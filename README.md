@@ -21,6 +21,8 @@ running the code is
 ./run_PACE_Simulation.bash
 
 Also under 
-run/OCIUAAER_Config input output directory needs to be defined depending on the directory change of location of the dependency data
+run/OCIUAAER_Config input output directory needs to be defined depending on the directory change of location of the dependency data, these data area shared using UMBC google drive within the release 
+https://drive.google.com/file/d/1T8na0ja0FDkkKAFsINZwTSs_pEivT2Br/view?usp=sharing
 
-build/Makefile dependency change 
+Under build folder needs to change Makefile based on the dependency.
+

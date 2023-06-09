@@ -1,0 +1,37 @@
+input_l1file = /data4/yshi1/PACE_unified_algorithm_from_paceteam/L1_data/PACE_OCI_SIM.20220321T102344.L1B.V9.1.nc
+
+
+output_dir = /data4/yshi1/PACE_unified_algorithm_from_paceteam/L2_data/ 
+! ANCILLARY DATASETS FROM PACE TEAM
+landwater_mask = /data4/yshi1/PACE_unified_algorithm_from_paceteam/ancillary/landmask_GMT15ARC.nc 
+
+! UV-group LUTs
+  uv_ai_mielut = /data4/yshi1/PACE_unified_algorithm_from_paceteam/UV/tbls/LUT_TROPOMI_AI_MieCloud_v2_700hPa.h5
+  uv_ai_lerlut = /data4/yshi1/PACE_unified_algorithm_from_paceteam/UV/tbls/LUT_TROPOMI_AI_LER_v1.h5
+uv_surfalbfile = /data4/yshi1/PACE_unified_algorithm_from_paceteam/UV/tbls/OMIsurfalbPawan_v7.h5
+uv_surfprsfile = /data4/yshi1/PACE_unified_algorithm_from_paceteam/UV/tbls/TERRAIN_PRES.h5
+uv_snowicefile = /data4/yshi1/PACE_unified_algorithm_from_paceteam/UV/tbls/SNOW_ICE_CLIM.h5 
+uv_ocncorr_lut = /data4/yshi1/PACE_unified_algorithm_from_paceteam/UV/tbls/Fresnel_OceanLUT_v1.h5
+    uv_aer_lut = /data4/yshi1/PACE_unified_algorithm_from_paceteam/UV/tbls/LUT_v5_2wave.h5
+   uv_sfc_file = /data4/yshi1/PACE_unified_algorithm_from_paceteam/UV/tbls/sfctype_highRes.dat
+  uv_zaer_file = /data4/yshi1/PACE_unified_algorithm_from_paceteam/UV/tbls/Zaer_clm.dat
+ uv_zaer2_file = /data4/yshi1/PACE_unified_algorithm_from_paceteam/UV/tbls/Zaer_caliopclm.dat
+uv_AIRSCO_clm_file = /data4/yshi1/PACE_unified_algorithm_from_paceteam/UV/tbls/AIRSCO_clm_v4.dat
+uv_omacalut_file = /data4/yshi1/PACE_unified_algorithm_from_paceteam/UV/tbls/omacaLUT_v130.h5
+uv_ssa388_clim_file = /data4/yshi1/PACE_unified_algorithm_from_paceteam/UV/tbls/omaca_ssa388_v140.h5
+
+! DT Tables Ocean
+dt_ext_coeff = /data4/yshi1/PACE_unified_algorithm_from_paceteam/DT_Ocean/tbls/VIIRS_LUT/Ocean_Ext_554_modislike
+dt_gas_coeff = /data4/yshi1/PACE_unified_algorithm_from_paceteam/DT_Ocean/tbls/VIIRS_LUT/VIIRS_GAS_COEFS_LBL_v1.dat
+VIIRS_ocean  = /data4/yshi1/PACE_unified_algorithm_from_paceteam/DT_Ocean/tbls/VIIRS_LUT/ 
+Pace_ocean   = /data4/yshi1/PACE_unified_algorithm_from_paceteam/DT_Ocean/tbls/PACE_LUT/  
+
+! DT Tables Land
+VIIRS_land  = /data4/yshi1/PACE_unified_algorithm_from_paceteam/DB_DT_Land/DT_Land/tbls/VIIRS_LUT/
+
+! DEEP-BLUE(s) LUTs
+db_config = ./DB_PACE.config
+
+! ML model
+ml_model= /data4/yshi1/PACE_unified_algorithm_from_paceteam/ML_UVAOD/data/
+

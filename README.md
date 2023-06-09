@@ -5,6 +5,7 @@ To run the program under run directory use run_PACE_Simulation.bash
 
 Before run set up external data path:
 under run/setup_env.bash  there needs to be directory for GMAO data
+Anc_package_path= to where you will put these binary files
 
 in run_PACE_Simulation.bash there needs to be change for related file names
 
@@ -19,10 +20,6 @@ line 120 nccoy directory change
 
 running the code is 
 ./run_PACE_Simulation.bash
-
-Also under 
-run/OCIUAAER_Config input output directory needs to be defined depending on the directory change of location of the dependency data, these data area shared using UMBC google drive within the release 
-https://drive.google.com/file/d/1T8na0ja0FDkkKAFsINZwTSs_pEivT2Br/view?usp=sharing
 
 Under build folder needs to change Makefile based on the dependency.
 

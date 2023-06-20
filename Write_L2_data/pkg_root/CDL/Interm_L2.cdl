@@ -1,0 +1,171 @@
+netcdf AERDT_L2_OCI {
+dimensions:
+	number_of_lines_8x8 = UNLIMITED ; // e.g. 404 but varies
+	number_of_pixels_8x8 = 400 ;
+	number_of_lines_1x1 = UNLIMITED ; // e.g. 3232
+	number_of_pixels_1x1 = 5000 ; 
+	Wavelength_Used = 5 ;
+	Wavelength_Used_ocean = 9 ;
+	number_of_month = 1;
+	
+// global attributes:
+        :Conventions = "CF-1.6";
+        :format_version = 1; 
+        :instrument = "OCI";
+        :platform = "";  // Suomi-NPP or NOAA-20
+        :processing_level = "L2";
+        :cdm_data_type = "swath";
+        :creator_name = "NASA Atmosphere SIPS";
+        :creator_email = "sips.support@ssec.wisc.edu";
+        :creator_url = "https://sips.ssec.wisc.edu/";
+        :institution = "NASA Atmosphere SIPS";
+        :project = "NASA Atmosphere Discipline";
+        :publisher_name = "NASA Atmosphere SIPS";
+        :publisher_email = "sips.support@ssec.wisc.edu";
+        :publisher_url = "https://sips.ssec.wisc.edu/";
+        :keywords_vocabulary = "NASA Global Change Master Directory (GCMD) Science Keywords";
+        :license = "https://science.nasa.gov/earth-science/earth-science-data/data-information-policy/";
+        :stdname_vocabulary = "NetCDF Climate and Forecast (CF) Metadata Convention";
+        :naming_authority = "gov.nasa.gsfc.sci.atmos";
+        :history = "";
+        :source = "";
+        :title = ""; // look this up
+        :long_name = ""; // look this up
+        :processing_version = "";
+
+group: geolocation_data {
+    variables:
+	short month(number_of_month);
+		month:valid_range = 0s, 12s ;
+        month:_FillValue = -999s ;
+        month:long_name = "Observation Month" ;
+        month:units = "none" ;
+        month:scale_factor = 1. ;
+        month:add_offset = 0. ;
+
+	float longitude(number_of_lines_8x8, number_of_pixels_8x8) ;
+		longitude:valid_range = -180.f, 180.f ;
+		longitude:_FillValue = -999.f ;
+		longitude:long_name = "Geodetic Longitude" ;
+		longitude:units = "degree_east" ;
+		longitude:scale_factor = 1. ;
+		longitude:add_offset = 0. ;
+		longitude:Parameter_Type = "OCI Input" ;
+		longitude:Geolocation_Pointer = "Geolocation data not applicable" ;
+		longitude:_CoordinateAxisType = "Lon" ;
+        longitude:_Storage = "chunked" ;
+        longitude:_ChunkSizes = 1, 400 ;
+        longitude:_DeflateLevel = 5 ;
+        longitude:_Shuffle = "true" ;
+	float latitude(number_of_lines_8x8, number_of_pixels_8x8) ;
+		latitude:valid_range = -90.f, 90.f ;
+		latitude:_FillValue = -999.f ;
+		latitude:long_name = "Geodetic Latitude" ;
+		latitude:units = "degree_north" ;
+		latitude:scale_factor = 1. ;
+		latitude:add_offset = 0. ;
+		latitude:Parameter_Type = "OCI Input" ;
+		latitude:Geolocation_Pointer = "Geolocation data not applicable" ;
+		latitude:_CoordinateAxisType = "Lat" ;
+        latitude:_Storage = "chunked" ;
+        latitude:_ChunkSizes = 1, 400 ;
+        latitude:_DeflateLevel = 5 ;
+        latitude:_Shuffle = "true" ;
+   short solar_zenith_angle(number_of_lines_8x8, number_of_pixels_8x8) ;
+		solar_zenith_angle:valid_range = 0s, 18000s ;
+		solar_zenith_angle:_FillValue = -9999s ;
+		solar_zenith_angle:long_name = "Solar Zenith Angle, Cell to Sun" ;
+		solar_zenith_angle:units = "degree" ;
+		solar_zenith_angle:scale_factor = 0.01 ;
+		solar_zenith_angle:add_offset = 0. ;
+		solar_zenith_angle:Parameter_Type = "OCI Input" ;
+		solar_zenith_angle:Geolocation_Pointer = "Internal geolocation arrays" ;
+		solar_zenith_angle:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
+        solar_zenith_angle:_Storage = "chunked" ;
+        solar_zenith_angle:_ChunkSizes = 1, 400 ;
+        solar_zenith_angle:_DeflateLevel = 5 ;
+        solar_zenith_angle:_Shuffle = "true" ;
+	short solar_azimuth_angle(number_of_lines_8x8, number_of_pixels_8x8) ;
+		solar_azimuth_angle:valid_range = -18000s, 18000s ;
+		solar_azimuth_angle:_FillValue = -9999s ;
+		solar_azimuth_angle:long_name = "Solar Azimuth Angle, Cell to Sun" ;
+		solar_azimuth_angle:units = "degree" ;
+		solar_azimuth_angle:scale_factor = 0.01 ;
+		solar_azimuth_angle:add_offset = 0. ;
+		solar_azimuth_angle:Parameter_Type = "OCI Input" ;
+		solar_azimuth_angle:Geolocation_Pointer = "Internal geolocation arrays" ;
+		solar_azimuth_angle:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
+        solar_azimuth_angle:_Storage = "chunked" ;
+        solar_azimuth_angle:_ChunkSizes = 1, 400 ;
+        solar_azimuth_angle:_DeflateLevel = 5 ;
+        solar_azimuth_angle:_Shuffle = "true" ;
+	short sensor_zenith_angle(number_of_lines_8x8, number_of_pixels_8x8) ;
+		sensor_zenith_angle:valid_range = 0s, 18000s ;
+		sensor_zenith_angle:_FillValue = -9999s ;
+		sensor_zenith_angle:long_name = "Sensor Zenith Angle, Cell to Sensor" ;
+		sensor_zenith_angle:units = "degree" ;
+		sensor_zenith_angle:scale_factor = 0.01 ;
+		sensor_zenith_angle:add_offset = 0. ;
+		sensor_zenith_angle:Parameter_Type = "OCI Input" ;
+		sensor_zenith_angle:Geolocation_Pointer = "Internal geolocation arrays" ;
+		sensor_zenith_angle:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
+        sensor_zenith_angle:_Storage = "chunked" ;
+        sensor_zenith_angle:_ChunkSizes = 1, 400 ;
+        sensor_zenith_angle:_DeflateLevel = 5 ;
+        sensor_zenith_angle:_Shuffle = "true" ;
+	short sensor_azimuth_angle(number_of_lines_8x8, number_of_pixels_8x8) ;
+		sensor_azimuth_angle:valid_range = -18000s, 18000s ;
+		sensor_azimuth_angle:_FillValue = -9999s ;
+		sensor_azimuth_angle:long_name = "Sensor Azimuth Angle, Cell to Sensor" ;
+		sensor_azimuth_angle:units = "degree" ;
+		sensor_azimuth_angle:scale_factor = 0.01 ;
+		sensor_azimuth_angle:add_offset = 0. ;
+		sensor_azimuth_angle:Parameter_Type = "OCI Input" ;
+		sensor_azimuth_angle:Geolocation_Pointer = "Internal geolocation arrays" ;
+		sensor_azimuth_angle:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
+        sensor_azimuth_angle:_Storage = "chunked" ;
+        sensor_azimuth_angle:_ChunkSizes = 1, 400 ;
+        sensor_azimuth_angle:_DeflateLevel = 5 ;
+        sensor_azimuth_angle:_Shuffle = "true" ;        
+	
+    data:
+    } // group geolocation_data
+group: geophysical_data {
+    variables:
+   
+	short Optical_Depth_Ocean(number_of_lines_8x8, number_of_pixels_8x8, Wavelength_Used_ocean) ;
+		Optical_Depth_Ocean:valid_range = -50s, 5000s ;
+		Optical_Depth_Ocean:_FillValue = -9999s ;
+		Optical_Depth_Ocean:long_name = "Retrieved AOT for 0.354,0.388 0.48, 0.55, 0.67 ,0.88,1.24,1.64 2.1microns"  ;
+		Optical_Depth_Ocean:units = "None" ;
+		Optical_Depth_Ocean:scale_factor = 0.001 ;
+		Optical_Depth_Ocean:add_offset = 0. ;
+		Optical_Depth_Ocean:Parameter_Type = "Output" ;
+		Optical_Depth_Ocean:Geolocation_Pointer = "Internal geolocation arrays" ;
+		Optical_Depth_Ocean:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
+        Optical_Depth_Ocean:_Storage = "chunked" ;
+        Optical_Depth_Ocean:_ChunkSizes = 1, 400, 4 ;
+        Optical_Depth_Ocean:_DeflateLevel = 5 ;
+        Optical_Depth_Ocean:_Shuffle = "true" ;
+        
+   
+   	short Optical_Depth_Land(number_of_lines_8x8, number_of_pixels_8x8, Wavelength_Used) ;
+		Optical_Depth_Land:valid_range = -50s, 5000s ;
+		Optical_Depth_Land:_FillValue = -9999s ;
+		Optical_Depth_Land:long_name = "Retrieved AOT for 0.354,0.388 0.48, 0.55, 0.67 microns"  ;
+		Optical_Depth_Land:units = "None" ;
+		Optical_Depth_Land:scale_factor = 0.001 ;
+		Optical_Depth_Land:add_offset = 0. ;
+		Optical_Depth_Land:Parameter_Type = "Output" ;
+		Optical_Depth_Land:Geolocation_Pointer = "Internal geolocation arrays" ;
+		Optical_Depth_Land:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
+        Optical_Depth_Land:_Storage = "chunked" ;
+        Optical_Depth_Land:_ChunkSizes = 1, 400, 4 ;
+        Optical_Depth_Land:_DeflateLevel = 5 ;
+        Optical_Depth_Land:_Shuffle = "true" ;
+        
+		
+    data:
+    } // group geophysical_data
+}
+

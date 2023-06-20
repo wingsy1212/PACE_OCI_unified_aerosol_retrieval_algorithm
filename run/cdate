@@ -1,0 +1,41 @@
+#! /bin/csh
+
+#Check if sufficient number of input variable are present
+
+if ( $#argv < 2 ) then
+   echo format either cdate YYYY JDAY or cdate YYYY MM DD
+   echo EXAMPLE       cdate 2003 32 or cdate 2003 02 01
+   exit
+endif
+
+if ( $#argv < 3 ) then
+
+# ~~~~~~~~~~ Calculate Calendar Date ~~~~~~~~~~~~~~~~~
+
+      #Get Year JDay from command line
+       set year = $1
+       set jday = $2
+
+#      Convert jday to integer
+       set num  = 0 
+       set jday = `echo "$jday -  $num" | bc`
+
+#      Convert jday to date using unix date command
+
+       @ jday--    # Subtract 1 from jday because we are starting from Jan 1
+       set january1 = `date -d "$year-01-01"`
+       echo `date -d "$january1 $jday days" +%Y" "%m" "%d`
+
+   else
+
+# ~~~~~~~~~~ Calculate Julian Day ~~~~~~~~~~~~~~~~~
+
+#  Get Year Month Day from command line
+   set YY = $1
+   set MM = $2
+   set DD = $3
+
+#  Convert to Julian day using date command
+   echo `date -d "$YY$MM$DD" +%Y" "%j`
+
+endif

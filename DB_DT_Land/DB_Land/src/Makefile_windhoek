@@ -1,0 +1,159 @@
+#
+##############################################################################################
+# GNUi (3.82) Makefile
+# # This is a GNU  makefile to automate the compilation of the FORTRAN and C source files of
+# the aerosol PACE package.
+# #
+# If the package is expanded/improved with additional source files, users/developers should
+# add the source files to the SRCS list and recompile the system.
+# #
+# # Since implicit dependency rules are used, the order of the source file list is essential.
+# If the module in File A is used by File B, File A should be put in front of File B in
+# the list.
+# #
+# # The path to NetCDF, HDF, HDF5 and the other utility libraries should be modified if not
+# # on Windhoek. 
+# #
+# # CREATION HISTORY:
+# #       Written by:     Zhaohui Zhang, 30-Nov-2021
+# #                       zhaohui.zhang@nasa.gov
+# #
+# #
+# ############################################################################################
+#
+#
+#
+#
+PKG_HOME=.
+ 
+#Program name and installation directory.
+PROGRAM   = deep_blue
+DEST      = .                
+## Source files.
+pkg_home=$(PKG_HOME)
+
+# DB Source files
+DB_SRCS =  \
+       ${pkg_home}/pack_412.f  \
+       ${pkg_home}/lmpar.f  \
+       ${pkg_home}/fdjac2.f  \
+       ${pkg_home}/lmdif1.f  \
+       ${pkg_home}/lmdif_v2.f  \
+       ${pkg_home}/lmdif.f  \
+       ${pkg_home}/dpmpar.f  \
+       ${pkg_home}/enorm.f  \
+       ${pkg_home}/qrfac.f  \
+       ${pkg_home}/qrsolv.f  \
+       ${pkg_home}/covar.f  \
+       ${pkg_home}/fdjac2_v2.f  \
+       ${pkg_home}/atmos.f90  \
+       ${pkg_home}/calendars.f95  \
+       ${pkg_home}/intero.f  \
+       ${pkg_home}/interr.f  \
+       ${pkg_home}/reflec.f  \
+       ${pkg_home}/viirs_aerosol_luts.f95  \
+       ${pkg_home}/viirs_ler_luts.f90  \
+       ${pkg_home}/lodbuf.f  \
+       ${pkg_home}/prflec.f  \
+       ${pkg_home}/lodsmp.f  \
+       ${pkg_home}/total.f  \
+       ${pkg_home}/sortrx.f  \
+       ${pkg_home}/lmdif1_v2.f  \
+       ${pkg_home}/landcover.f95  \
+       ${pkg_home}/viirs_obpg_corrections.f95  \
+       ${pkg_home}/viirs_ocean_aero.f95  \
+       ${pkg_home}/seawifs_surface_pressure.f95  \
+       ${pkg_home}/modis_surface.f95  \
+       ${pkg_home}/viirs_config.f95  \
+       ${pkg_home}/viirs_db_utils.f95  \
+       ${pkg_home}/set_qa_land.f95  \
+       ${pkg_home}/set_qa_ocean.f95  \
+       ${pkg_home}/read_l1b.f95  \
+       ${pkg_home}/modis.f90  \
+       ${pkg_home}/get_lut_211sfc.f90  \
+       ${pkg_home}/get_lut_igbp_land_cover.f90  \
+       ${pkg_home}/db_debug.f95  \
+       ${pkg_home}/find_v_vegset.f  \
+       ${pkg_home}/find_v_viirs.f  \
+       ${pkg_home}/viirs_ancillary.f95  \
+       ${pkg_home}/screening.f95  \
+       ${pkg_home}/deep_blue.f90  
+       
+SRCS  = $(DB_SRCS)
+OBJS  = $(notdir $(patsubst %.f90,%.o,\
+        $(patsubst %.f95,%.o,\
+        $(patsubst %.f,%.o,$(SRCS)))))       
+     
+# utility Libraries 
+CDF4_DIR = /usr/lib64/gfortran/modules
+CDF4_INC = -I$(CDF4_DIR)
+CDF4_LIB = -L/usr/lib64/ -lnetcdf -lnetcdff -Wall -lcurl 
+HDF4_DIR = /usr/local/sdptk_modaps-5.2.19/hdf/linux64/hdf-4.2.10
+HDF4_LIB = -L$(HDF4_DIR)/lib  -lmfhdf  -ldf  -lz -lm 
+HDF4_INC = -I$(HDF4_DIR)/include
+HDF5_DIR = /usr/local/sdptk_modaps-5.2.19/hdf5
+HDF5_LIB = -L$(HDF5_DIR)/lib -lhdf5  -lhdf5_fortran -lhdf5hl_fortran -lhdf5_hl
+HDF5_INC = -I$(HDF5_DIR)/include
+EOS4_DIR = /usr/local/sdptk_modaps-5.2.19/hdfeos
+EOS4_LIB = -L$(EOS4_DIR)/lib  -lGctp  -lhdfeos 
+EOS4_INC = -I$(EOS4_DIR)/include
+EOS5_DIR = /usr/local/sdptk_modaps-5.2.19/hdfeos5
+EOS5_LIB = -L$(EOS5_DIR)/lib  -lGctp  -lhe5_hdfeos
+EOS5_INC = -I$(EOS5_DIR)/include
+SZIP_DIR = /usr
+SZIP_INC = -I$(SZIP_DIR)/include 
+SZIP_LIB = -L$(SZIP_DIR)/lib -lsz   
+
+
+## C compiler variables.
+CC       =  gcc 
+CFLAGS   = -O -C -static #-n32 
+
+## F90 compiler variables. 
+FC       =  gfortran 
+FCFLAGS  =  -O2 -mcmodel=medium  -fbounds-check -g -fbacktrace \
+            -ffpe-trap=zero,overflow,underflow 
+FCFLAGS += $(CDF4_INC) $(HDF4_INC) $(HDF5_INC) $(EOS5_INC) $(EOS4_INC) 
+F90FLAGS = $(FCFLAGS)
+F77FLAGS = $(FCFLAGS) -ffixed-line-length-none
+
+## linker libraries
+FLFLAGS  = -O -ffixed-line-length-132 $(CDF4_LIB) $(HDF5_LIB) $(HDF4_LIB) $(EOS5_LIB) $(EOS4_LIB) 
+USERLIBS = 
+
+## Default target.
+all:  $(PROGRAM)
+
+# create the exectuable  
+$(PROGRAM):  $(OBJS) $(USERLIBS)
+	@echo "Linking $(PROGRAM) ..."
+	$(FC) $(OBJS) $(FLFLAGS) $(USERLIBS) -o $@
+	@echo "done" 
+	
+## Redefine rule for compiling C files.
+.SUFFIXES:  
+.SUFFIXES: .f90 .f95 .f .c .o
+.c.o:
+	$(CC) $(CFLAGS) -c $<
+
+## Define rule for compiling F90 files.
+.f90.o:
+	$(FC) $(F90FLAGS) -c $< 
+.f95.o:
+	$(FC) $(F90FLAGS) -c $< 	
+.f.o:
+	$(FC) $(F77FLAGS) -c $< 	
+
+# remove object code, executables and core
+clean:
+	rm -f $(PROGRAM) $(OBJS) *.mod 
+
+# install executable in destination directory
+install: $(PROGRAM)
+	@echo Installing $(PROGRAM) in $(DEST)
+	@-strip $(PROGRAM)
+	@if [ $(DEST) != . ]; then \
+	(cp -f $(PROGRAM) $(DEST)); fi	
+	
+	
+

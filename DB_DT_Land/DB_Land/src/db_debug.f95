@@ -21,7 +21,7 @@ integer function db_debug_output(of)  result(status)
       
   implicit none
  
- 	include 'hdf.f90' 
+ 	include 'hdf.inc' 
 
   type(output_file), intent(in)           ::  of
   
@@ -105,7 +105,7 @@ integer function pace_test_output(of)  result(status)
       
   implicit none
  
- 	include 'hdf.f90' 
+ 	include 'hdf.inc' 
 
   type(output_file), intent(in)           ::  of
   

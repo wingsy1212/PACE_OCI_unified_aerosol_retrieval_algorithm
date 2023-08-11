@@ -81,8 +81,8 @@ module modis_surface
   integer function load_terrainflg_tables(tflg_file, season) result(status)
     implicit none
     
-    include 'hdf.f90'
-	  include 'dffunc.f90'
+    include 'hdf.inc'
+	  include 'dffunc.inc'
 	
     character(len=*), intent(in)  ::  tflg_file
     integer, intent(in)           ::  season 
@@ -252,8 +252,8 @@ module modis_surface
   integer function load_seasonal_desert(file) result(status)
     implicit none
     
-    include 'hdf.f90'
-	  include 'dffunc.f90'
+    include 'hdf.inc'
+	  include 'dffunc.inc'
 	
     character(len=*), intent(in)  ::  file
     
@@ -333,8 +333,8 @@ module modis_surface
   integer function load_brdf(brdffile) result(status)
     implicit none
     
-    include 'hdf.f90'
-	  include 'dffunc.f90'
+    include 'hdf.inc'
+	  include 'dffunc.inc'
 	
     character(len=*), intent(in)    ::  brdffile
     
@@ -4975,8 +4975,8 @@ module modis_surface
 ! -- Load surface LER coefficient tables.
   integer function load_hdfLER(modis_ler_file, viirs_ler_file, coeffs_file) RESULT(status)
 
-    include 'hdf.f90'
-    include 'dffunc.f90'
+    include 'hdf.inc'
+    include 'dffunc.inc'
 
     character(len=*), intent(in)    ::  modis_ler_file
     character(len=*), intent(in)    ::  viirs_ler_file
@@ -5185,8 +5185,8 @@ module modis_surface
   integer function load_swir_coeffs(file) result(status) !jlee added 05/16/2017
     implicit none
 
-    include 'hdf.f90'
-    include 'dffunc.f90'
+    include 'hdf.inc'
+    include 'dffunc.inc'
 
     character(len=*), intent(in)  ::  file
 
@@ -5632,8 +5632,8 @@ module modis_surface
     character (len=255), intent(in)     ::  sds_name
     real, intent(out)                   ::  outref(edge(1),edge(2))
 
-    include 'hdf.f90'
-    include 'dffunc.f90'
+    include 'hdf.inc'
+    include 'dffunc.inc'
 
     ! HDF vars
     integer                           ::  sds_index, sds_id 
@@ -5727,8 +5727,8 @@ module modis_surface
     character (len=*), intent(in)           ::  sds_name
     real, dimension(:,:,:,:), intent(inout) ::  outref
     
-    include 'hdf.f90'
-    include 'dffunc.f90'
+    include 'hdf.inc'
+    include 'dffunc.inc'
 
     ! HDF vars
     integer               ::  sds_index, sds_id 
@@ -5829,8 +5829,8 @@ module modis_surface
     character (len=255), intent(in)     ::  sds_name
     real, intent(out)                   ::  outref(edge(1),edge(2))
 
-    include 'hdf.f90'
-    include 'dffunc.f90'
+    include 'hdf.inc'
+    include 'dffunc.inc'
 
     ! HDF vars
     integer                           ::  sds_index, sds_id
@@ -5924,8 +5924,8 @@ module modis_surface
     character (len=*), intent(in)           ::  sds_name
     real, dimension(:,:,:), intent(inout) ::  outref
 
-    include 'hdf.f90'
-    include 'dffunc.f90'
+    include 'hdf.inc'
+    include 'dffunc.inc'
 
     ! HDF vars
     integer               ::  sds_index, sds_id

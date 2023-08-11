@@ -113,8 +113,8 @@ end subroutine unload_viirs_aerosol_luts
 integer function read_aerosol_lut_file(lut_file, lut412, lut488, lut672) result(status)
   implicit none
   
-  include 'hdf.f90'
-  include 'dffunc.f90'
+  include 'hdf.inc'
+  include 'dffunc.inc'
   
   character(len=*), intent(in)            ::  lut_file 
   type(viirs_aerosol_lut), intent(inout)  ::  lut412

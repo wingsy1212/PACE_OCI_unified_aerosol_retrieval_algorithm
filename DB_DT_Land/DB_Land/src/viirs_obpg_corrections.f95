@@ -408,8 +408,8 @@ module viirs_obpg_corrections
   type(xcal_table) function read_xcal_table(tbl_file, status) result(xcal)
     implicit none
     
-    include 'hdf.f90'
-	  include 'dffunc.f90'
+    include 'hdf.inc'
+    include 'dffunc.inc'
     
     character(len=*), intent(in)          ::  tbl_file
     integer, intent(inout)                ::  status
@@ -647,8 +647,8 @@ module viirs_obpg_corrections
   type(gain_table) function read_gain_table(tbl_file, status) result(gain)
     implicit none
     
-    include 'hdf.f90'
-	  include 'dffunc.f90'
+    include 'hdf.inc'
+    include 'dffunc.inc'
     
     character(len=*), intent(in)          ::  tbl_file
     integer, intent(inout)                ::  status

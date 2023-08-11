@@ -16,8 +16,8 @@ subroutine get_lut_igbp_land_cover( lut_file, status)
    
    implicit none
    
-   include 'hdf.f90'
-   include 'dffunc.f90'
+   include 'hdf.inc'
+   include 'dffunc.inc'
   
    include 'newaottbl90.inc'
    

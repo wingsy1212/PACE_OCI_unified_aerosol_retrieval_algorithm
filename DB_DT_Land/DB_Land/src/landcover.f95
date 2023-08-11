@@ -14,8 +14,8 @@ module landcover
   integer function load_landcover(lc_file) result(status)
     implicit none
     
-    include 'hdf.f90'
-	  include 'dffunc.f90'
+    include 'hdf.inc'
+	  include 'dffunc.inc'
   
     character(len=*), intent(in)  ::  lc_file
 

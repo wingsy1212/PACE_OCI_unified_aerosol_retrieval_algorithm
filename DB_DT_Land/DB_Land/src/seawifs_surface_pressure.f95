@@ -17,8 +17,8 @@ module seawifs_surface_pressure
   integer function load_surfterr_table(surfterr_file)
     implicit none
     
-    include 'hdf.f90'
-	  include 'dffunc.f90'
+    include 'hdf.inc'
+    include 'dffunc.inc'
   
     character(len=*), intent(in)  ::  surfterr_file
 
@@ -146,8 +146,8 @@ module seawifs_surface_pressure
   subroutine load_surface_pressure(lutable_file)
     implicit none
 		
-		include 'hdf.f90'
-	  include 'dffunc.f90'
+		include 'hdf.inc'
+	  include 'dffunc.inc'
 	  
     character(len=*)  ::  lutable_file
  		real, dimension(2160, 4320) :: sfc_pressure

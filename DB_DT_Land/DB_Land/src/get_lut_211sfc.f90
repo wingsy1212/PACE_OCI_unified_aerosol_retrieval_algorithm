@@ -12,8 +12,8 @@ subroutine get_lut_211sfc( lut_file, status)
 !   use lut_arrays
 
    implicit none
-   include 'hdf.f90'
-   include 'dffunc.f90'
+   include 'hdf.inc'
+   include 'dffunc.inc'
    include 'sfc21tbl90.inc'
    
    character(*),           intent (in)      :: lut_file

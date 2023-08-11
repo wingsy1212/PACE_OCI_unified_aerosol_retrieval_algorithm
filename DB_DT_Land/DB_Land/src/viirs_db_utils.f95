@@ -413,8 +413,8 @@ end function create_dbdt_pace
   integer function load_dbdt_region_table(dbdt_file, month) result(status)
     implicit none
 
-    include 'hdf.f90'
-          include 'dffunc.f90'
+    include 'hdf.inc'
+    include 'dffunc.inc'
         
     character(len=*), intent(in)      ::  dbdt_file
     integer, intent(in)               ::  month

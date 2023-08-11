@@ -92,8 +92,8 @@ subroutine load_pace_test_data(geo_file,lat,lon,sza,saz,vza,vaz,elev,&
 
   implicit none
   
-  include 'hdf.f90'
-  include 'dffunc.f90'
+  include 'hdf.inc'
+  include 'dffunc.inc'
   
 
                   
@@ -1134,8 +1134,8 @@ subroutine write_pace_test_data(geo_file,lat,lon,sza,saz,&
   use calendars, only: gdatetime, gregorian_from_doy,doy_from_gregorian
                       
   implicit none
-  include 'hdf.f90'
-  include 'dffunc.f90'
+  include 'hdf.inc'
+  include 'dffunc.inc'
  
                   
   character(len=*), intent(in)          ::  geo_file

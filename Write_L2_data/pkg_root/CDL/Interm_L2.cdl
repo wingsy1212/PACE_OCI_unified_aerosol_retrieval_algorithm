@@ -2,7 +2,7 @@ netcdf AERDT_L2_OCI {
 dimensions:
 	number_of_lines_8x8 = UNLIMITED ; // e.g. 404 but varies
 	number_of_pixels_8x8 = 400 ;
-	number_of_lines_1x1 = UNLIMITED ; // e.g. 3232
+//	number_of_lines_1x1 = UNLIMITED ; // e.g. 3232
 	number_of_pixels_1x1 = 5000 ; 
 	Wavelength_Used = 5 ;
 	Wavelength_Used_ocean = 9 ;

@@ -1,0 +1,30 @@
+input_l1file = /home/sam/winhome/nasa/data/oci/pytoast-9/l1b/PACE_OCI_SIM.20220321T102344.L1B.V9.1.nc
+output_dir   =    /home/sam/winhome/nasa/uaa/luts/L2_data/ 
+! ANCILLARY DATASETS FROM PACE TEAM
+landwater_mask = /home/sam/winhome/nasa/uaa/luts/ancillary/landmask_GMT15ARC.nc 
+! UV-group LUTs
+  uv_ai_mielut = /home/sam/winhome/nasa/uaa/luts/UV/tbls/LUT_TROPOMI_AI_MieCloud_v2_700hPa.h5
+  uv_ai_lerlut = /home/sam/winhome/nasa/uaa/luts/UV/tbls/LUT_TROPOMI_AI_LER_v1.h5
+uv_surfalbfile = /home/sam/winhome/nasa/uaa/luts/UV/tbls/OMIsurfalbPawan_v7.h5
+uv_surfprsfile = /home/sam/winhome/nasa/uaa/luts/UV/tbls/TERRAIN_PRES.h5
+uv_snowicefile = /home/sam/winhome/nasa/uaa/luts/UV/tbls/SNOW_ICE_CLIM.h5 
+uv_ocncorr_lut = /home/sam/winhome/nasa/uaa/luts/UV/tbls/Fresnel_OceanLUT_v1.h5
+    uv_aer_lut = /home/sam/winhome/nasa/uaa/luts/UV/tbls/LUT_v5_2wave.h5
+   uv_sfc_file = /home/sam/winhome/nasa/uaa/luts/UV/tbls/sfctype_highRes.dat
+  uv_zaer_file = /home/sam/winhome/nasa/uaa/luts/UV/tbls/Zaer_clm.dat
+ uv_zaer2_file = /home/sam/winhome/nasa/uaa/luts/UV/tbls/Zaer_caliopclm.dat
+uv_AIRSCO_clm_file = /home/sam/winhome/nasa/uaa/luts/UV/tbls/AIRSCO_clm_v4.dat
+uv_omacalut_file = /home/sam/winhome/nasa/uaa/luts/UV/tbls/omacaLUT_v130.h5
+uv_ssa388_clim_file = /home/sam/winhome/nasa/uaa/luts/UV/tbls/omaca_ssa388_v140.h5
+! DT Tables Ocean
+dt_ext_coeff   =   /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/VIIRS_LUT/Ocean_Ext_554_modislike
+dt_gas_coeff   =   /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/VIIRS_LUT/VIIRS_GAS_COEFS_LBL_v1.dat
+VIIRS_ocean    =   /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/VIIRS_LUT/ 
+Pace_ocean     =   /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/  
+! DT Tables Land
+VIIRS_land   =   /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DT_Land/tbls/VIIRS_LUT/
+! DEEP-BLUE(s) LUTs
+db_aero_lut_land = /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DB_Land/tbls/VIIRS_LUT/land_aerosol_luts_20151105.hdf
+db_aero_lut_dust = /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DB_Land/tbls/VIIRS_LUT/land_aerosol_luts_dust_0628.hdf
+db_config= /home/sam/git/PACE_OCI_unified_aerosol_retrieval_algorithm/uaa_db_home.par
+

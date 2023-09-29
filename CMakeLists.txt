@@ -84,7 +84,7 @@ find_package(HDF4 REQUIRED)
 include_directories(${HDF4_INCLUDE_DIRS})
 #find_package(HDFEOS REQUIRED)
 #include_directories(${HDFEOS_INCLUDE_DIRS})
-set(LIBS ${CMAKE_PREFIX_PATH}/lib/libxdr.a ${HDF4_LIBRARIES})
+set(LIBS ${HDF4_DIR}/lib/libxdr.a ${HDF4_LIBRARIES})
 #set(LIBS ${HDF4_LIBRARIES})
 #list(APPEND LIBS ${HDFEOS_LIBRARIES})
 
@@ -135,7 +135,7 @@ add_executable(oci_ua_aer
   UV/src/NUV_AerosolModule.f90
   UV/src/Get_ssaclimLUT2_H5module.f90
   UV/src/Get_omacaLUT7dim_H5module.f90
-  UV/src/NUV_ACAerosolModule.f90
+  Main/NUV_ACAerosolModule.f90
   UV/src/NUV_package_modules.f90 
   # DT Source files common to ocean and Land
   DT_Common_src/src/Interp.f90

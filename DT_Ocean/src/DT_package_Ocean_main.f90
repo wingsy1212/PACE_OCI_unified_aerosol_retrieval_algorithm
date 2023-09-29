@@ -19,7 +19,7 @@ contains
                     save_View_phi,save_solar_phi,Save_average_Tau_Ocean_UV,& 
                     Save_Small_weighting_FUV,Save_ref_allwav_uv,save_Sea_Land_Flag,&
                     Save_average_Omega_Ocean_UV,CldMsk_500_Ocean,Save_Index_Height,&
-                    Save_land_ocean_Quality,Save_CLDFRC_Ocean)
+                    Save_land_ocean_Quality,Save_CLDFRC_Ocean,anc_file)
                      
      
       USE write_pace_dt_ocean
@@ -49,6 +49,7 @@ contains
        
       SAVE 
         
+      CHARACTER(255) :: anc_file
       
                  Anc_flag ='GMAO'
                 
@@ -209,7 +210,7 @@ contains
 !------------------------------------------------------------------------------------------------------------------                           
         
                 CALL Get_An_GMAO(Lat_center,Lon_center,ugrd,vgrd,pwat,&
-                ozone,skinTemp,set_counter_for_anc,RTN_NCEP) 
+                ozone,skinTemp,set_counter_for_anc,RTN_NCEP,anc_file)
   
          
                

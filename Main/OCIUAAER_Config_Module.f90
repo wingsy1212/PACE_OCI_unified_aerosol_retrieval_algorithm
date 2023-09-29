@@ -50,9 +50,11 @@ CONTAINS
 !---------------------------------------------------------------
 !---------------------------------------------------------------
 !
-FUNCTION read_ociuaaer_config(cfg) RESULT(STATUS)
+FUNCTION read_ociuaaer_config(par_file, cfg) RESULT(STATUS)
 
 IMPLICIT NONE
+
+CHARACTER(255), INTENT(IN) :: par_file
 
 TYPE(ociuaaer_config_type), INTENT(INOUT) :: cfg
 CHARACTER(255), PARAMETER :: config_file = 'OCIUAAER_Config'
@@ -64,7 +66,7 @@ STATUS = 0
 nline = 0
 
 PRINT *, 'Now reading OCIUAAER Configuration file : ',  config_file	 
- OPEN(1101, FILE=config_file, STATUS='OLD', FORM='FORMATTED',  ACTION='READ', iostat=STATUS)  
+ OPEN(1101, FILE=par_file, STATUS='OLD', FORM='FORMATTED',  ACTION='READ', iostat=STATUS)
     IF (STATUS /= 0) THEN
       PRINT *, 'ERROR: failed to OPEN configuration file: ', STATUS
       RETURN

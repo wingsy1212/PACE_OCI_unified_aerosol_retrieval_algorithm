@@ -16,7 +16,7 @@ contains
                           Land_Sea_Flag,l1b_nXTrack,l1b_nLines,save_ref_Land_PACE,& 
                           save_corrected,save_Lat,Save_lon,CldMsk_500_Land,&
                           Save_land_ocean_Quality,Save_dust_weighting,Save_CLDFRC_land,&
-                          Ret_Xtrack,Ret_Lines) 
+                          Ret_Xtrack,Ret_Lines,anc_file)
                          
                        
       USE write_pace_dt
@@ -43,6 +43,8 @@ contains
       INCLUDE 'Save_data_declare.inc'
       INCLUDE 'Save_data_UV_declare.inc'
       SAVE 
+
+      CHARACTER(255) :: anc_file
          
       
                       
@@ -197,7 +199,7 @@ contains
 !------------------------------------------------------------------------------------------------------------------                           
            
                 CALL Get_An_GMAO(Lat_center,Lon_center,ugrd,vgrd,pwat,&
-                ozone,skinTemp,set_counter_for_anc,RTN_NCEP) 
+                ozone,skinTemp,set_counter_for_anc,RTN_NCEP,anc_file)
   
          
  

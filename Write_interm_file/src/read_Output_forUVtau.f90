@@ -21,10 +21,12 @@ contains
 !
 ! ---------------------------------------------------------------------
 
-      subroutine read_Output_forUVtau(Ret_Xtrack,Ret_Lines,uvdbdtaod)
+      subroutine read_Output_forUVtau(Ret_Xtrack,Ret_Lines,uvdbdtaod,nc_name)
                    
       include 'output_Variables.inc' 
 !     Declare input variables
+
+       CHARACTER(255) :: nc_name
 
        real(8) :: scale_factor, add_offset, cprime
        character(len=200) :: SDS_name
@@ -40,7 +42,7 @@ contains
 !       integer :: nvars
 !       integer(4), dimension(:),allocatable :: var_ids
 
-       character (len=*), parameter :: nc_name = 'Interm_file.nc'
+!       character (len=*), parameter :: nc_name = interm_file
       call check(nf90_open(nc_name,NF90_NOWRITE,file_id))
       SDS_name='Optical_Depth_Land'
 !     Open the netCDF file already created via ncgen

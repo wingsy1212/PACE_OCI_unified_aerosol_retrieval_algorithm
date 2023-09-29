@@ -27,7 +27,7 @@ contains
        
         subroutine write_Output_forUVtau(Ret_Xtrack,Ret_Lines,Ret_Lat,Ret_Lon,&
                    Ret_SolZen,Ret_View_angle,Ret_View_phi,Ret_solar_phi,uvdbdtaod,&
-                   Ret_tau_ocean,Month)        
+                   Ret_tau_ocean,Month,nc_name)
                    
 !     Define input variable dimensions, etc.
 !     Define parameters from Main_Driver.f90
@@ -35,6 +35,7 @@ contains
       include 'output_Variables.inc' 
 !     Declare input variables
  
+       CHARACTER(255) :: nc_name
 
 !     Declare output variables
        character(len=10) :: Sat_Flag  
@@ -52,7 +53,7 @@ contains
       integer XL,YL,ZL,li,lj, YY1_new, YY2_new,ZL2,ZL3,ZL4,ZLS
       integer IL,IX,IY
       integer ncid,grpid
-      character (len=*), parameter :: nc_name = 'Interm_file.nc'
+!      character (len=*), parameter :: nc_name = 'Interm_file.nc'
       real fv3,fv4
 
 !     Open the netCDF file already created via ncgen

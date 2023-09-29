@@ -59,14 +59,27 @@ INTEGER, DIMENSION(2)              :: cell_dims
 INTEGER IX,IY,IL,IXX,IYY,jjx,jjy,clear,IJ,IK,iwav
 real :: start, finish,cloudy
 real :: lat_min,lat_max,lon_max,lon_min
+
                   
+  INTEGER :: num_args
+  CHARACTER(255) :: par_file, met1_file, met2_file, out_file, interm_file
+
+  num_args = command_argument_count()
+  IF (num_args > 0) THEN
+      call get_command_argument(1,par_file)
+      call get_command_argument(2,met1_file)
+      call get_command_argument(3,met2_file)
+      call get_command_argument(4,out_file)
+      call get_command_argument(5,interm_file)
+  ENDIF
+
 
 CALL h5open_f(hdferr)
 
 !==============================================================================
 ! Read the Runtime paramters/LUT from the Config file.
 !==============================================================================
-  STATUS = read_ociuaaer_config(cfg)
+  STATUS = read_ociuaaer_config(par_file, cfg)
   IF (STATUS < 0) THEN 
     PRINT *,'Error : Unable to Read OCIUAAER Config file..'
     CALL EXIT(1)
@@ -184,7 +197,7 @@ CALL h5open_f(hdferr)
    !   CldMsk_Native_Land ( 0=cloud 1= clear)   Ret_land_Quality_Flag( 0-3)                
           Ret_ref_allwav_land,Ret_tau_land,Ret_Lat,Ret_Lon,CldMsk_Native_Land,&
           Ret_land_Quality_Flag,Ret_Small_weighting_land,Ret_CLDFRC_land_DT,&
-          Ret_Xtrack,Ret_Lines)
+          Ret_Xtrack,Ret_Lines,met1_file)
           
    call cpu_time(finish)       
    print *, 'end DT', finish
@@ -286,7 +299,7 @@ CALL h5open_f(hdferr)
                    Ret_View_phi,Ret_solar_phi,Ret_tau_ocean,& 
                    Ret_Small_weighting,Ret_ref_ocean,Land_sea_flag,&
                    Ret_average_Omega_Ocean_UV,CldMsk_Native_Ocean,&
-                   Ret_Index_Height,Ret_ocean_Quality,Ret_CLDFRC_Ocean)
+                   Ret_Index_Height,Ret_ocean_Quality,Ret_CLDFRC_Ocean,met1_file)
                       
   
 !            print *,'"Ret_Xtrack,Ret_Lines:" i4,i4 ',Ret_Xtrack,Ret_Lines           
@@ -298,7 +311,7 @@ CALL h5open_f(hdferr)
              
          Call  write_Output_forUVtau(Ret_Xtrack,Ret_Lines,Ret_Lat,Ret_Lon,&
                    Ret_SolZen,Ret_View_angle,Ret_View_phi,Ret_solar_phi,uvdbdtaod,&
-                   Ret_tau_ocean,Month)   
+                   Ret_tau_ocean,Month,interm_file)
            
                                        
           print *, ' Finished writing  Interim file' 
@@ -307,7 +320,7 @@ CALL h5open_f(hdferr)
          block
          call execute_command_line("python ../ML_UVAOD/read_nc_landonly.py")
          endblock
-         call read_Output_forUVtau(Ret_Xtrack,Ret_Lines,uvdbdtaod)
+         call read_Output_forUVtau(Ret_Xtrack,Ret_Lines,uvdbdtaod,interm_file)
 
           print *,'Finished reading ML output'
          

@@ -15,9 +15,10 @@ contains
        
        
         Subroutine Get_An_GMAO(lat,lon,met_ugrd,met_vgrd,&
-            met_pwat,met_ozone,met_skinTemp,set_counter_for_anc,RTN_NCEP)
+            met_pwat,met_ozone,met_skinTemp,set_counter_for_anc,RTN_NCEP,anc_file)
        USE Linear_interpolation           
        include 'read_Sat_MODIS.inc' 
+       CHARACTER(255) :: anc_file
        character(len=3000) :: filename_Anc
        integer ncid,grpid,dimid,varid,nlines,ifile,i,j,ct,npixels,tt 
 !         Real , dimension(:,:), allocatable :: U,V,W,O
@@ -39,7 +40,7 @@ contains
 !     read only once  
     
       if( set_counter_for_anc .eq.1)then 
-       open(ifile, FILE='input_anc_file',status='old')
+       open(ifile, FILE=anc_file,status='old')
              read(ifile,101)filename_Anc
              rewind ifile
 !         print*,'filename_Anc',trim(filename_Anc),set_counter_for_anc 

@@ -40,28 +40,28 @@ contains
 !     read only once  
     
       if( set_counter_for_anc .eq.1)then 
-       open(ifile, FILE=anc_file,status='old')
+       open(ifile, FILE=trim(anc_file),status='old')
              read(ifile,101)filename_Anc
              rewind ifile
 !         print*,'filename_Anc',trim(filename_Anc),set_counter_for_anc 
   101     format(a3000) 
         
-      call check( nf90_open(trim(filename_Anc), NF90_NOWRITE, ncid) ) 
+      call check( nf90_open(trim(filename_Anc), NF90_NOWRITE, ncid) )
       ! Dimension number_of_lines varies; look it up so that variable
       ! dimensions can be allocated for cloud mask array 
       call check( nf90_inq_dimid(ncid,'lon',dimid) )
       call check( nf90_inquire_dimension(ncid,dimid,len=npixels) )
       call check( nf90_inq_dimid(ncid,'lat',dimid) )
-      call check( nf90_inquire_dimension(ncid,dimid,len=nlines) )  
+      call check( nf90_inquire_dimension(ncid,dimid,len=nlines) )
       call check( nf90_inq_dimid(ncid,'time',dimid) )
-      call check( nf90_inquire_dimension(ncid,dimid,len=tt) ) 
+      call check( nf90_inquire_dimension(ncid,dimid,len=tt) )
        LA =  scale_Double(ncid,'lat',nlines) 
        Lo =  scale_Double(ncid,'lon',npixels) 
        U = scale_float(ncid,'U10M',npixels,nlines,tt) 
        V = scale_float(ncid,'V10M',npixels,nlines,tt)   
        W = scale_float(ncid,'TQV',npixels,nlines,tt)
        O = scale_float(ncid,'TO3',npixels,nlines,tt) 
-       ST =scale_float(ncid,'TS',npixels,nlines,tt) 
+       ST =scale_float(ncid,'TS',npixels,nlines,tt)
        Number_pixels = npixels
        Number_Lines  = nlines 
         do Ik = 1,nlines
@@ -110,8 +110,9 @@ contains
               if( Imet_Var .eq.4) met_ozone  =y1 
               if( Imet_Var .eq.5) met_skinTemp  =y1 
          Enddo  
-         RTN_NCEP=RTN_NCEP+1   
-               
+         RTN_NCEP=RTN_NCEP+1
+
+      CALL check(nf90_close(ncid))
              
       end subroutine  Get_An_GMAO 
        

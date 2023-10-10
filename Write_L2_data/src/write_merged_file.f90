@@ -31,7 +31,7 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
           Ret_average_Omega_Ocean_UV,Ret_Index_Height,Cloud_Frac_LandOcean,&
 	  Ret_Quality_LandOcean,Ret_Quality_LandOcean_W0,&
           NUV_AI, NUV_COD, NUV_CldFrac, NUV_SSA, NUV_ALH, NUV_ACAOD, NUV_AerCorrCOD,& 
-	  NUV_FinalAlgorithmFlagsACA, NUV_UncertaintyACAODToSSA, NUV_UncertaintyCODToSSA)
+	  NUV_FinalAlgorithmFlagsACA, NUV_UncertaintyACAODToSSA, NUV_UncertaintyCODToSSA, out_file)
 
             
 !     Define input variable dimensions, etc.
@@ -39,7 +39,7 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
 
       include 'output_Variables.inc' 
 !     Declare input variables
- 
+      CHARACTER(255) :: out_file
 
 !     Declare output variables 
       character(len=10) :: Sat_Flag  
@@ -75,13 +75,13 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
       integer XL,YL,ZL,li,lj, YY1_new, YY2_new,ZL1,ZL2,ZL3,ZL4,ZLS
       integer IL,IX,IY
       integer ncid,grpid
-      character (len=*), parameter :: nc_name = 'PACE_output.nc'
+!      character (len=*), parameter :: nc_name = out_file
       real fv3,fv4
 
 !     Open the netCDF file already created via ncgen
        
                     
-      call check( nf90_open(nc_name,NF90_WRITE, ncid) )
+      call check( nf90_open(trim(out_file),NF90_WRITE, ncid) )
        ipart =1
     
       XL = Ret_Xtrack
@@ -296,7 +296,7 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
 !  Close the netCDF file
 3000   continue
 if( ipart .eq.1)call check( nf90_close(ncid) )
-print *, 'Wrote variables to ',nc_name 
+print *, 'Wrote variables to ', out_file
 
 return
 

@@ -14,7 +14,7 @@ contains
                      UVtoSWIR_Reflectances,Year,month_int,Day,doy,proxyfile, &
                      Land_Sea_Flag,IX1KM,IY1KM,nwave, config_file,dtspec_ori,dtaod_ori,dtlat, &
                      dtlon,dt_cldmsk,dt_qa,uvdbdtaod,dbdt_refl,input_l1file,dtfmf,&
-                     Ret_Xtrack,Ret_Lines,dbdtfmf,dbdt_cld)
+                     Ret_Xtrack,Ret_Lines,dbdtfmf,dbdt_cld,met1_file,met2_file)
 
    USE db_debug
    use landcover
@@ -83,6 +83,8 @@ contains
    include 'newaottbl90.inc'
    include 'sfc21tbl90.inc'      
    
+   CHARACTER(255) :: met1_file, met2_file
+
    integer Year,day,month_int,doy
    INTEGER IX1KM_B,IY1KM_B,nwave,IX1KM,IY1KM,IY
    
@@ -189,6 +191,8 @@ contains
 !     stop
 !   end if
   config = load_viirs_config(config_file, status)
+  config%gdas_file1 = trim(met1_file)
+  config%gdas_file2 = trim(met2_file)
   if (status /= 0) then
     print *, "ERROR: Failed to read in VIIRS configuration file: ", status
     stop

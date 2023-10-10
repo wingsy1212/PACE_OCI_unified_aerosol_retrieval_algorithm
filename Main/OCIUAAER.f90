@@ -62,15 +62,16 @@ real :: lat_min,lat_max,lon_max,lon_min
 
                   
   INTEGER :: num_args
-  CHARACTER(255) :: par_file, met1_file, met2_file, out_file, interm_file
+  CHARACTER(255) :: par_file, l1b_file, met1_file, met2_file, out_file, interm_file
 
   num_args = command_argument_count()
   IF (num_args > 0) THEN
       call get_command_argument(1,par_file)
-      call get_command_argument(2,met1_file)
-      call get_command_argument(3,met2_file)
-      call get_command_argument(4,out_file)
-      call get_command_argument(5,interm_file)
+      call get_command_argument(2,l1b_file)
+      call get_command_argument(3,met1_file)
+      call get_command_argument(4,met2_file)
+      call get_command_argument(5,out_file)
+      call get_command_argument(6,interm_file)
   ENDIF
 
 
@@ -85,7 +86,8 @@ CALL h5open_f(hdferr)
     CALL EXIT(1)
   ENDIF 
   doy=0
- l1b_filename = cfg%input_l1file
+  cfg%input_l1file = l1b_file
+  l1b_filename = cfg%input_l1file
 
   do_testfile = .false.  !.true.  !.false.
 ! do_testfile = .true.
@@ -275,7 +277,7 @@ CALL h5open_f(hdferr)
     ViewingZenithAngle,ViewingAzimuthAngle,TerrainHeight,UVtoSWIR_Reflectances,Year,Month,Day,&
     doy,cfg%proxy_l1file,grn_lwmask,nXTrack, nLines,UVtoSWIR_nWavel,cfg%db_config,Ret_ref_allwav_land,&
     Ret_tau_land,Ret_Lat,Ret_Lon,CldMsk_Native_land,Ret_land_Quality_Flag,uvdbdtaod,dbdt_refl,&
-    cfg%input_l1file,Ret_Small_weighting_land,Ret_Xtrack,Ret_Lines,dbdtfmf,dbdt_cld) 
+    cfg%input_l1file,Ret_Small_weighting_land,Ret_Xtrack,Ret_Lines,dbdtfmf,dbdt_cld,met1_file,met2_file)
       
  call cpu_time(finish)
  print *, 'end DB', finish
@@ -370,7 +372,7 @@ CALL h5open_f(hdferr)
           Ret_average_Omega_Ocean_UV,Ret_Index_Height,Cloud_Frac_LandOcean,&
 	  Ret_Quality_LandOcean,Ret_Quality_LandOcean_W0,&
           NUV_AI, NUV_COD, NUV_CldFrac, NUV_SSA, NUV_ALH, NUV_ACAOD, NUV_AerCorrCOD,& 
-	  NUV_FinalAlgorithmFlagsACA, NUV_UncertaintyACAODToSSA, NUV_UncertaintyCODToSSA)
+	  NUV_FinalAlgorithmFlagsACA, NUV_UncertaintyACAODToSSA, NUV_UncertaintyCODToSSA, out_file)
             
 
 ! Close the HDF-5 interface

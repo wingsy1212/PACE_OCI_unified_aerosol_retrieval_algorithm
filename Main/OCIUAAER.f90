@@ -65,13 +65,16 @@ real :: lat_min,lat_max,lon_max,lon_min
   CHARACTER(255) :: par_file, l1b_file, met1_file, met2_file, out_file, interm_file
 
   num_args = command_argument_count()
-  IF (num_args > 0) THEN
+  IF (num_args == 6) THEN
       call get_command_argument(1,par_file)
       call get_command_argument(2,l1b_file)
       call get_command_argument(3,met1_file)
       call get_command_argument(4,met2_file)
       call get_command_argument(5,out_file)
       call get_command_argument(6,interm_file)
+  ELSE
+    PRINT *,'Error : Six command line arguments required.'
+    CALL EXIT(1)
   ENDIF
 
 
@@ -320,7 +323,7 @@ CALL h5open_f(hdferr)
 !
 !******  *********  ML  Land( 0.354.0.388 0.55)
          block
-         call execute_command_line("python ../ML_UVAOD/read_nc_landonly.py")
+         call execute_command_line("python " // cfg%read_nc_landonly // " interm_file")
          endblock
          call read_Output_forUVtau(Ret_Xtrack,Ret_Lines,uvdbdtaod,interm_file)
 

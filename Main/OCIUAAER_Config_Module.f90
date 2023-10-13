@@ -6,6 +6,7 @@ IMPLICIT NONE
 !---------------------------------------------------------------
 !---------------------------------------------------------------
 TYPE, PUBLIC  :: ociuaaer_config_type
+  CHARACTER(LEN=255)      ::  read_nc_landonly = 'NULL'
   CHARACTER(LEN=255)      ::  input_l1file = 'NULL'
   CHARACTER(LEN=255)      ::  proxy_l1file = 'NULL'
   CHARACTER(LEN=255)      ::  output_dir = 'NULL'
@@ -106,6 +107,8 @@ PRINT *, 'Now reading OCIUAAER Configuration file : ',  config_file
 	!
 	!print *, trim(var), trim(val)
 	select case (trim(var))
+        case ('read_nc_landonly')
+      cfg%read_nc_landonly = trim(val)
         case ('input_l1file')
 		cfg%input_l1file = trim(val)
         case ('proxy_l1file')
@@ -113,7 +116,7 @@ PRINT *, 'Now reading OCIUAAER Configuration file : ',  config_file
         case ('output_dir')
 		cfg%output_dir = trim(val)
         case ('landwater_mask')
- 		cfg%landwater_mask = trim(val)
+      cfg%landwater_mask = trim(val)
 
 	! UV-LUTs
         case ('uv_ai_mielut')

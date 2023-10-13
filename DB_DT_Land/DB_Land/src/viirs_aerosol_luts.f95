@@ -1105,6 +1105,7 @@ subroutine aero_470(dflag, refl, x1, x2, x3, mm, nn, ll, ma, imod,  &
   &   r470, model_frac, yy, debug)
   if (status /= 0) then
     dflag = .true.
+    deallocate(yy, stat=status)
     return
   end if
 
@@ -1113,6 +1114,7 @@ subroutine aero_470(dflag, refl, x1, x2, x3, mm, nn, ll, ma, imod,  &
     if (trflg > 0.0) tau_x470 = 0.02
     tau_x470_flag = -10
     if (debug) print *, 'aero_470, hit low bound: ', refl, yy(1)
+    deallocate(yy, stat=status)
     return
   end if
  
@@ -1130,6 +1132,7 @@ subroutine aero_470(dflag, refl, x1, x2, x3, mm, nn, ll, ma, imod,  &
     if (tau_x470 > 5.0) tau_x470 = 5.0
     tau_x470_flag = 1
     if (debug) print *, 'aero_470, hit hi bound: ', refl, yy(10)
+    deallocate(yy, stat=status)
     return
   endif
 
@@ -1149,12 +1152,14 @@ subroutine aero_470(dflag, refl, x1, x2, x3, mm, nn, ll, ma, imod,  &
   ii = search(refl, yy2, status, frac=frac)
   if (status /= 0) then
     dflag = .true.
+    deallocate(yy, stat=status)
     return
   end if
 
   tau_x470 = frac*default_lut488%aot(ii+1+3) + (1.-frac)*default_lut488%aot(ii+3)
   tau_x470_flag = 0
 !  if (debug) print *, 'aero_470, exit 2358, aot: ', tau_x470
+  deallocate(yy, stat=status)
   return
  
 650     continue
@@ -1165,6 +1170,7 @@ subroutine aero_470(dflag, refl, x1, x2, x3, mm, nn, ll, ma, imod,  &
   ii = search(refl, yy, status, frac=frac)
   if (status /= 0) then
     dflag = .true.
+    deallocate(yy, stat=status)
     return
   end if
   
@@ -1234,6 +1240,7 @@ subroutine aero_650(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
   &   r650, 1.0, yy, debug)
   if (status /= 0) then
     dflag = .true.
+    deallocate(yy, stat=status)
     return
   end if
 
@@ -1241,6 +1248,7 @@ subroutine aero_650(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
     tau_x650 = 0.002
     if (trflg > 0.0) tau_x650 = 0.02
     tau_x650_flag = -10
+    deallocate(yy, stat=status)
     return
   end if
  
@@ -1258,6 +1266,7 @@ subroutine aero_650(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
     if (tau_x650 > 5.0) tau_x650 = 5.0
     w0_x      = -999.
     tau_x650_flag = 1 
+    deallocate(yy, stat=status)
     return
   end if
 
@@ -1270,12 +1279,14 @@ subroutine aero_650(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
     ii = search(refl, yy3, status, frac=frac)
     if (status /= 0) then
       dflag = .true.
+      deallocate(yy, stat=status)
       return
     end if
         
     tau_x650 = frac*default_lut672%aot(ii+1+6) + (1.-frac)*default_lut672%aot(ii+6)
     tau_x650_flag = 0
   
+    deallocate(yy, stat=status)
     return
   
   end if
@@ -1298,11 +1309,13 @@ subroutine aero_650(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
   ii = search(refl, yy2, status, frac=frac)
   if (status /= 0) then
     dflag = .true.
+    deallocate(yy, stat=status)
     return
   end if
 
   tau_x650 = frac*default_lut672%aot(ii+1+3) + (1.-frac)*default_lut672%aot(ii+3)
   tau_x650_flag = 0
+  deallocate(yy, stat=status)
   return
 
 670   continue
@@ -1329,6 +1342,7 @@ subroutine aero_650(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
   ii = search(refl, yy5, status, frac=frac)
   if (status /= 0) then
     dflag = .true.
+    deallocate(yy, stat=status)
     return
   end if
 
@@ -1336,6 +1350,7 @@ subroutine aero_650(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
   tau_x650 = frac*default_lut672%aot(ii+1+4) + (1.-frac)*default_lut672%aot(ii+4)
   tau_x650_flag = 0
 
+  deallocate(yy, stat=status)
   return
  
 650   continue
@@ -1345,6 +1360,7 @@ subroutine aero_650(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
   ii = search(refl, yy, status, frac=frac)
   if (status /= 0) then
     dflag = .true.
+    deallocate(yy, stat=status)
     return
   end if
 
@@ -1410,6 +1426,7 @@ end subroutine aero_650
   &   r412, model_frac, yy, debug)
   if (status /= 0) then
     dflag = .true.
+    deallocate(yy, stat=status)
     return
   end if
   
@@ -1418,6 +1435,7 @@ end subroutine aero_650
     if (trflg > 0.0) tau_x412 = 0.02
     tau_x412_flag = -10       
     if (debug) print *, 'aero_412, hit low bound: ', refl, yy(1)
+    deallocate(yy, stat=status)
     return
   end if
 
@@ -1436,6 +1454,7 @@ end subroutine aero_650
     
     tau_x412_flag = 1
     if (debug) print *, 'aero_412, hit hi bound: ', refl, yy(10)
+    deallocate(yy, stat=status)
     return
   end if
 !
@@ -1453,12 +1472,14 @@ end subroutine aero_650
   ii = search(refl, yy2, status, frac=frac)
   if (status /= 0) then
     dflag = .true.
+    deallocate(yy, stat=status)
     return
   end if
 
   tau_x412 = frac*default_lut412%aot(ii+1+3) + (1.0-frac)*default_lut412%aot(ii+3)
   tau_x412_flag = 0
 !  if (debug) print *, 'aero_412, exit 2355, aot: ', tau_x412
+  deallocate(yy, stat=status)
   return
  
 650 continue
@@ -1468,6 +1489,7 @@ end subroutine aero_650
   ii = search(refl, yy, status, frac=frac)
   if (status /= 0) then
     dflag = .true.
+    deallocate(yy, stat=status)
     return
   end if
 
@@ -1519,6 +1541,7 @@ subroutine aero_412_abs(dflag,refl,x1,x2,x3,mm,nn,ll,r412,tau_x,w0_x)
   index_ia = search(tau_x, default_lut412%aot, status, frac=frac_ia)
   if (status /= 0) then
     dflag = .false.
+    deallocate(nnvalxw, yyw, stat=status)
     return
   end if
   
@@ -1527,22 +1550,26 @@ subroutine aero_412_abs(dflag,refl,x1,x2,x3,mm,nn,ll,r412,tau_x,w0_x)
   if (status /= 0) then
     dflag = .true.
     print *, "ERROR: create_reduced_lut_ssa: aero_412_abs", refl,x1, x2, x3, index_ia, r412  
+    deallocate(nnvalxw, yyw, stat=status)
     return
   end if
   
   if (refl.le.yyw(1)) then
     w0_x = 0.82
+    deallocate(nnvalxw, yyw, stat=status)
     return
   endif
 
   if (refl.ge.yyw(8)) then
     w0_x = 1.0
+    deallocate(nnvalxw, yyw, stat=status)
     return
   endif
       
   index_ii = search(refl, yyw, status, frac=frac)
   if (status /= 0) then
     dflag = .false.
+    deallocate(nnvalxw, yyw, stat=status)
     return
   end if      
   w0_x = frac*default_lut412%ssa(index_ii+1) + (1.-frac)*default_lut412%ssa(index_ii)
@@ -1592,6 +1619,7 @@ subroutine aero_470_abs(dflag2,refl,x1,x2,x3,mm,nn,ll,r470,tau_x,w0_x)
   index_ia = search(tau_x, default_lut488%aot, status, frac=frac_ia)
   if (status /= 0) then
     dflag2 = .false.
+    deallocate(nnvalxw, yyw, stat=status)
     return
   end if
       
@@ -1600,22 +1628,26 @@ subroutine aero_470_abs(dflag2,refl,x1,x2,x3,mm,nn,ll,r470,tau_x,w0_x)
   if (status /= 0) then
     dflag2 = .true.
     print *, "ERROR: create_reduced_lut_ssa: aero_470_abs", refl,x1, x2, x3, index_ia, r470      
+    deallocate(nnvalxw, yyw, stat=status)
     return
   end if
        
   if (refl.le.yyw(1)) then
     w0_x = -999.
+    deallocate(nnvalxw, yyw, stat=status)
     return
   endif
 
   if (refl.ge.yyw(4)) then
     w0_x = 1.0
+    deallocate(nnvalxw, yyw, stat=status)
     return
   endif
     
   index_ii = search(refl, yyw, status, frac=frac)
   if (status /= 0) then
     dflag2 = .false.
+    deallocate(nnvalxw, yyw, stat=status)
     return
   end if      
   w0_x = frac*default_lut488%ssa(index_ii+1) + (1.-frac)*default_lut488%ssa(index_ii)
@@ -1678,6 +1710,7 @@ subroutine aero_470_dust(dflag, refl, x1, x2, x3, mm, nn, ll, ma, imod,  &
   &   r470, model_frac, yy, debug)
   if (status /= 0) then
     dflag = .true.
+    deallocate(yy, stat=status)
     return
   end if
 
@@ -1686,6 +1719,7 @@ subroutine aero_470_dust(dflag, refl, x1, x2, x3, mm, nn, ll, ma, imod,  &
     if (trflg > 0.0) tau_x470 = 0.02
     tau_x470_flag = -10
     if (debug) print *, 'aero_470_dust, hit low bound: ', refl, yy(1)
+    deallocate(yy, stat=status)
     return
   end if
 
@@ -1704,6 +1738,7 @@ subroutine aero_470_dust(dflag, refl, x1, x2, x3, mm, nn, ll, ma, imod,  &
     if (tau_x470 > 5.0) tau_x470 = 5.0
     tau_x470_flag = 1
     if (debug) print *, 'aero_470_dust, hit hi bound: ', refl, yy(10)
+    deallocate(yy, stat=status)
     return
   endif
 
@@ -1723,12 +1758,14 @@ subroutine aero_470_dust(dflag, refl, x1, x2, x3, mm, nn, ll, ma, imod,  &
   ii = search(refl, yy2, status, frac=frac)
   if (status /= 0) then
     dflag = .true.
+    deallocate(yy, stat=status)
     return
   end if
 
   tau_x470 = frac*dust_lut488%aot(ii+1+3) + (1.-frac)*dust_lut488%aot(ii+3)
   tau_x470_flag = 0
   if (debug) print *, 'aero_470_dust, exit 2358, aot: ', tau_x470
+  deallocate(yy, stat=status)
   return
 
 650     continue
@@ -1739,6 +1776,7 @@ subroutine aero_470_dust(dflag, refl, x1, x2, x3, mm, nn, ll, ma, imod,  &
   ii = search(refl, yy, status, frac=frac)
   if (status /= 0) then
     dflag = .true.
+    deallocate(yy, stat=status)
     return
   end if
 
@@ -1807,6 +1845,7 @@ subroutine aero_650_dust(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
   &   r650, 1.0, yy, debug)
   if (status /= 0) then
     dflag = .true.
+    deallocate(yy, stat=status)
     return
   end if
 
@@ -1814,6 +1853,7 @@ subroutine aero_650_dust(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
     tau_x650 = 0.002
     if (trflg > 0.0) tau_x650 = 0.02
     tau_x650_flag = -10
+    deallocate(yy, stat=status)
     return
   end if
 
@@ -1831,6 +1871,7 @@ subroutine aero_650_dust(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
     if (tau_x650 > 5.0) tau_x650 = 5.0
     w0_x      = -999.
     tau_x650_flag = 1
+    deallocate(yy, stat=status)
     return
   end if
 
@@ -1843,12 +1884,14 @@ subroutine aero_650_dust(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
     ii = search(refl, yy3, status, frac=frac)
     if (status /= 0) then
       dflag = .true.
+      deallocate(yy, stat=status)
       return
     end if
 
     tau_x650 = frac*dust_lut672%aot(ii+1+6) + (1.-frac)*dust_lut672%aot(ii+6)
     tau_x650_flag = 0
 
+    deallocate(yy, stat=status)
     return
 
   end if
@@ -1871,11 +1914,13 @@ subroutine aero_650_dust(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
   ii = search(refl, yy2, status, frac=frac)
   if (status /= 0) then
     dflag = .true.
+    deallocate(yy, stat=status)
     return
   end if
 
   tau_x650 = frac*dust_lut672%aot(ii+1+3) + (1.-frac)*dust_lut672%aot(ii+3)
   tau_x650_flag = 0
+  deallocate(yy, stat=status)
   return
 
 670   continue
@@ -1902,6 +1947,7 @@ subroutine aero_650_dust(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
   ii = search(refl, yy5, status, frac=frac)
   if (status /= 0) then
     dflag = .true.
+    deallocate(yy, stat=status)
     return
   end if
 
@@ -1909,6 +1955,7 @@ subroutine aero_650_dust(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
   tau_x650 = frac*dust_lut672%aot(ii+1+4) + (1.-frac)*dust_lut672%aot(ii+4)
   tau_x650_flag = 0
 
+  deallocate(yy, stat=status)
   return
 
 650   continue
@@ -1918,6 +1965,7 @@ subroutine aero_650_dust(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
   ii = search(refl, yy, status, frac=frac)
   if (status /= 0) then
     dflag = .true.
+    deallocate(yy, stat=status)
     return
   end if
 
@@ -1983,6 +2031,7 @@ end subroutine aero_650_dust
   &   r412, model_frac, yy, debug)
   if (status /= 0) then
     dflag = .true.
+    deallocate(yy, stat=status)
     return
   end if
 
@@ -1991,6 +2040,7 @@ end subroutine aero_650_dust
     if (trflg > 0.0) tau_x412 = 0.02
     tau_x412_flag = -10
     if (debug) print *, 'aero_412_dust, hit low bound: ', refl, yy(1)
+    deallocate(yy, stat=status)
     return
   end if
 
@@ -2009,6 +2059,7 @@ end subroutine aero_650_dust
 
     tau_x412_flag = 1
     if (debug) print *, 'aero_412_dust, hit hi bound: ', refl, yy(10)
+    deallocate(yy, stat=status)
     return
   end if
 !
@@ -2026,12 +2077,14 @@ end subroutine aero_650_dust
   ii = search(refl, yy2, status, frac=frac)
   if (status /= 0) then
     dflag = .true.
+    deallocate(yy, stat=status)
     return
   end if
 
   tau_x412 = frac*dust_lut412%aot(ii+1+3) + (1.0-frac)*dust_lut412%aot(ii+3)
   tau_x412_flag = 0
   if (debug) print *, 'aero_412_dust, exit 2355, aot: ', tau_x412
+  deallocate(yy, stat=status)
   return
 
 650 continue
@@ -2041,6 +2094,7 @@ end subroutine aero_650_dust
   ii = search(refl, yy, status, frac=frac)
   if (status /= 0) then
     dflag = .true.
+    deallocate(yy, stat=status)
     return
   end if
 
@@ -2092,6 +2146,7 @@ subroutine aero_412_abs_dust(dflag,refl,x1,x2,x3,mm,nn,ll,r412,tau_x,w0_x)
   index_ia = search(tau_x, dust_lut412%aot, status, frac=frac_ia)
   if (status /= 0) then
     dflag = .false.
+    deallocate(nnvalxw, yyw, stat=status)
     return
   end if
 
@@ -2100,22 +2155,26 @@ subroutine aero_412_abs_dust(dflag,refl,x1,x2,x3,mm,nn,ll,r412,tau_x,w0_x)
   if (status /= 0) then
     dflag = .true.
     print *, "ERROR: create_reduced_lut_ssa: aero_412_abs_dust", refl,x1, x2, x3, index_ia, r412
+    deallocate(nnvalxw, yyw, stat=status)
     return
   end if
 
   if (refl.le.yyw(1)) then
     w0_x = 0.82
+    deallocate(nnvalxw, yyw, stat=status)
     return
   endif
 
   if (refl.ge.yyw(8)) then
     w0_x = 1.0
+    deallocate(nnvalxw, yyw, stat=status)
     return
   endif
 
   index_ii = search(refl, yyw, status, frac=frac)
   if (status /= 0) then
     dflag = .false.
+    deallocate(nnvalxw, yyw, stat=status)
     return
   end if
   w0_x = frac*dust_lut412%ssa(index_ii+1) + (1.-frac)*dust_lut412%ssa(index_ii)
@@ -2165,6 +2224,7 @@ subroutine aero_470_abs_dust(dflag2,refl,x1,x2,x3,mm,nn,ll,r470,tau_x,w0_x)
   index_ia = search(tau_x, dust_lut488%aot, status, frac=frac_ia)
   if (status /= 0) then
     dflag2 = .false.
+    deallocate(nnvalxw, yyw, stat=status)
     return
   end if
 
@@ -2173,22 +2233,26 @@ subroutine aero_470_abs_dust(dflag2,refl,x1,x2,x3,mm,nn,ll,r470,tau_x,w0_x)
   if (status /= 0) then
     dflag2 = .true.
     print *, "ERROR: create_reduced_lut_ssa: aero_470_abs_dust", refl,x1, x2, x3, index_ia, r470
+    deallocate(nnvalxw, yyw, stat=status)
     return
   end if
 
   if (refl.le.yyw(1)) then
     w0_x = -999.
+    deallocate(nnvalxw, yyw, stat=status)
     return
   endif
 
   if (refl.ge.yyw(4)) then
     w0_x = 1.0
+    deallocate(nnvalxw, yyw, stat=status)
     return
   endif
 
   index_ii = search(refl, yyw, status, frac=frac)
   if (status /= 0) then
     dflag2 = .false.
+    deallocate(nnvalxw, yyw, stat=status)
     return
   end if
   w0_x = frac*dust_lut488%ssa(index_ii+1) + (1.-frac)*dust_lut488%ssa(index_ii)

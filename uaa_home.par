@@ -1,4 +1,3 @@
-input_l1file = /home/sam/winhome/nasa/data/oci/pytoast-9/l1b/PACE_OCI_SIM.20220321T102344.L1B.V9.1.nc
 output_dir   =    /home/sam/winhome/nasa/uaa/luts/L2_data/ 
 ! ANCILLARY DATASETS FROM PACE TEAM
 landwater_mask = /home/sam/winhome/nasa/uaa/luts/ancillary/landmask_GMT15ARC.nc 
@@ -27,4 +26,4 @@ VIIRS_land   =   /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DT_Land/tbls/VIIRS_L
 db_aero_lut_land = /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DB_Land/tbls/VIIRS_LUT/land_aerosol_luts_20151105.hdf
 db_aero_lut_dust = /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DB_Land/tbls/VIIRS_LUT/land_aerosol_luts_dust_0628.hdf
 db_config= /home/sam/git/PACE_OCI_unified_aerosol_retrieval_algorithm/uaa_db_home.par
-
+read_nc_landonly= /home/sam/git/PACE_OCI_unified_aerosol_retrieval_algorithm/ML_UVAOD/read_nc_landonly.py

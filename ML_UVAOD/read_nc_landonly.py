@@ -1,5 +1,5 @@
 #import argparse
-from sklearn.ensemble import RandomForestRegressor
+#from sklearn.ensemble import RandomForestRegressor
 
 import pandas as pd
 import os
@@ -12,6 +12,7 @@ import pickle
 import glob
 import netCDF4 as nc4
 import h5py 
+import sys 
 #import matplotlib.pyplot as plt
 
 modelpath='../ML_UVAOD/data/'
@@ -21,7 +22,7 @@ modelname='landmodel_both_nogeo_'
 
 path='./'
 
-ncfiles=glob.glob(path+'Interm_file.nc')
+ncfiles=glob.glob(sys.argv[1])
 #ncfiles=glob.glob(path+'Interm_L2*.nc')
 
 

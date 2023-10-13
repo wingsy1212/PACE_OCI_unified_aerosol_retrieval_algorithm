@@ -39,14 +39,14 @@ contains
       ! Open the netCDF file
 !     read only once  
     
-      if( set_counter_for_anc .eq.1)then 
-       open(ifile, FILE=trim(anc_file),status='old')
-             read(ifile,101)filename_Anc
-             rewind ifile
+      if( set_counter_for_anc .eq.1)then
+!       open(ifile, FILE=trim(anc_file),status='old')
+!             read(ifile,101)filename_Anc
+!             rewind ifile
 !         print*,'filename_Anc',trim(filename_Anc),set_counter_for_anc 
-  101     format(a3000) 
+!  101     format(a3000)
         
-      call check( nf90_open(trim(filename_Anc), NF90_NOWRITE, ncid) )
+      call check( nf90_open(trim(anc_file), NF90_NOWRITE, ncid) )
       ! Dimension number_of_lines varies; look it up so that variable
       ! dimensions can be allocated for cloud mask array 
       call check( nf90_inq_dimid(ncid,'lon',dimid) )
@@ -74,6 +74,7 @@ contains
        Tozone(ij,ik) = O(ij,ik)
           Enddo
           ENDDO 
+      CALL check(nf90_close(ncid))
           endif  
              
           call Find_index_for_inter(lat,lon,Number_pixels,Number_Lines,i1,i2,j1,j2)    
@@ -111,8 +112,6 @@ contains
               if( Imet_Var .eq.5) met_skinTemp  =y1 
          Enddo  
          RTN_NCEP=RTN_NCEP+1
-
-      CALL check(nf90_close(ncid))
              
       end subroutine  Get_An_GMAO 
        

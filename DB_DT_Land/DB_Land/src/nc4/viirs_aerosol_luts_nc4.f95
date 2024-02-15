@@ -11,10 +11,10 @@ public    ::  aero_412_dust, aero_470_dust, aero_650_dust
 public    ::  aero_412_abs_dust, aero_470_abs_dust
 public    ::  new_intep, polint
 
-integer, parameter		:: 	SGL = SELECTED_REAL_KIND(p=3)
+integer, parameter        ::  SGL = SELECTED_REAL_KIND(p=3)
 
-real, dimension(30)             ::  lut_raa
-real, dimension(46)             ::  lut_vza
+real, dimension(30)       ::  lut_raa
+real, dimension(46)       ::  lut_vza
 
 real, dimension(12,46,30,10,8,20) ::  nvalx412
 real, dimension(12,46,30,10,4,24) ::  nvalx470
@@ -50,26 +50,28 @@ common /aottbl/ nvalx412, nvalx(12,46,30,10),             &
 
 contains
 
-integer function load_viirs_aerosol_luts(lut_land_file, lut_dust_file) result(status)
+integer function load_viirs_aerosol_luts(lut_file) result(status)
   implicit none
 
-  character(len=*), intent(in)    ::  lut_land_file
-  character(len=*), intent(in)    ::  lut_dust_file
+  character(len=255), intent(in)    ::  lut_file
+  character(len=255)                ::  lut_type
         
 !  print *, 'Reading land LUT...'
-  status = read_aerosol_lut_file(lut_land_file, default_lut412, default_lut488, default_lut672)
+  lut_type = 'aerosol_land'
+  status = read_aerosol_lut_file(lut_file, lut_type, default_lut412, default_lut488, default_lut672)
   if (status /= 0) then 
     print *, 'ERROR: Failed to read in default land aerosol model LUT: ', status
-    print *, 'File: ', trim(lut_land_file)
+    print *, 'File: ', trim(lut_file)
     return
   end if
 !  print *, 'done.'
   
 !  print *, 'Reading dust LUT...'
-  status = read_aerosol_lut_file(lut_dust_file, dust_lut412, dust_lut488, dust_lut672)
+  lut_type = 'aerosol_dust'
+  status = read_aerosol_lut_file(lut_file, lut_type, dust_lut412, dust_lut488, dust_lut672)
   if (status /= 0) then 
     print *, 'ERROR: Failed to read in dust aerosol model LUT: ', status
-!    print *, 'File: ', trim(lut_dust_file)
+    print *, 'File: ', trim(lut_file)
     return
   end if
 !  print *, 'done.'
@@ -77,9 +79,9 @@ integer function load_viirs_aerosol_luts(lut_land_file, lut_dust_file) result(st
 ! -- translate new LUT node arrays to old variabled in common block  
 ! -- copy over the data to the deprecated common block 
 ! -- still used in the vegetated retrieval -- see find_v_vegset.f
-  nvalx412 = default_lut412%nvalx(:,:,:,:,:,:)
-  nvalx470 = default_lut488%nvalx(:,:,:,:,:,:)
-  nvalx650 = default_lut672%nvalx(:,:,:,:,1,:)
+!  nvalx412 = default_lut412%nvalx(:,:,:,:,:,:)
+!  nvalx470 = default_lut488%nvalx(:,:,:,:,:,:)
+!  nvalx650 = default_lut672%nvalx(:,:,:,:,1,:)
   
   tau         = default_lut412%aot
   theta0      = default_lut412%sza
@@ -110,950 +112,658 @@ subroutine unload_viirs_aerosol_luts(status)
 
 end subroutine unload_viirs_aerosol_luts
 
-integer function read_aerosol_lut_file(lut_file, lut412, lut488, lut672) result(status)
-  implicit none
-  
-  include 'hdf.inc'
-  include 'dffunc.inc'
-  
-  character(len=*), intent(in)            ::  lut_file 
-  type(viirs_aerosol_lut), intent(inout)  ::  lut412
-  type(viirs_aerosol_lut), intent(inout)  ::  lut488
-  type(viirs_aerosol_lut), intent(inout)  ::  lut672
-  
-  character(len=255)  ::  sds_name
-  integer :: sd_id, sds_index, sds_id, rank, n_attrs, data_type
-  integer, dimension(1) ::  start1, stride1, edges1, dim_sizes1
-  integer, dimension(5) ::  edges5, start5, stride5, dim_sizes5
-  integer, dimension(6) ::  edges6, start6, stride6, dim_sizes6
-  integer, dimension(32)::  dim_sizes
-  
-  integer                         ::  i
+integer function read_aerosol_lut_file(lut_file, type, lut412, lut488, lut672) result(status)
 
-  sd_id = sfstart(lut_file, DFACC_READ)
-  if (sd_id == FAIL) then
-    print *, "ERROR: Unable to start SD interface on land aerosol model table: ", sd_id
-    status = -1
-    return
-  end if
-  
+!   include 'hdf.f90'
+!   include 'dffunc.f90'
+    use netcdf
+    USE OCIUAAER_Config_Module
+
+    implicit none
+
+    character(len=255), intent(in)          ::  lut_file
+    character(len=255), intent(in)          ::  type
+    type(viirs_aerosol_lut), intent(inout)  ::  lut412
+    type(viirs_aerosol_lut), intent(inout)  ::  lut488
+    type(viirs_aerosol_lut), intent(inout)  ::  lut672
+
+    integer :: sd_id, sds_index, sds_id, rank, n_attrs, data_type
+    integer, dimension(1) ::  start1, stride1, edges1, dim_sizes1
+    integer, dimension(5) ::  edges5, start5, stride5, dim_sizes5
+    integer, dimension(6) ::  edges6, start6, stride6, dim_sizes6
+    integer, dimension(32)::  dimids
+    integer               ::  i, dimlen
+    integer               ::  xtype, ndims
+    integer               ::  nc_id
+    integer               ::  dim_id
+    integer               ::  dset_id
+    integer               ::  grp_id
+
+    character(len=255)    ::  dset_name
+    character(len=255)    ::  attr_name
+    character(len=255)    ::  group_name
+    character(len=255)    ::  err_msg
+
+    lut_file = cfg%db_nc4
+    status = nf90_open(lut_file, nf90_nowrite, nc_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
+        return
+    end if
+
+    group_name = trim(type)
+    status = nf90_inq_ncid(nc_id, group_name, grp_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
+        return
+    end if
+
 ! -- 412nm
-  sds_name = 'SZA412_Nodes'
-  sds_index = sfn2index(sd_id, sds_name)
-  if (sds_index == FAIL) then
-    print *, "ERROR: Unable to find index of "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-  end if
+
+    dset_name = 'SZA412_Nodes'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_inquire_variable(grp_id, dset_id, dimids=dimids)
+    status = nf90_inquire_dimension(grp_id, dimids(1), len = dimlen)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Unable to get info on SDS "//trim(dset_name)//": ", status
+        status = -1
+        return
+    end if
   
-  sds_id = sfselect(sd_id, sds_index)
-  if (sds_id == FAIL) then
-    print *, "ERROR: Unable to select SDS "//trim(sds_name)//": ", sds_id
-    status = -1
-    return
-  end if
+    lut412%nsza = dimlen
+    allocate(lut412%sza(lut412%nsza), stat=status)
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate SZA412 data array: ", status
+        return
+    end if
+
+    start1  = (/1/)
+    stride1 = (/1/)
+    edges1  = (/lut412%nsza/)
+    status = nf90_get_var(grp_id, dset_id, lut412%sza, start=start1, &
+                          stride=stride1, count=edges1)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
+    end if
+
+    dset_name = 'VZA412_Nodes'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_inquire_variable(grp_id, dset_id, dimids=dimids)
+    status = nf90_inquire_dimension(grp_id, dimids(1), len = dimlen)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Unable to get info on SDS "//trim(dset_name)//": ", status
+        status = -1
+        return
+    end if
   
-  status = sfginfo(sds_id, sds_name, rank, dim_sizes, data_type, n_attrs)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to get info on SDS "//trim(sds_name)//": ", status
-    status = -1
-    return
-  end if
+    lut412%nvza = dimlen
+    allocate(lut412%vza(lut412%nvza), stat=status)
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate VZA412 data array: ", status
+        return
+    end if
+
+    start1  = (/1/)
+    stride1 = (/1/)
+    edges1  = (/lut412%nvza/)
+    status = nf90_get_var(grp_id, dset_id, lut412%vza, start=start1, &
+                          stride=stride1, count=edges1)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
+    end if
+
+    dset_name = 'RAA412_Nodes'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_inquire_variable(grp_id, dset_id, dimids=dimids)
+    status = nf90_inquire_dimension(grp_id, dimids(1), len = dimlen)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Unable to get info on SDS "//trim(dset_name)//": ", status
+        status = -1
+        return
+    end if
   
-  lut412%nsza = dim_sizes(1)
-  allocate(lut412%sza(lut412%nsza), stat=status)
-  if (status /= 0) then
-    print *, "ERROR: Unable to allocate SZA412 data array: ", status
-    return
-  end if
+    lut412%nraa = dimlen
+    allocate(lut412%raa(lut412%nraa), stat=status)
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate RAA412 data array: ", status
+        return
+    end if
+
+    start1  = (/1/)
+    stride1 = (/1/)
+    edges1  = (/lut412%nraa/)
+    status = nf90_get_var(grp_id, dset_id, lut412%raa, start=start1, &
+                          stride=stride1, count=edges1)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
+    end if
+
+    dset_name = 'AOT412_Nodes'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_inquire_variable(grp_id, dset_id, dimids=dimids)
+    status = nf90_inquire_dimension(grp_id, dimids(1), len = dimlen)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Unable to get info on SDS "//trim(dset_name)//": ", status
+        status = -1
+        return
+    end if
   
-  start1  = (/0/)
-  stride1 = (/1/)
-  edges1  = (/lut412%nsza/)
-  status = sfrdata(sds_id, start1, stride1, edges1, lut412%sza)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to read SDS "//trim(sds_name)//": ", status
-    return
-  end if
+    lut412%naot = dimlen
+    allocate(lut412%aot(lut412%naot), stat=status)
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate AOT412 data array: ", status
+        return
+    end if
+
+    start1  = (/1/)
+    stride1 = (/1/)
+    edges1  = (/lut412%naot/)
+    status = nf90_get_var(grp_id, dset_id, lut412%aot, start=start1, &
+                          stride=stride1, count=edges1)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
+    end if
+
+    dset_name = 'SSA412_Nodes'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_inquire_variable(grp_id, dset_id, dimids=dimids)
+    status = nf90_inquire_dimension(grp_id, dimids(1), len = dimlen)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Unable to get info on SDS "//trim(dset_name)//": ", status
+        status = -1
+        return
+    end if
   
-  status = sfendacc(sds_id)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to end access to SDS "//trim(sds_name)//": ", status
-    return
-  end if
+    lut412%nssa  = dimlen
+    allocate(lut412%ssa (lut412%nssa ), stat=status)
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate SSA412 data array: ", status
+        return
+    end if
+
+    start1  = (/1/)
+    stride1 = (/1/)
+    edges1  = (/lut412%nssa /)
+    status = nf90_get_var(grp_id, dset_id, lut412%ssa , start=start1, &
+                          stride=stride1, count=edges1)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
+    end if
+
+    dset_name = 'SR412_Nodes'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_inquire_variable(grp_id, dset_id, dimids=dimids)
+    status = nf90_inquire_dimension(grp_id, dimids(1), len = dimlen)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Unable to get info on SDS "//trim(dset_name)//": ", status
+        status = -1
+        return
+    end if
   
-  sds_name = 'VZA412_Nodes'
-  sds_index = sfn2index(sd_id, sds_name)
-  if (sds_index == FAIL) then
-    print *, "ERROR: Unable to find index of "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-  end if
-  
-  sds_id = sfselect(sd_id, sds_index)
-  if (sds_id == FAIL) then
-    print *, "ERROR: Unable to select SDS "//trim(sds_name)//": ", sds_id
-    status = -1
-    return
-  end if
-  
-  status = sfginfo(sds_id, sds_name, rank, dim_sizes, data_type, n_attrs)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to get info on SDS "//trim(sds_name)//": ", status
-    status = -1
-    return
-  end if
-  
-  lut412%nvza = dim_sizes(1)
-  allocate(lut412%vza(lut412%nvza), stat=status)
-  if (status /= 0) then
-    print *, "ERROR: Unable to allocate VZA412 data array: ", status
-    return
-  end if
-  
-  start1  = (/0/)
-  stride1 = (/1/)
-  edges1  = (/lut412%nvza/)
-  status = sfrdata(sds_id, start1, stride1, edges1, lut412%vza)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to read SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  status = sfendacc(sds_id)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to end access to SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  sds_name = 'RAA412_Nodes'
-  sds_index = sfn2index(sd_id, sds_name)
-  if (sds_index == FAIL) then
-    print *, "ERROR: Unable to find index of "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-  end if
-  
-  sds_id = sfselect(sd_id, sds_index)
-  if (sds_id == FAIL) then
-    print *, "ERROR: Unable to select SDS "//trim(sds_name)//": ", sds_id
-    status = -1
-    return
-  end if
-  
-  status = sfginfo(sds_id, sds_name, rank, dim_sizes, data_type, n_attrs)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to get info on SDS "//trim(sds_name)//": ", status
-    status = -1
-    return
-  end if
-  
-  lut412%nraa = dim_sizes(1)
-  allocate(lut412%raa(lut412%nraa), stat=status)
-  if (status /= 0) then
-    print *, "ERROR: Unable to allocate RAA412 data array: ", status
-    return
-  end if
-  
-  start1  = (/0/)
-  stride1 = (/1/)
-  edges1  = (/lut412%nraa/)
-  status = sfrdata(sds_id, start1, stride1, edges1, lut412%raa)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to read SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  status = sfendacc(sds_id)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to end access to SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  sds_name = 'AOT412_Nodes'
-  sds_index = sfn2index(sd_id, sds_name)
-  if (sds_index == FAIL) then
-    print *, "ERROR: Unable to find index of "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-  end if
-  
-  sds_id = sfselect(sd_id, sds_index)
-  if (sds_id == FAIL) then
-    print *, "ERROR: Unable to select SDS "//trim(sds_name)//": ", sds_id
-    status = -1
-    return
-  end if
-  
-  status = sfginfo(sds_id, sds_name, rank, dim_sizes, data_type, n_attrs)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to get info on SDS "//trim(sds_name)//": ", status
-    status = -1
-    return
-  end if
-  
-  lut412%naot = dim_sizes(1)
-  allocate(lut412%aot(lut412%naot), stat=status)
-  if (status /= 0) then
-    print *, "ERROR: Unable to allocate AOT412 data array: ", status
-    return
-  end if
-  
-  start1  = (/0/)
-  stride1 = (/1/)
-  edges1  = (/lut412%naot/)
-  status = sfrdata(sds_id, start1, stride1, edges1, lut412%aot)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to read SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  status = sfendacc(sds_id)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to end access to SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  sds_name = 'SSA412_Nodes'
-  sds_index = sfn2index(sd_id, sds_name)
-  if (sds_index == FAIL) then
-    print *, "ERROR: Unable to find index of "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-  end if
-  
-  sds_id = sfselect(sd_id, sds_index)
-  if (sds_id == FAIL) then
-    print *, "ERROR: Unable to select SDS "//trim(sds_name)//": ", sds_id
-    status = -1
-    return
-  end if
-  
-  status = sfginfo(sds_id, sds_name, rank, dim_sizes, data_type, n_attrs)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to get info on SDS "//trim(sds_name)//": ", status
-    status = -1
-    return
-  end if
-  
-  lut412%nssa = dim_sizes(1)
-  allocate(lut412%ssa(lut412%nssa), stat=status)
-  if (status /= 0) then
-    print *, "ERROR: Unable to allocate SSA412 data array: ", status
-    return
-  end if
-  
-  start1  = (/0/)
-  stride1 = (/1/)
-  edges1  = (/lut412%nssa/)
-  status = sfrdata(sds_id, start1, stride1, edges1, lut412%ssa)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to read SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  status = sfendacc(sds_id)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to end access to SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  sds_name = 'SR412_Nodes'
-  sds_index = sfn2index(sd_id, sds_name)
-  if (sds_index == FAIL) then
-    print *, "ERROR: Unable to find index of "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-  end if
-  
-  sds_id = sfselect(sd_id, sds_index)
-  if (sds_id == FAIL) then
-    print *, "ERROR: Unable to select SDS "//trim(sds_name)//": ", sds_id
-    status = -1
-    return
-  end if
-  
-  status = sfginfo(sds_id, sds_name, rank, dim_sizes, data_type, n_attrs)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to get info on SDS "//trim(sds_name)//": ", status
-    status = -1
-    return
-  end if
-  
-  lut412%nsfc = dim_sizes(1)
-  allocate(lut412%sfc(lut412%nsfc), stat=status)
-  if (status /= 0) then
-    print *, "ERROR: Unable to allocate SR412 data array: ", status
-    return
-  end if
-  
-  start1  = (/0/)
-  stride1 = (/1/)
-  edges1  = (/lut412%nsfc/)
-  status = sfrdata(sds_id, start1, stride1, edges1, lut412%sfc)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to read SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  status = sfendacc(sds_id)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to end access to SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  sds_name = 'nvalx412'
-  allocate(lut412%nvalx(lut412%nsza,lut412%nvza,lut412%nraa,lut412%naot,lut412%nssa, &
-  & lut412%nsfc), stat=status)
-  if (status /= 0) then
-    print *, "ERROR: Unable to allocate nvalx412 data array: ", status
-    return
-  end if
-  
-  sds_index = sfn2index(sd_id, sds_name)
-  if (sds_index == FAIL) then
-    print *, "ERROR: Unable to find index of SDS "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-  end if
-  
-  sds_id = sfselect(sd_id, sds_index)
-  if (sds_id == FAIL) then
-    print *, "ERROR: Unable to select SDS "//trim(sds_name)//": ", sds_id
-    status = -1
-    return
-  end if
-  
-  start6  = (/0,0,0,0,0,0/)
-  stride6 = (/1,1,1,1,1,1/)
-  edges6  = shape(lut412%nvalx)
-  status = sfrdata(sds_id, start6, stride6, edges6, lut412%nvalx)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to read SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  status = sfendacc(sds_id)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to end access to SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
+    lut412%nsfc  = dimlen
+    allocate(lut412%sfc (lut412%nsfc ), stat=status)
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate SR412 data array: ", status
+        return
+    end if
+
+    start1  = (/1/)
+    stride1 = (/1/)
+    edges1  = (/lut412%nsfc /)
+    status = nf90_get_var(grp_id, dset_id, lut412%sfc , start=start1, &
+                         stride=stride1, count=edges1)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
+    end if
+
 ! -- 488nm
-  sds_name = 'SZA488_Nodes'
-  sds_index = sfn2index(sd_id, sds_name)
-  if (sds_index == FAIL) then
-    print *, "ERROR: Unable to find index of "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-  end if
-  
-  sds_id = sfselect(sd_id, sds_index)
-  if (sds_id == FAIL) then
-    print *, "ERROR: Unable to select SDS "//trim(sds_name)//": ", sds_id
-    status = -1
-    return
-  end if
-  
-  status = sfginfo(sds_id, sds_name, rank, dim_sizes, data_type, n_attrs)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to get info on SDS "//trim(sds_name)//": ", status
-    status = -1
-    return
-  end if
-  
-  lut488%nsza = dim_sizes(1)
-  allocate(lut488%sza(lut488%nsza), stat=status)
-  if (status /= 0) then
-    print *, "ERROR: Unable to allocate SZA488 data array: ", status
-    return
-  end if
-  
-  start1  = (/0/)
-  stride1 = (/1/)
-  edges1  = (/lut488%nsza/)
-  status = sfrdata(sds_id, start1, stride1, edges1, lut488%sza)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to read SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  status = sfendacc(sds_id)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to end access to SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  sds_name = 'VZA488_Nodes'
-  sds_index = sfn2index(sd_id, sds_name)
-  if (sds_index == FAIL) then
-    print *, "ERROR: Unable to find index of "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-  end if
-  
-  sds_id = sfselect(sd_id, sds_index)
-  if (sds_id == FAIL) then
-    print *, "ERROR: Unable to select SDS "//trim(sds_name)//": ", sds_id
-    status = -1
-    return
-  end if
-  
-  status = sfginfo(sds_id, sds_name, rank, dim_sizes, data_type, n_attrs)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to get info on SDS "//trim(sds_name)//": ", status
-    status = -1
-    return
-  end if
-  
-  lut488%nvza = dim_sizes(1)
-  allocate(lut488%vza(lut488%nvza), stat=status)
-  if (status /= 0) then
-    print *, "ERROR: Unable to allocate VZA488 data array: ", status
-    return
-  end if
-  
-  start1  = (/0/)
-  stride1 = (/1/)
-  edges1  = (/lut488%nvza/)
-  status = sfrdata(sds_id, start1, stride1, edges1, lut488%vza)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to read SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  status = sfendacc(sds_id)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to end access to SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  sds_name = 'RAA488_Nodes'
-  sds_index = sfn2index(sd_id, sds_name)
-  if (sds_index == FAIL) then
-    print *, "ERROR: Unable to find index of "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-  end if
-  
-  sds_id = sfselect(sd_id, sds_index)
-  if (sds_id == FAIL) then
-    print *, "ERROR: Unable to select SDS "//trim(sds_name)//": ", sds_id
-    status = -1
-    return
-  end if
-  
-  status = sfginfo(sds_id, sds_name, rank, dim_sizes, data_type, n_attrs)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to get info on SDS "//trim(sds_name)//": ", status
-    status = -1
-    return
-  end if
-  
-  lut488%nraa = dim_sizes(1)
-  allocate(lut488%raa(lut488%nraa), stat=status)
-  if (status /= 0) then
-    print *, "ERROR: Unable to allocate RAA488 data array: ", status
-    return
-  end if
-  
-  start1  = (/0/)
-  stride1 = (/1/)
-  edges1  = (/lut488%nraa/)
-  status = sfrdata(sds_id, start1, stride1, edges1, lut488%raa)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to read SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  status = sfendacc(sds_id)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to end access to SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  sds_name = 'AOT488_Nodes'
-  sds_index = sfn2index(sd_id, sds_name)
-  if (sds_index == FAIL) then
-    print *, "ERROR: Unable to find index of "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-  end if
-  
-  sds_id = sfselect(sd_id, sds_index)
-  if (sds_id == FAIL) then
-    print *, "ERROR: Unable to select SDS "//trim(sds_name)//": ", sds_id
-    status = -1
-    return
-  end if
-  
-  status = sfginfo(sds_id, sds_name, rank, dim_sizes, data_type, n_attrs)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to get info on SDS "//trim(sds_name)//": ", status
-    status = -1
-    return
-  end if
-  
-  lut488%naot = dim_sizes(1)
-  allocate(lut488%aot(lut488%naot), stat=status)
-  if (status /= 0) then
-    print *, "ERROR: Unable to allocate AOT488 data array: ", status
-    return
-  end if
-  
-  start1  = (/0/)
-  stride1 = (/1/)
-  edges1  = (/lut488%naot/)
-  status = sfrdata(sds_id, start1, stride1, edges1, lut488%aot)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to read SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  status = sfendacc(sds_id)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to end access to SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  sds_name = 'SSA488_Nodes'
-  sds_index = sfn2index(sd_id, sds_name)
-  if (sds_index == FAIL) then
-    print *, "ERROR: Unable to find index of "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-  end if
-  
-  sds_id = sfselect(sd_id, sds_index)
-  if (sds_id == FAIL) then
-    print *, "ERROR: Unable to select SDS "//trim(sds_name)//": ", sds_id
-    status = -1
-    return
-  end if
-  
-  status = sfginfo(sds_id, sds_name, rank, dim_sizes, data_type, n_attrs)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to get info on SDS "//trim(sds_name)//": ", status
-    status = -1
-    return
-  end if
-  
-  lut488%nssa = dim_sizes(1)
-  allocate(lut488%ssa(lut488%nssa), stat=status)
-  if (status /= 0) then
-    print *, "ERROR: Unable to allocate SSA488 data array: ", status
-    return
-  end if
-  
-  start1  = (/0/)
-  stride1 = (/1/)
-  edges1  = (/lut488%nssa/)
-  status = sfrdata(sds_id, start1, stride1, edges1, lut488%ssa)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to read SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  status = sfendacc(sds_id)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to end access to SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  sds_name = 'SR488_Nodes'
-  sds_index = sfn2index(sd_id, sds_name)
-  if (sds_index == FAIL) then
-    print *, "ERROR: Unable to find index of "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-  end if
-  
-  sds_id = sfselect(sd_id, sds_index)
-  if (sds_id == FAIL) then
-    print *, "ERROR: Unable to select SDS "//trim(sds_name)//": ", sds_id
-    status = -1
-    return
-  end if
-  
-  status = sfginfo(sds_id, sds_name, rank, dim_sizes, data_type, n_attrs)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to get info on SDS "//trim(sds_name)//": ", status
-    status = -1
-    return
-  end if
-  
-  lut488%nsfc = dim_sizes(1)
-  allocate(lut488%sfc(lut488%nsfc), stat=status)
-  if (status /= 0) then
-    print *, "ERROR: Unable to allocate SR488 data array: ", status
-    return
-  end if
-  
-  start1  = (/0/)
-  stride1 = (/1/)
-  edges1  = (/lut488%nsfc/)
-  status = sfrdata(sds_id, start1, stride1, edges1, lut488%sfc)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to read SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  status = sfendacc(sds_id)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to end access to SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  sds_name = 'nvalx488'
-  allocate(lut488%nvalx(lut488%nsza,lut488%nvza,lut488%nraa,lut488%naot,lut488%nssa, &
-  & lut488%nsfc), stat=status)
-  if (status /= 0) then
-    print *, "ERROR: Unable to allocate nvalx488 data array: ", status
-    return
-  end if
-  
-  sds_index = sfn2index(sd_id, sds_name)
-  if (sds_index == FAIL) then
-    print *, "ERROR: Unable to find index of SDS "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-  end if
-  
-  sds_id = sfselect(sd_id, sds_index)
-  if (sds_id == FAIL) then
-    print *, "ERROR: Unable to select SDS "//trim(sds_name)//": ", sds_id
-    status = -1
-    return
-  end if
-  
-  start6  = (/0,0,0,0,0,0/)
-  stride6 = (/1,1,1,1,1,1/)
-  edges6  = shape(lut488%nvalx)
-  status = sfrdata(sds_id, start6, stride6, edges6, lut488%nvalx)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to read SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  status = sfendacc(sds_id)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to end access to SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  sds_name = 'SZA672_Nodes'
-  sds_index = sfn2index(sd_id, sds_name)
-  if (sds_index == FAIL) then
-    print *, "ERROR: Unable to find index of "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-  end if
-  
-  sds_id = sfselect(sd_id, sds_index)
-  if (sds_id == FAIL) then
-    print *, "ERROR: Unable to select SDS "//trim(sds_name)//": ", sds_id
-    status = -1
-    return
-  end if
-  
-  status = sfginfo(sds_id, sds_name, rank, dim_sizes, data_type, n_attrs)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to get info on SDS "//trim(sds_name)//": ", status
-    status = -1
-    return
-  end if
-  
-! -- 672 nm
-  lut672%nsza = dim_sizes(1)
-  allocate(lut672%sza(lut672%nsza), stat=status)
-  if (status /= 0) then
-    print *, "ERROR: Unable to allocate SZA670 data array: ", status
-    return
-  end if
-  
-  start1  = (/0/)
-  stride1 = (/1/)
-  edges1  = (/lut672%nsza/)
-  status = sfrdata(sds_id, start1, stride1, edges1, lut672%sza)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to read SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  status = sfendacc(sds_id)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to end access to SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  sds_name = 'VZA672_Nodes'
-  sds_index = sfn2index(sd_id, sds_name)
-  if (sds_index == FAIL) then
-    print *, "ERROR: Unable to find index of "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-  end if
-  
-  sds_id = sfselect(sd_id, sds_index)
-  if (sds_id == FAIL) then
-    print *, "ERROR: Unable to select SDS "//trim(sds_name)//": ", sds_id
-    status = -1
-    return
-  end if
-  
-  status = sfginfo(sds_id, sds_name, rank, dim_sizes, data_type, n_attrs)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to get info on SDS "//trim(sds_name)//": ", status
-    status = -1
-    return
-  end if
-  
-  lut672%nvza = dim_sizes(1)
-  allocate(lut672%vza(lut672%nvza), stat=status)
-  if (status /= 0) then
-    print *, "ERROR: Unable to allocate VZA670 data array: ", status
-    return
-  end if
-  
-  start1  = (/0/)
-  stride1 = (/1/)
-  edges1  = (/lut672%nvza/)
-  status = sfrdata(sds_id, start1, stride1, edges1, lut672%vza)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to read SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  status = sfendacc(sds_id)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to end access to SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  sds_name = 'RAA672_Nodes'
-  sds_index = sfn2index(sd_id, sds_name)
-  if (sds_index == FAIL) then
-    print *, "ERROR: Unable to find index of "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-  end if
-  
-  sds_id = sfselect(sd_id, sds_index)
-  if (sds_id == FAIL) then
-    print *, "ERROR: Unable to select SDS "//trim(sds_name)//": ", sds_id
-    status = -1
-    return
-  end if
-  
-  status = sfginfo(sds_id, sds_name, rank, dim_sizes, data_type, n_attrs)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to get info on SDS "//trim(sds_name)//": ", status
-    status = -1
-    return
-  end if
-  
-  lut672%nraa = dim_sizes(1)
-  allocate(lut672%raa(lut672%nraa), stat=status)
-  if (status /= 0) then
-    print *, "ERROR: Unable to allocate RAA670 data array: ", status
-    return
-  end if
-  
-  start1  = (/0/)
-  stride1 = (/1/)
-  edges1  = (/lut672%nraa/)
-  status = sfrdata(sds_id, start1, stride1, edges1, lut672%raa)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to read SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  status = sfendacc(sds_id)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to end access to SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  sds_name = 'AOT672_Nodes'
-  sds_index = sfn2index(sd_id, sds_name)
-  if (sds_index == FAIL) then
-    print *, "ERROR: Unable to find index of "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-  end if
-  
-  sds_id = sfselect(sd_id, sds_index)
-  if (sds_id == FAIL) then
-    print *, "ERROR: Unable to select SDS "//trim(sds_name)//": ", sds_id
-    status = -1
-    return
-  end if
-  
-  status = sfginfo(sds_id, sds_name, rank, dim_sizes, data_type, n_attrs)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to get info on SDS "//trim(sds_name)//": ", status
-    status = -1
-    return
-  end if
-  
-  lut672%naot = dim_sizes(1)
-  allocate(lut672%aot(lut672%naot), stat=status)
-  if (status /= 0) then
-    print *, "ERROR: Unable to allocate AOT670 data array: ", status
-    return
-  end if
-  
-  start1  = (/0/)
-  stride1 = (/1/)
-  edges1  = (/lut672%naot/)
-  status = sfrdata(sds_id, start1, stride1, edges1, lut672%aot)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to read SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  status = sfendacc(sds_id)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to end access to SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  sds_name = 'SSA672_Nodes'
-  sds_index = sfn2index(sd_id, sds_name)
-  if (sds_index == FAIL) then
-    print *, "ERROR: Unable to find index of "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-  end if
-  
-  sds_id = sfselect(sd_id, sds_index)
-  if (sds_id == FAIL) then
-    print *, "ERROR: Unable to select SDS "//trim(sds_name)//": ", sds_id
-    status = -1
-    return
-  end if
-  
-  status = sfginfo(sds_id, sds_name, rank, dim_sizes, data_type, n_attrs)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to get info on SDS "//trim(sds_name)//": ", status
-    status = -1
-    return
-  end if
-  
-  lut672%nssa = dim_sizes(1)
-  allocate(lut672%ssa(lut672%nssa), stat=status)
-  if (status /= 0) then
-    print *, "ERROR: Unable to allocate SSA670 data array: ", status
-    return
-  end if
-  
-  start1  = (/0/)
-  stride1 = (/1/)
-  edges1  = (/lut672%nssa/)
-  status = sfrdata(sds_id, start1, stride1, edges1, lut672%ssa)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to read SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  status = sfendacc(sds_id)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to end access to SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  
-  sds_name = 'SR672_Nodes'
-  sds_index = sfn2index(sd_id, sds_name)
-  if (sds_index == FAIL) then
-    print *, "ERROR: Unable to find index of "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-  end if
-  
-  sds_id = sfselect(sd_id, sds_index)
-  if (sds_id == FAIL) then
-    print *, "ERROR: Unable to select SDS "//trim(sds_name)//": ", sds_id
-    status = -1
-    return
-  end if
-  
-  status = sfginfo(sds_id, sds_name, rank, dim_sizes, data_type, n_attrs)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to get info on SDS "//trim(sds_name)//": ", status
-    status = -1
-    return
-  end if
-  
-  lut672%nsfc = dim_sizes(1)
-  allocate(lut672%sfc(lut672%nsfc), stat=status)
-  if (status /= 0) then
-    print *, "ERROR: Unable to allocate SR670 data array: ", status
-    return
-  end if
-  
-  start1  = (/0/)
-  stride1 = (/1/)
-  edges1  = (/lut672%nsfc/)
-  status = sfrdata(sds_id, start1, stride1, edges1, lut672%sfc)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to read SDS "//trim(sds_name)//": ", status
-    return
-  end if
-  
-  status = sfendacc(sds_id)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to end access to SDS "//trim(sds_name)//": ", status
-    return
-  end if
 
-  sds_name = 'nvalx672'
-  allocate(lut672%nvalx(lut672%nsza,lut672%nvza,lut672%nraa,lut672%naot, &
-  & lut672%nssa, lut672%nsfc), stat=status)
-  if (status /= 0) then
-    print *, "ERROR: Unable to allocate nvalx670 data array: ", status
-    return
-  end if
+    dset_name = 'SZA488_Nodes'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_inquire_variable(grp_id, dset_id, dimids=dimids)
+    status = nf90_inquire_dimension(grp_id, dimids(1), len = dimlen)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Unable to get info on SDS "//trim(dset_name)//": ", status
+        status = -1
+        return
+    end if
   
-  sds_index = sfn2index(sd_id, sds_name)
-  if (sds_index == FAIL) then
-    print *, "ERROR: Unable to find index of SDS "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-    return
-  end if
+    lut488%nsza = dimlen
+    allocate(lut488%sza(lut488%nsza), stat=status)
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate SZA488 data array: ", status
+        return
+    end if
+
+    start1  = (/1/)
+    stride1 = (/1/)
+    edges1  = (/lut488%nsza/)
+    status = nf90_get_var(grp_id, dset_id, lut488%sza, start=start1, &
+                          stride=stride1, count=edges1)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
+    end if
+
+    dset_name = 'VZA488_Nodes'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_inquire_variable(grp_id, dset_id, dimids=dimids)
+    status = nf90_inquire_dimension(grp_id, dimids(1), len = dimlen)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Unable to get info on SDS "//trim(dset_name)//": ", status
+        status = -1
+        return
+    end if
   
-  sds_id = sfselect(sd_id, sds_index)
-  if (sds_id == FAIL) then
-    print *, "ERROR: Unable to find index of SDS "//trim(sds_name)//": ", sds_index
-    status = -1
-    return
-  end if
+    lut488%nvza = dimlen
+    allocate(lut488%vza(lut488%nvza), stat=status)
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate VZA488 data array: ", status
+        return
+    end if
+
+    start1  = (/1/)
+    stride1 = (/1/)
+    edges1  = (/lut488%nvza/)
+    status = nf90_get_var(grp_id, dset_id, lut488%vza, start=start1, &
+                          stride=stride1, count=edges1)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
+    end if
+
+    dset_name = 'RAA488_Nodes'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_inquire_variable(grp_id, dset_id, dimids=dimids)
+    status = nf90_inquire_dimension(grp_id, dimids(1), len = dimlen)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Unable to get info on SDS "//trim(dset_name)//": ", status
+        status = -1
+        return
+    end if
   
-  start6  = (/0,0,0,0,0,0/)
-  stride6 = (/1,1,1,1,1,1/)
-  edges6  = shape(lut672%nvalx)
-  status = sfrdata(sds_id, start6, stride6, edges6, lut672%nvalx)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to read SDS "//trim(sds_name)//": ", status
-    return
-  end if
+    lut488%nraa = dimlen
+    allocate(lut488%raa(lut488%nraa), stat=status)
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate RAA488 data array: ", status
+        return
+    end if
+
+    start1  = (/1/)
+    stride1 = (/1/)
+    edges1  = (/lut488%nraa/)
+    status = nf90_get_var(grp_id, dset_id, lut488%raa, start=start1, &
+                          stride=stride1, count=edges1)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
+    end if
+
+    dset_name = 'AOT488_Nodes'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_inquire_variable(grp_id, dset_id, dimids=dimids)
+    status = nf90_inquire_dimension(grp_id, dimids(1), len = dimlen)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Unable to get info on SDS "//trim(dset_name)//": ", status
+        status = -1
+        return
+    end if
   
-  status = sfendacc(sds_id)
-  if (status == FAIL) then
-    print *, "ERROR: Unable to end access to SDS "//trim(sds_name)//": ", status
-    return
-  end if
-    
-  status = sfend(sd_id)
-  if (status /= 0) then
-    print *, "ERROR: Unable to close land aerosol model file: ", status
-    return
-  end if
-      
-  return
+    lut488%naot = dimlen
+    allocate(lut488%aot(lut488%naot), stat=status)
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate AOT488 data array: ", status
+        return
+    end if
+
+    start1  = (/1/)
+    stride1 = (/1/)
+    edges1  = (/lut488%naot/)
+    status = nf90_get_var(grp_id, dset_id, lut488%aot, start=start1, &
+                          stride=stride1, count=edges1)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
+    end if
+
+    dset_name = 'SSA488_Nodes'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_inquire_variable(grp_id, dset_id, dimids=dimids)
+    status = nf90_inquire_dimension(grp_id, dimids(1), len = dimlen)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Unable to get info on SDS "//trim(dset_name)//": ", status
+        status = -1
+        return
+    end if
+  
+    lut488%nssa  = dimlen
+    allocate(lut488%ssa(lut488%nssa ), stat=status)
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate SSA488 data array: ", status
+        return
+    end if
+
+    start1  = (/1/)
+    stride1 = (/1/)
+    edges1  = (/lut488%nssa /)
+    status = nf90_get_var(grp_id, dset_id, lut488%ssa , start=start1, &
+                          stride=stride1, count=edges1)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
+    end if
+
+    dset_name = 'SR488_Nodes'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_inquire_variable(grp_id, dset_id, dimids=dimids)
+    status = nf90_inquire_dimension(grp_id, dimids(1), len = dimlen)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Unable to get info on SDS "//trim(dset_name)//": ", status
+        status = -1
+        return
+    end if
+  
+    lut488%nsfc  = dimlen
+    allocate(lut488%sfc (lut488%nsfc ), stat=status)
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate SR488 data array: ", status
+        return
+    end if
+
+    start1  = (/1/)
+    stride1 = (/1/)
+    edges1  = (/lut488%nsfc /)
+    status = nf90_get_var(grp_id, dset_id, lut488%sfc , start=start1, &
+                          stride=stride1, count=edges1)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
+    end if
 
 
+! -- 672nm
+
+    dset_name = 'SZA672_Nodes'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_inquire_variable(grp_id, dset_id, dimids=dimids)
+    status = nf90_inquire_dimension(grp_id, dimids(1), len = dimlen)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Unable to get info on SDS "//trim(dset_name)//": ", status
+        status = -1
+        return
+    end if
+  
+    lut672%nsza = dimlen
+    allocate(lut672%sza(lut672%nsza), stat=status)
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate SZA672 data array: ", status
+        return
+    end if
+
+    start1  = (/1/)
+    stride1 = (/1/)
+    edges1  = (/lut672%nsza/)
+    status = nf90_get_var(grp_id, dset_id, lut672%sza, start=start1, &
+                          stride=stride1, count=edges1)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
+    end if
+
+    dset_name = 'VZA672_Nodes'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_inquire_variable(grp_id, dset_id, dimids=dimids)
+    status = nf90_inquire_dimension(grp_id, dimids(1), len = dimlen)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Unable to get info on SDS "//trim(dset_name)//": ", status
+        status = -1
+        return
+    end if
+  
+    lut672%nvza = dimlen
+    allocate(lut672%vza(lut672%nvza), stat=status)
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate VZA672 data array: ", status
+        return
+    end if
+
+    start1  = (/1/)
+    stride1 = (/1/)
+    edges1  = (/lut672%nvza/)
+    status = nf90_get_var(grp_id, dset_id, lut672%vza, start=start1, &
+                          stride=stride1, count=edges1)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
+    end if
+
+    dset_name = 'RAA672_Nodes'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_inquire_variable(grp_id, dset_id, dimids=dimids)
+    status = nf90_inquire_dimension(grp_id, dimids(1), len = dimlen)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Unable to get info on SDS "//trim(dset_name)//": ", status
+        status = -1
+        return
+    end if
+  
+    lut672%nraa = dimlen
+    allocate(lut672%raa(lut672%nraa), stat=status)
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate RAA672 data array: ", status
+        return
+    end if
+
+    start1  = (/1/)
+    stride1 = (/1/)
+    edges1  = (/lut672%nraa/)
+    status = nf90_get_var(grp_id, dset_id, lut672%raa, start=start1, &
+                          stride=stride1, count=edges1)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
+    end if
+
+    dset_name = 'AOT672_Nodes'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_inquire_variable(grp_id, dset_id, dimids=dimids)
+    status = nf90_inquire_dimension(grp_id, dimids(1), len = dimlen)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Unable to get info on SDS "//trim(dset_name)//": ", status
+        status = -1
+        return
+    end if
+  
+    lut672%naot = dimlen
+    allocate(lut672%aot(lut672%naot), stat=status)
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate AOT672 data array: ", status
+        return
+    end if
+
+    start1  = (/1/)
+    stride1 = (/1/)
+    edges1  = (/lut672%naot/)
+    status = nf90_get_var(grp_id, dset_id, lut672%aot, start=start1, &
+                          stride=stride1, count=edges1)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
+    end if
+
+    dset_name = 'SSA672_Nodes'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_inquire_variable(grp_id, dset_id, dimids=dimids)
+    status = nf90_inquire_dimension(grp_id, dimids(1), len = dimlen)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Unable to get info on SDS "//trim(dset_name)//": ", status
+        status = -1
+        return
+    end if
+  
+    lut672%nssa  = dimlen
+    allocate(lut672%ssa(lut672%nssa ), stat=status)
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate SSA672 data array: ", status
+        return
+    end if
+
+    start1  = (/1/)
+    stride1 = (/1/)
+    edges1  = (/lut672%nssa /)
+    status = nf90_get_var(grp_id, dset_id, lut672%ssa , start=start1, &
+                          stride=stride1, count=edges1)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
+    end if
+
+    dset_name = 'SR672_Nodes'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_inquire_variable(grp_id, dset_id, dimids=dimids)
+    status = nf90_inquire_dimension(grp_id, dimids(1), len = dimlen)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Unable to get info on SDS "//trim(dset_name)//": ", status
+        status = -1
+        return
+    end if
+  
+    lut672%nsfc  = dimlen
+    allocate(lut672%sfc(lut672%nsfc ), stat=status)
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate SR672 data array: ", status
+        return
+    end if
+
+    start1  = (/1/)
+    stride1 = (/1/)
+    edges1  = (/lut672%nsfc /)
+    status = nf90_get_var(grp_id, dset_id, lut672%sfc , start=start1, &
+                          stride=stride1, count=edges1)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
+    end if
+
+    status = nf90_close(nc_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to close lut_nc4 file: ", status
+        return
+    end if
+
+    return
 end function read_aerosol_lut_file
 
 
@@ -1095,16 +805,19 @@ subroutine aero_470(dflag, refl, x1, x2, x3, mm, nn, ll, ma, imod,  &
   tau_x470      = -999.0
   tau_x470_flag = -999
   
+  status = default_lut488%naot
+  status = 0
   if (allocated(yy)) deallocate(yy)
   allocate(yy(default_lut488%naot), stat=status)
   if (status /= 0) then
-    print *, "ERROR: Failed to allocate array for reduced AOT table: ", status
+    print *, "ERROR: Failed to allocate array for reduced AOT 488 table: ", status
     return
   end if
         
   status = create_reduced_lut_aot(default_lut488, refl, x1,x2,x3, imod,  &
   &   r470, model_frac, yy, debug)
   if (status /= 0) then
+    deallocate(yy, stat=status)
     dflag = .true.
     return
   end if
@@ -1124,13 +837,14 @@ subroutine aero_470(dflag, refl, x1, x2, x3, mm, nn, ll, ma, imod,  &
       if (status == 1) then
         tau_x470 = 5.0
       else
-!         print *, 'ERROR: Failed to extrapolate AOT: ', status
+        print *, 'ERROR: Failed to extrapolate AOT: ', status
         return
       end if
     end if
     if (tau_x470 > 5.0) tau_x470 = 5.0
     tau_x470_flag = 1
     if (debug) print *, 'aero_470, hit hi bound: ', refl, yy(10)
+    deallocate(yy, stat=status)
     return
   endif
 
@@ -1228,13 +942,14 @@ subroutine aero_650(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
   if (allocated(yy)) deallocate(yy)
   allocate(yy(default_lut672%naot), stat=status)
   if (status /= 0) then
-    print *, "ERROR: Failed to allocate array for reduced AOT table: ", status
+    print *, "ERROR: Failed to allocate array for reduced AOT 672 table: ", status
     return
   end if
   
   status = create_reduced_lut_aot(default_lut672, refl, x1,x2,x3, 1,  &
   &   r650, 1.0, yy, debug)
   if (status /= 0) then
+    deallocate(yy, stat=status)
     dflag = .true.
     return
   end if
@@ -1253,13 +968,14 @@ subroutine aero_650(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
       if (status == 1) then
         tau_x650 = 5.0
       else
-!         print *, 'ERROR: Failed to extrapolate AOT: ', status
+        print *, 'ERROR: Failed to extrapolate AOT: ', status
         return
       end if
     end if
     if (tau_x650 > 5.0) tau_x650 = 5.0
     w0_x      = -999.
     tau_x650_flag = 1 
+    deallocate(yy, stat=status)
     return
   end if
 
@@ -1277,7 +993,7 @@ subroutine aero_650(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
         
     tau_x650 = frac*default_lut672%aot(ii+1+6) + (1.-frac)*default_lut672%aot(ii+6)
     tau_x650_flag = 0
-  
+    deallocate(yy, stat=status)
     return
   
   end if
@@ -1405,13 +1121,14 @@ end subroutine aero_650
   if (allocated(yy)) deallocate(yy)
   allocate(yy(default_lut412%naot), stat=status)
   if (status /= 0) then
-    print *, "ERROR: Failed to allocate array for reduced AOT table: ", status
+    print *, "ERROR: Failed to allocate array for reduced AOT 412 table: ", status
     return
   end if
   
   status = create_reduced_lut_aot(default_lut412, refl, x1,x2,x3, imod,  &
   &   r412, model_frac, yy, debug)
   if (status /= 0) then
+    deallocate(yy, stat=status)
     dflag = .true.
     return
   end if
@@ -1431,7 +1148,7 @@ end subroutine aero_650
       if (status == 1) then
         tau_x412 = 5.0
       else
-!         print *, 'ERROR: Failed to extrapolate AOT: ', status
+        print *, 'ERROR: Failed to extrapolate AOT: ', status
         return
       end if
     end if
@@ -1439,6 +1156,7 @@ end subroutine aero_650
     
     tau_x412_flag = 1
     if (debug) print *, 'aero_412, hit hi bound: ', refl, yy(10)
+    deallocate(yy, stat=status)
     return
   end if
 !
@@ -1530,7 +1248,6 @@ subroutine aero_412_abs(dflag,refl,x1,x2,x3,mm,nn,ll,r412,tau_x,w0_x)
   &   r412, frac_ia, yyw)
   if (status /= 0) then
     dflag = .true.
-    print *, "ERROR: create_reduced_lut_ssa: aero_412_abs", refl,x1, x2, x3, index_ia, r412  
     return
   end if
   
@@ -1604,7 +1321,6 @@ subroutine aero_470_abs(dflag2,refl,x1,x2,x3,mm,nn,ll,r470,tau_x,w0_x)
   &     r470, frac_ia, yyw)
   if (status /= 0) then
     dflag2 = .true.
-    print *, "ERROR: create_reduced_lut_ssa: aero_470_abs", refl,x1, x2, x3, index_ia, r470      
     return
   end if
        
@@ -1676,13 +1392,14 @@ subroutine aero_470_dust(dflag, refl, x1, x2, x3, mm, nn, ll, ma, imod,  &
   if (allocated(yy)) deallocate(yy)
   allocate(yy(dust_lut488%naot), stat=status)
   if (status /= 0) then
-    print *, "ERROR: Failed to allocate array for reduced AOT table: ", status
+    print *, "ERROR: Failed to allocate array for reduced AOT DUST 488 table: ", status
     return
   end if
-  
+
   status = create_reduced_lut_aot(dust_lut488, refl, x1,x2,x3, imod,  &
   &   r470, model_frac, yy, debug)
   if (status /= 0) then
+    deallocate(yy, stat=status)
     dflag = .true.
     return
   end if
@@ -1702,13 +1419,14 @@ subroutine aero_470_dust(dflag, refl, x1, x2, x3, mm, nn, ll, ma, imod,  &
       if (status == 1) then
         tau_x470 = 5.0
       else
-!         print *, 'ERROR: Failed to extrapolate AOT: ', status
+        print *, 'ERROR: Failed to extrapolate AOT: ', status
         return
       end if
     end if
     if (tau_x470 > 5.0) tau_x470 = 5.0
     tau_x470_flag = 1
     if (debug) print *, 'aero_470_dust, hit hi bound: ', refl, yy(10)
+    deallocate(yy, stat=status)
     return
   endif
 
@@ -1805,13 +1523,14 @@ subroutine aero_650_dust(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
   if (allocated(yy)) deallocate(yy)
   allocate(yy(dust_lut672%naot), stat=status)
   if (status /= 0) then
-    print *, "ERROR: Failed to allocate array for reduced AOT table: ", status
+    print *, "ERROR: Failed to allocate array for reduced AOT DUST 672 table: ", status
     return
   end if
 
   status = create_reduced_lut_aot(dust_lut672, refl, x1,x2,x3, 1,  &
   &   r650, 1.0, yy, debug)
   if (status /= 0) then
+    deallocate(yy, stat=status)
     dflag = .true.
     return
   end if
@@ -1830,13 +1549,14 @@ subroutine aero_650_dust(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
       if (status == 1) then
         tau_x650 = 5.0
       else
-!         print *, 'ERROR: Failed to extrapolate AOT: ', status
+        print *, 'ERROR: Failed to extrapolate AOT: ', status
         return
       end if
     end if
     if (tau_x650 > 5.0) tau_x650 = 5.0
     w0_x      = -999.
     tau_x650_flag = 1
+    deallocate(yy, stat=status)
     return
   end if
 
@@ -1982,13 +1702,14 @@ end subroutine aero_650_dust
   if (allocated(yy)) deallocate(yy)
   allocate(yy(dust_lut412%naot), stat=status)
   if (status /= 0) then
-    print *, "ERROR: Failed to allocate array for reduced AOT table: ", status
+    print *, "ERROR: Failed to allocate array for reduced AOT DUST 412 table: ", status
     return
   end if
 
   status = create_reduced_lut_aot(dust_lut412, refl, x1,x2,x3, imod,  &
   &   r412, model_frac, yy, debug)
   if (status /= 0) then
+    deallocate(yy, stat=status)
     dflag = .true.
     return
   end if
@@ -2008,7 +1729,7 @@ end subroutine aero_650_dust
       if (status == 1) then
         tau_x412 = 5.0
       else
-!         print *, 'ERROR: Failed to extrapolate AOT: ', status
+        print *, 'ERROR: Failed to extrapolate AOT: ', status
         return
       end if
     end if
@@ -2016,6 +1737,7 @@ end subroutine aero_650_dust
 
     tau_x412_flag = 1
     if (debug) print *, 'aero_412_dust, hit hi bound: ', refl, yy(10)
+    deallocate(yy, stat=status)
     return
   end if
 !
@@ -2107,7 +1829,6 @@ subroutine aero_412_abs_dust(dflag,refl,x1,x2,x3,mm,nn,ll,r412,tau_x,w0_x)
   &   r412, frac_ia, yyw)
   if (status /= 0) then
     dflag = .true.
-    print *, "ERROR: create_reduced_lut_ssa: aero_412_abs_dust", refl,x1, x2, x3, index_ia, r412
     return
   end if
 
@@ -2181,7 +1902,6 @@ subroutine aero_470_abs_dust(dflag2,refl,x1,x2,x3,mm,nn,ll,r470,tau_x,w0_x)
   &     r470, frac_ia, yyw)
   if (status /= 0) then
     dflag2 = .true.
-    print *, "ERROR: create_reduced_lut_ssa: aero_470_abs_dust", refl,x1, x2, x3, index_ia, r470
     return
   end if
 
@@ -2245,14 +1965,12 @@ integer function create_reduced_lut_aot(lut, refl, sza, vza, raa, imod,  &
       
   index_ii = search(rXXX, lut%sfc, status, frac=frac) 
   if (status /= 0) then 
-!     print *, 'ERROR: Specified SFC not within table: '
     return
   endif
 !  if (debug) print *, 'aero_XXX, sfc indx: ', rXXX, index_ii
   
   ii = search(raa, lut%raa, status, frac=xfrac)
   if (status /= 0) then
-    print *, 'ERROR: Specified RAA not within table: ', raa, lut%raa(1), lut%raa(lut%nraa)
     return
   end if
 !  if (debug) print *, 'aero_XXX, raa: ', raa, ii, lut%raa(ii), lut%raa(ii+1)
@@ -2538,68 +2256,6 @@ end function create_reduced_lut_ssa
 
   end function search
        
-! -- perform a binary search of array xx for j such that x lies between xx(j) and xx(j+1).
-! -- see Numerical Recipes in Fortran, Second Edition, p.110
-! -- returns  values:
-! --     0 if xx(1) > x and size(xx) if xx(size(xx)) < x
-! --    -1, 1 if x < xx(1) or x > xx(size(xx)) respectively.
-! --
-! -- xx must be sorted.
-  integer function locate(x,xx,status,frac) result(j)
-    implicit none
-    
-    real, dimension(:), intent(in)    ::  xx
-    real, intent(in)                  ::  x
-    integer, intent(inout)            ::  status
-    real, intent(inout), optional     ::  frac
-    
-    integer                           ::  jl, jm, ju
-    integer                           ::  i, n
-    
-    n = size(xx)
-    status = 0
-    
-!   -- start binary search.
-    jl = 0
-    ju = n + 1
-    do
-      if (ju-jl > 1) then
-          jm = (ju + jl) / 2
-        if ((xx(n) >= xx(1)) .EQV. (x >= xx(jm))) then
-          jl = jm
-        else
-          ju = jm
-        end if
-      else
-        exit
-      endif
-    end do
-
-!   -- check endpoint equality, otherwise use jl from above.
-    if (x == xx(1)) then 
-      j = 1
-    else if (x == xx(n)) then
-      j = n-1
-    else
-      j = jl
-    end if
-    
-!   -- set status, indicate success or appropriate failure condition.
-    status = 0
-    if (j >= n) status = 1
-    if (j < 1) status = -1
-    
-    if (present(frac) .AND. status == 0) then
-      if (j < n) then
-        frac = (x-xx(j))/ (xx(j+1)-xx(j))
-      else
-        frac = 1.0
-      end if
-    end if
-    
-    return
-     
-  end function locate
   
 ! -- https://en.wikipedia.org/wiki/Extrapolation
   real function extrap(x, xx, yy, status) result(res)
@@ -2616,15 +2272,15 @@ end function create_reduced_lut_ssa
     res = -999.0
     status = -1
     
-    n = size(xx, 1) 
+    n = size(xx, 1)
     status = linfit(xx(n-1:n), yy(n-1:n), r)
     if (status /= 0) then 
-!       print *, "ERROR: linfit failed, skipping: ", status
+      print *, "ERROR: linfit failed, skipping: ", status
       return
     end if
     
     res = r(1) + (x)*r(2)
-
+      
 !   -- if extrapolation produces a negative AOT, exclude the last node point
 !   -- and try again.
     if (res < 3.5) then
@@ -2632,7 +2288,7 @@ end function create_reduced_lut_ssa
       do while (res < 3.5 .AND. i >= 2)
         status = linfit(xx(i-1:i), yy(i-1:i), r)
         if (status /= 0) then 
-!           print *, "ERROR: linfit failed, skipping: ", status
+          print *, "ERROR: linfit failed, skipping: ", status
           return
         end if
     
@@ -2644,7 +2300,7 @@ end function create_reduced_lut_ssa
         return
       end if
     end if
-
+    
     status = 0
     return    
     
@@ -2674,15 +2330,11 @@ end function create_reduced_lut_ssa
       sxy = sxy + (x(i) * y(i))
       syy = syy + (y(i) * y(i))
     end do
-
-    if (abs((n*sxy) - (sx*sy)) < 1.0e-10 .or. abs((n*sxx)-(sx*sx))<1.0e-10 .or. n==0.) then 
-     status = -1
-    else 
-     r(2) = ((n*sxy) - (sx*sy))/((n*sxx)-(sx*sx))
-     r(1) = (sy/n)-(r(2)*sx/n)
-     status = 0
-    end if
     
+    r(2) = ((n*sxy) - (sx*sy))/((n*sxx)-(sx*sx))
+    r(1) = (sy/n)-(r(2)*sx/n)
+    
+    status = 0
     return
     
   end function linfit

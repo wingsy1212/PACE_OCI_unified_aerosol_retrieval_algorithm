@@ -29,7 +29,7 @@ module modis_surface
   public  ::  get_modis_LER412, get_modis_LER470, get_modis_LER650, get_modis_LER865
   public  ::  get_viirs_LER412, get_viirs_LER488, get_viirs_LER670
   public  ::  get_viirs_modisbrdf_LER412, get_viirs_modisbrdf_LER488, get_viirs_modisbrdf_LER670
-  public  ::  latlon_to_index_ler,check_status
+  public  ::  latlon_to_index_ler
   public  ::  get_geographic_zone, get_sfc_elev_std, get_background_aod! 9 January 2018 JLee
   private ::  readLER5, readLER2
   
@@ -52,25 +52,25 @@ module modis_surface
   real, dimension(3600,1800)    ::  terrain_flag, sfc_elev_std
   real, dimension(360,180)    ::  bg_aod! 9 January 2018 JLee
 
-  integer                                         :: LERstart(2), LERedge(2), dateline
-  integer                                         :: LERstart6(2), LERedge6(2), dateline6
-  real, dimension(:,:,:,:), allocatable         :: coefs650_fwd, coefs470_fwd, coefs412_fwd
-  real, dimension(:,:,:,:), allocatable         :: coefs650_all, coefs470_all, coefs412_all
+  integer                                  :: LERstart(2), LERedge(2), dateline
+  integer                                  :: LERstart6(2), LERedge6(2), dateline6
+  real, dimension(:,:,:,:), allocatable  :: coefs650_fwd, coefs470_fwd, coefs412_fwd
+  real, dimension(:,:,:,:), allocatable  :: coefs650_all, coefs470_all, coefs412_all
 
-  real, dimension(:,:), allocatable               :: gref412_all, gref412_fwd
-  real, dimension(:,:), allocatable               :: gref470_all, gref470_fwd
-  real, dimension(:,:), allocatable               :: gref650_all, gref650_fwd
-  real, dimension(:,:), allocatable               :: gref865_all  !gref*_all = MODIS min reflectance
+  real, dimension(:,:), allocatable        :: gref412_all, gref412_fwd
+  real, dimension(:,:), allocatable        :: gref470_all, gref470_fwd
+  real, dimension(:,:), allocatable        :: gref650_all, gref650_fwd
+  real, dimension(:,:), allocatable        :: gref865_all
   
 ! -- VIIRS, all-angle surface database
-  real, dimension(:,:), allocatable               :: vgref412_all
-  real, dimension(:,:), allocatable               :: vgref488_all
-  real, dimension(:,:), allocatable               :: vgref670_all !Vgref*_all = VIIRS min reflectance
+  real, dimension(:,:), allocatable        :: vgref412_all
+  real, dimension(:,:), allocatable        :: vgref488_all
+  real, dimension(:,:), allocatable        :: vgref670_all
 
 ! -- 2.2 um surface database
-  real, dimension(:,:,:), allocatable             :: swir_coeffs412, swir_coeffs470
-  real, dimension(:,:), allocatable            		:: swir_stderr412, swir_stderr470
-  real, dimension(:,:), allocatable               :: swir_min, swir_max
+  real, dimension(:,:,:), allocatable      :: swir_coeffs412, swir_coeffs470
+  real, dimension(:,:), allocatable        :: swir_stderr412, swir_stderr470
+  real, dimension(:,:), allocatable        :: swir_min, swir_max
   
   real, parameter   ::  NDVI1_CUTOFF = 0.18
   real, parameter   ::  NDVI2_CUTOFF = 0.35
@@ -79,37 +79,36 @@ module modis_surface
 
 ! @TODO: should rename this to load_geozone_table or something even more descriptive.
   integer function load_terrainflg_tables(tflg_file, season) result(status)
+
+!   include 'hdf.f90'
+!   include 'dffunc.f90'
+    use netcdf
+    USE OCIUAAER_Config_Module
+
     implicit none
+
+    character(len=255), intent(in)  ::  tflg_file
+    integer, intent(in)    ::  season
     
-    include 'hdf.inc'
-	  include 'dffunc.inc'
-	
-    character(len=*), intent(in)  ::  tflg_file
-    integer, intent(in)           ::  season 
-    
-    logical                             ::  file_exists
     real, dimension(:,:), allocatable   ::  tmptfn
     real, dimension(:,:,:), allocatable ::  tmpaod
     integer                             ::  i, j
 
     ! HDF vars
     character(len=255)    ::  sds_name
+    character(len=255)    ::  dset_name
+    character(len=255)    ::  attr_name
+    character(len=255)    ::  group_name
+
+    integer               ::  nc_id
+    integer               ::  dim_id
+    integer               ::  dset_id
+    integer               ::  grp_id
     integer               ::  sd_id, sds_index, sds_id
     integer, dimension(2) ::  start2, stride2, edges2
     integer, dimension(3) ::  start3, stride3, edges3   
  
     status = -1
-    
-    inquire(file=trim(tflg_file), exist=file_exists, iostat=status)
-    if (status /= 0) then
-      print *, "ERROR: Unable to inquire about terrain flag file: ", status
-      return
-    end if
-    if (file_exists .eqv. .false.) then
-      print *, "ERROR: Terrain flag file does not exist. Please check the config file."
-      status = -1
-      return
-    end if
     
 !   -- allocate our tmp array
     allocate(tmptfn(3600,1800), stat=status)
@@ -124,109 +123,72 @@ module modis_surface
       print *, "ERROR: Unable to allocate tmp array for background aod data: ", status
       return
     end if
-    
-! 	Open HDF and output file.      
-!---------------------------------------------------------------------------------------------------       
-		sd_id = sfstart(tflg_file, DFACC_READ)
-    if (sd_id == FAIL ) then
-    	print *,"ERROR: failed to start SDS interface on terrain flag file: ", sd_id
-      status = -1
-      return
+
+    tflg_file = cfg%db_nc4
+    status = nf90_open(tflg_file, nf90_nowrite, nc_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
+        return
     end if
-    !================================== 
-    sds_name = 'geographical_zone_flag'
-    sds_index = sfn2index(sd_id, sds_name)
-    if (sds_index == FAIL) then
-      print *, "ERROR: Unable to find index of "//trim(sds_name)//" SDS: ", sds_index
-      status = -1
-      return
+
+    group_name = 'geozone'
+    status = nf90_inq_ncid(nc_id, group_name, grp_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
+        return
     end if
-    sds_id = sfselect(sd_id, sds_index)
-    if (sds_id == FAIL) then
-      print *, "ERROR: Unable to select "//trim(sds_name)//" SDS: ", sds_id
-      stop
-    end if
-    
-    start2  = (/0,0/)
+
+    start2  = (/1,1/)
     stride2 = (/1,1/)
     edges2  = (/3600,1800/)
-    status = sfrdata(sds_id, start2, stride2, edges2, tmptfn)
-    if (status == FAIL) then
-      print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
-      status = -1
-      return
+    dset_name = 'geographical_zone_flag'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
     end if
-    
-    status = sfendacc(sds_id)
-    if (status == FAIL) then
-      print *, "ERROR: Unable to end access to "//trim(sds_name)//" SDS: ", status
-      return
-    end if
-    !====================
-    sds_name = 'surface_elevation_stddev'
-    sds_index = sfn2index(sd_id, sds_name)
-    if (sds_index == FAIL) then
-      print *, "ERROR: Unable to find index of "//trim(sds_name)//" SDS: ", sds_index
-      status = -1
-      return
-    end if
-    sds_id = sfselect(sd_id, sds_index)
-    if (sds_id == FAIL) then
-      print *, "ERROR: Unable to select "//trim(sds_name)//" SDS: ", sds_id
-      stop
+    status = nf90_get_var(grp_id, dset_id, tmptfn, start=start2, &
+                          stride=stride2, count=edges2)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
     end if
 
-    start2  = (/0,0/)
-    stride2 = (/1,1/)
-    edges2  = (/3600,1800/)
-    status = sfrdata(sds_id, start2, stride2, edges2, sfc_elev_std)
-    if (status == FAIL) then
-      print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
-      status = -1
-      return
+    dset_name = 'surface_elevation_stddev'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_get_var(grp_id, dset_id, sfc_elev_std, start=start2, &
+                          stride=stride2, count=edges2)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
     end if
 
-    status = sfendacc(sds_id)
-    if (status == FAIL) then
-      print *, "ERROR: Unable to end access to "//trim(sds_name)//" SDS: ", status
-      return
-    end if
-    !====================
-    sds_name = 'background_aod'
-    sds_index = sfn2index(sd_id, sds_name)
-    if (sds_index == FAIL) then
-      print *, "ERROR: Unable to find index of "//trim(sds_name)//" SDS: ", sds_index
-      status = -1
-      return
-    end if
-    sds_id = sfselect(sd_id, sds_index)
-    if (sds_id == FAIL) then
-      print *, "ERROR: Unable to select "//trim(sds_name)//" SDS: ", sds_id
-      stop
-    end if
-
-    start3  = (/0,0,0/)
+    start3  = (/1,1,1/)
     stride3 = (/1,1,1/)
     edges3  = (/360,180,4/)
-    status = sfrdata(sds_id, start3, stride3, edges3, tmpaod)
-    if (status == FAIL) then
-      print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
-      status = -1
-      return
+    dset_name = 'background_aod'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_get_var(grp_id, dset_id, tmpaod, start=start3, &
+                          stride=stride3, count=edges3)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
     end if
 
-    status = sfendacc(sds_id)
-    if (status == FAIL) then
-      print *, "ERROR: Unable to end access to "//trim(sds_name)//" SDS: ", status
-      return
+    status = nf90_close(nc_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to close lut_nc4 file: ", status
+        return
     end if
-    !====================
-    status = sfend(sd_id)
-    if (status /= 0) then
-      print *, "ERROR: Unable to close land aerosol model file: ", status
-      return
-    end if
-    
+
     terrain_flag_new = int(tmptfn)
     bg_aod(1:360,1:180) = tmpaod(1:360,1:180,season)
     !print *, "aod test", bg_aod(1,68), tmpaod(1,68,season)
@@ -250,77 +212,68 @@ module modis_surface
   end function load_terrainflg_tables
   
   integer function load_seasonal_desert(file) result(status)
+    
+!   include 'hdf.f90'
+!   include 'dffunc.f90'
+    use netcdf
+    USE OCIUAAER_Config_Module
+
     implicit none
+
+    character(len=255), intent(in)  ::  file
     
-    include 'hdf.inc'
-	  include 'dffunc.inc'
-	
-    character(len=*), intent(in)  ::  file
-    
-    logical                             ::  file_exists
     real, dimension(:,:), allocatable   ::  tmptfn
     integer                             ::  i, j
 
     ! HDF vars
     character(len=255)    ::  sds_name
+    character(len=255)    ::  dset_name
+    character(len=255)    ::  attr_name
+    character(len=255)    ::  group_name
+
+    integer               ::  nc_id
+    integer               ::  dim_id
+    integer               ::  dset_id
+    integer               ::  grp_id
     integer               ::  sd_id, sds_index, sds_id
     integer, dimension(2) ::  start2, stride2, edges2
     
     status = -1
     
-    inquire(file=trim(file), exist=file_exists, iostat=status)
-    if (status /= 0) then
-      print *, "ERROR: Unable to inquire about terrain flag file: ", status
-      return
-    end if
-    if (file_exists .eqv. .false.) then
-      print *, "ERROR: Seasonal desert file does not exist. Please check the config file."
-      status = -1
-      return
-    end if
-    
-! 	Open HDF and output file.      
-!---------------------------------------------------------------------------------------------------       
-		sd_id = sfstart(file, DFACC_READ)
-    if (sd_id == FAIL ) then
-    	print *,"ERROR: failed to start SDS interface on terrain flag file: ", sd_id
-      status = -1
-      return
+    file = cfg%db_nc4
+    status = nf90_open(file, nf90_nowrite, nc_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
+        return
     end if
 
-    sds_name = 'seasonal_desert_flag'
-    sds_index = sfn2index(sd_id, sds_name)
-    if (sds_index == FAIL) then
-      print *, "ERROR: Unable to find index of "//trim(sds_name)//" SDS: ", sds_index
-      status = -1
-      return
+    group_name = 'seasonal_deserts'
+    status = nf90_inq_ncid(nc_id, group_name, grp_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
+        return
     end if
-    sds_id = sfselect(sd_id, sds_index)
-    if (sds_id == FAIL) then
-      print *, "ERROR: Unable to select "//trim(sds_name)//" SDS: ", sds_id
-      status = -1
-      return
-    end if
-    
-    start2  = (/0,0/)
+
+    start2  = (/1,1/)
     stride2 = (/1,1/)
     edges2  = (/3600,1800/)
-    status = sfrdata(sds_id, start2, stride2, edges2, terrain_flag)
-    if (status == FAIL) then
-      print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
-      return
+    dset_name = 'seasonal_desert_flag'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
     end if
-    
-    status = sfendacc(sds_id)
-    if (status == FAIL) then
-     print *, "ERROR: Unable to end access to "//trim(sds_name)//" SDS: ", status
-      return
+    status = nf90_get_var(grp_id, dset_id, terrain_flag, start=start2, &
+                          stride=stride2, count=edges2)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
     end if
-    
-    status = sfend(sd_id)
-    if (status /= 0) then
-      print *, "ERROR: Unable to close land aerosol model file: ", status
-      return
+
+    status = nf90_close(nc_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to close lut_nc4 file: ", status
+        return
     end if
 
     status = 0
@@ -331,20 +284,29 @@ module modis_surface
 ! --    reflectivity file into brdf650 array.
 !-----------------------------------------------------------------------------------------
   integer function load_brdf(brdffile) result(status)
-    implicit none
     
-    include 'hdf.inc'
-	  include 'dffunc.inc'
-	
-    character(len=*), intent(in)    ::  brdffile
+!   include 'hdf.f90'
+!   include 'dffunc.f90'
+    use netcdf
+    USE OCIUAAER_Config_Module
+
+    implicit none
+
+    character(len=255), intent(in)    ::  brdffile
     
     integer, parameter              ::  nsites = 30
     
-    logical                         ::  file_exists
-    
-    character(len=255)              ::  sds_name
-    integer                         ::  sd_id, sds_index, sds_id
-    integer, dimension(2)           ::  start2, stride2, edges2, dims2
+    character(len=255)    ::  sds_name
+    character(len=255)    ::  dset_name
+    character(len=255)    ::  attr_name
+    character(len=255)    ::  group_name
+
+    integer               ::  nc_id
+    integer               ::  dim_id
+    integer               ::  dset_id
+    integer               ::  grp_id
+    integer               ::  sd_id, sds_index, sds_id
+    integer, dimension(2) ::  start2, stride2, edges2, dims2
     
 !   -- assume a successful return.
     status = 0
@@ -433,12 +395,9 @@ module modis_surface
     aero_zones(6)    = 15
     aero_elev(6)     = 123
 !   use fall BRDF for summer, 26 January 2018 JLee, TEST
-!   test
     aero_sr412(6,:)  = (/8.76996,6.24308,8.49987,7.49987/)
     aero_sr470(6,:)  = (/6.26996,5.74308,7.99987,5.99987/)
     aero_sr650(6,:)  = (/10.25542,10.1785,11.75790,10.75790/)
-    aero_bgaod(6,:) = (/0.27400, 0.24800, 0.27600, 0.27900/)
-    
     aero_bgaod(6,:) = (/0.27400, 0.24800, 0.27600, 0.27900/)
 !    aero_bgaod(6,:) = (/0.31233, 0.28328, 0.44091, 0.36488/)
     
@@ -561,9 +520,9 @@ module modis_surface
 !    aero_sr470(16,:) = (/-999.000,6.22824,6.43915,5.62537/)
 !    aero_sr650(16,:) = (/-999.000,9.71739,9.57229,8.67115/)
 
-!		-- Pune, India urban areas
-		aero_sites(17)	 = 'Pune'
-		aero_types(17)   = 4
+!        -- Pune, India urban areas
+    aero_sites(17) = 'Pune'
+    aero_types(17)   = 4
     aero_zones(17)   = 19
     aero_elev(17)    = 559
     aero_sr412(17,:) = (/4.49376,6.22264,4.81305,7.31305/)  
@@ -572,9 +531,9 @@ module modis_surface
     aero_bgaod(17,:) = (/0.20400, 0.16400, 0.07500, 0.17100/)
 !    aero_bgaod(17,:) = (/0.14888, 0.21124, 0.27165, 0.19066/)
     
-!		-- Evora, Spain
-		aero_sites(18)	 = 'Evora'
-		aero_types(18)   = 3
+!        -- Evora, Spain
+        aero_sites(18)     = 'Evora'
+        aero_types(18)   = 3
     aero_zones(18)   = 22
     aero_elev(18)    = 293
     aero_sr412(18,:) = (/4.95347,4.48004,4.75238,5.64016/)    
@@ -583,9 +542,9 @@ module modis_surface
     aero_bgaod(18,:) = (/0.01900, 0.03400, 0.02600, 0.02500/)
 !    aero_bgaod(18,:) = (/0.03544, 0.06548, 0.09886, 0.05251/)
 
-!		-- Blida, N. Africa
-		aero_sites(19)	 = 'Blida'
-		aero_types(19)   = 3
+!        -- Blida, N. Africa
+        aero_sites(19)     = 'Blida'
+        aero_types(19)   = 3
     aero_zones(19)   = -1 !2
     aero_elev(19)    = 230
     aero_sr412(19,:) = (/-999.000,5.20722,5.84409,-999.000/)    
@@ -594,9 +553,9 @@ module modis_surface
     aero_bgaod(19,:) = (/0.04400, 0.04900, 0.07700, 0.05800/)
 !    aero_bgaod(19,:) = (/0.07116, 0.10362, 0.15463, 0.09386/)
 
-!		-- Blida, N. Africa
-		aero_sites(20)	 = 'Blida_High'
-		aero_types(20)   = 3
+!        -- Blida, N. Africa
+        aero_sites(20)     = 'Blida_High'
+        aero_types(20)   = 3
     aero_zones(20)   = -1 !2
     aero_elev(20)    = 600
     aero_sr412(20,:) = (/-999.000,5.20722,5.84409,-999.000/)    
@@ -717,68 +676,50 @@ module modis_surface
 !    aero_bgaod(30,:) = (/0.05629, 0.12101, 0.13732, 0.07340/)
 
 !   -- read in base BRDF reflectivitiy @ 650nm from infile.
-    inquire(file=trim(brdffile), exist=file_exists, iostat=status)
-    if (status /= 0) then
-      print *, "ERROR: Unable to inquire about BRDF base file: ", status
-      return
-    end if
-    if (file_exists .eqv. .false.) then
-      print *, "ERROR: BRDF base file does not exist. Please check the config file."
-      status = -1
-      return
-    end if
-   
     allocate(brdf650(3600,1800), stat=status)
     if (status /= 0) then
       print *, "ERROR: Unable to allocate array for BRDF base data: ", status
       return
     end if
-    
-! 	--open and read      
-		sd_id = sfstart(brdffile, DFACC_READ)
-    if (sd_id == -1 ) then
-    	print *,"ERROR: failed to start SDS interface on BRDF file: ", sd_id
-      status = sd_id
-      return
+
+   brdffile cfg%db_nc4
+    status = nf90_open(brdffile, nf90_nowrite, nc_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
+        return
     end if
 
-    sds_name = 'brdf_base_650'
-    sds_index = sfn2index(sd_id, sds_name)
-    if (sds_index == -1) then
-      print *, "ERROR: Unable to find index of "//trim(sds_name)//" SDS: ", sds_index
-      status = sds_index
-      return
+    group_name = 'brdfbase'
+    status = nf90_inq_ncid(nc_id, group_name, grp_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
+        return
     end if
-    sds_id = sfselect(sd_id, sds_index)
-    if (sds_id == -1) then
-      print *, "ERROR: Unable to select "//trim(sds_name)//" SDS: ", sds_id
-      status = sds_id 
-      return
+
+    dset_name = 'brdf_base_650'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
     end if
     
-    start2  = (/0,0/)
+    start2  = (/1,1/)
     stride2 = (/1,1/)
     edges2  = (/3600,1800/)
-    status = sfrdata(sds_id, start2, stride2, edges2, brdf650)
-    if (status == FAIL) then
-      print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
-      return
+    status = nf90_get_var(grp_id, dset_id, brdf650, start=start2, &
+                          stride=stride2, count=edges2)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
     end if
-    
-    status = sfendacc(sds_id)
-    if (status == FAIL) then
-      print *, "ERROR: Unable to end access to "//trim(sds_name)//" SDS: ", status
-      return
-    end if
-    
-    status = sfend(sd_id)
-    if (status /= 0) then
-      print *, "ERROR: Unable to close base BRDF file: ", status
-      return
+
+    status = nf90_close(nc_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to close lut_nc4 file: ", status
+        return
     end if
     
     return
-  
   end function load_brdf
 
 ! -- deallocate brdf650 array and AERONET site and surface reflectivity variables.
@@ -838,7 +779,7 @@ module modis_surface
     real                      ::  refsr650
     integer                   ::  ilat, ilon
     integer                   ::  m
-    integer                   ::  fillcnt,min_flag
+    integer                   ::  fillcnt
     
     character(len=255)                  ::  asite
     real, dimension(:), allocatable     ::  maero412, maero470, maero650
@@ -861,7 +802,6 @@ module modis_surface
     real                  ::  v_sr412, v_sr488, v_sr670  
       
     dflag = .false.
-    min_flag  = 0
     if (present(debug)) then
       dflag = debug
     end if
@@ -907,31 +847,31 @@ module modis_surface
       m = count(aero_zones == gzone .AND. (elev < 500 .EQV. aero_elev < 500))
     end if
     
-!		-- create exception for Fresno Valley, Australia, tropical Sahel, Mexico_City - match by region only.
-		if (gzone == 18 .OR. gzone == 12 .OR. (gzone == 26 .OR. gzone == 27) .OR. gzone == 29) then
-			m = count(aero_zones == gzone)
-		end if
+!        -- create exception for Fresno Valley, Australia, tropical Sahel, Mexico_City - match by region only.
+        if (gzone == 18 .OR. gzone == 12 .OR. (gzone == 26 .OR. gzone == 27) .OR. gzone == 29) then
+            m = count(aero_zones == gzone)
+        end if
 
-!		-- create exception for high elevation Tibet/China zone - match by region only.
-		if (gzone == 28) then
-			  m = count(aero_zones == gzone)
-		end if
+!        -- create exception for high elevation Tibet/China zone - match by region only.
+        if (gzone == 28) then
+              m = count(aero_zones == gzone)
+        end if
 
-!		-- create exception for Jaipur zone - match by region only.
-		if (gzone == 20) then
-			  m = count(aero_zones == gzone)
-		end if
-		
-		!		-- create exception for NW_India_Desert zone - match by region only.
-		if (gzone == 30) then
-			  m = count(aero_zones == gzone)
-		end if
-		
-!		-- create exception for Pune - match by region only.		
-		if (gzone == 19) then
-			m = count(aero_zones == gzone)
-		end if
-		
+!        -- create exception for Jaipur zone - match by region only.
+        if (gzone == 20) then
+              m = count(aero_zones == gzone)
+        end if
+
+        !        -- create exception for NW_India_Desert zone - match by region only.
+        if (gzone == 30) then
+              m = count(aero_zones == gzone)
+        end if
+
+!        -- create exception for Pune - match by region only.
+        if (gzone == 19) then
+            m = count(aero_zones == gzone)
+        end if
+
 !   -- create exception for Kanpur - match by region only, 9 January 2018 JLee
     if (gzone == 15) then
       m = count(aero_zones == gzone)
@@ -964,9 +904,10 @@ module modis_surface
       if (allocated(mbgaod)) deallocate(mbgaod, stat=status)
       if (allocated(msiteindx)) deallocate(msiteindx, stat=status)
       if (allocated(sorted)) deallocate(sorted, stat=status)
-      allocate(maero412(m), maero470(m), maero650(m), mbgaod(m), msiteindx(m), sorted(m), stat=status)
+      allocate(maero412(m), maero470(m), maero650(m), mbgaod(m), msiteindx(m), &
+                sorted(m), stat=status)
       if (status /= 0) then
-        print *, "ERROR: Failed to allocate AERONET 650 SR match arrays: ", status
+        print *,"ERROR: Failed to allocate AERONET 650 SR match arrays: ",status
         return
       end if
       
@@ -990,10 +931,10 @@ module modis_surface
               end if
             end if
           
-          case (18, 12, 20, 26, 27, 28, 29, 30, 31)						! Fresno Valley, only match by region
-          	if (aero_zones(i) == gzone) then
-          		cnt = cnt + 1
-          		maero412(cnt) = aero_sr412(i,season)
+          case (18, 12, 20, 26, 27, 28, 29, 30, 31)                        ! Fresno Valley, only match by region
+              if (aero_zones(i) == gzone) then
+                  cnt = cnt + 1
+                  maero412(cnt) = aero_sr412(i,season)
               maero470(cnt) = aero_sr470(i,season)
               maero650(cnt) = aero_sr650(i,3)        ! < -- always use summer for 650nm to match refsr650
               mbgaod(cnt)   = aero_bgaod(i,season)
@@ -1005,10 +946,10 @@ module modis_surface
               end if
             end if
             
-          case (15, 19)						! Pune, only match by region, added Kanpur and India high elevation 31 January 2018 JLee
-          	if (aero_zones(i) == gzone) then
-          		cnt = cnt + 1
-          		maero412(cnt) = aero_sr412(i,season)
+          case (15, 19)                        ! Pune, only match by region, added Kanpur and India high elevation 31 January 2018 JLee
+              if (aero_zones(i) == gzone) then
+                  cnt = cnt + 1
+                  maero412(cnt) = aero_sr412(i,season)
               maero470(cnt) = aero_sr470(i,season)
               maero650(cnt) = aero_sr650(i,3)        ! < -- always use summer for 650nm to match refsr650
               mbgaod(cnt)   = aero_bgaod(i,season)
@@ -1061,7 +1002,7 @@ module modis_surface
           if (refsr650 >= maero650(sorted(i)) .AND. refsr650 < maero650(sorted(i+1))) then
             ii = sorted(i)
             asite = aero_sites(msiteindx(ii))
-            status = get_aeronet_brdf_sr(trim(asite), month, ra, sa, vza, ndvi, stdv, ab412,  &
+            status = get_aeronet_brdf_sr(asite, month, ra, sa, vza, ndvi, stdv, ab412,  &
             &                            ab470, ab650, ac412, ac470, ac650, use_alternate_brdf, debug=dflag)
             if (status /= 0) then
               print *, "ERROR: Failed to get BRDF-corrected SR from AERONET site: ", trim(asite), status
@@ -1073,7 +1014,7 @@ module modis_surface
             
             jj = sorted(i+1)
             asite = aero_sites(msiteindx(jj))
-            status = get_aeronet_brdf_sr(trim(asite), month, ra, sa, vza, ndvi, stdv, ab412,  &
+            status = get_aeronet_brdf_sr(asite, month, ra, sa, vza, ndvi, stdv, ab412,  &
             &                            ab470, ab650, ac412, ac470, ac650, use_alternate_brdf, debug=dflag)
             if (status /= 0) then
               print *, "ERROR: Failed to get BRDF-corrected SR from AERONET site: ", trim(asite), status
@@ -1131,7 +1072,7 @@ module modis_surface
         end if
   
         asite = aero_sites(msiteindx(ii))
-        status = get_aeronet_brdf_sr(trim(asite), month, ra, sa, vza, ndvi, stdv, ab412, ab470, &
+        status = get_aeronet_brdf_sr(asite, month, ra, sa, vza, ndvi, stdv, ab412, ab470, &
         &                             ab650, ac412, ac470, ac650, use_alternate_brdf, debug=dflag)
         if (status /= 0) then
           print *, "ERROR: Failed ot get BRDF-corrected SR from AERONET site, single: ", trim(asite), status
@@ -1241,22 +1182,22 @@ module modis_surface
     sr412 = -999.0
     sr470 = -999.0
     sr650 = -999.0     
-	  sr412 = get_LER412(ilat, ilon, ndvi, sa, ra, min_flag)    !get_viirs_modisbrdf_LER* ->get_LER*
-	  sr470 = get_LER470(ilat, ilon, ndvi, sa, ra, min_flag)    !7.5.2017 W.Kim
-	  sr650 = get_LER650(ilat, ilon, ndvi, sa, ra, min_flag)    
+      sr412 = get_LER412(ilat, ilon, ndvi, sa, ra)    !get_viirs_modisbrdf_LER* ->get_LER*
+      sr470 = get_LER470(ilat, ilon, ndvi, sa, ra)    !7.5.2017 W.Kim
+      sr650 = get_LER650(ilat, ilon, ndvi, sa, ra)
 
-			
-			if (dflag) then
-!			  print '(A,A,14(F10.4))', trim(func_name), "lat, lon: ", lat, lon
-!			  print '(A,A,3(F10.4))', trim(func_name), "MBSR412, MBSR470, MBSR650: ", mb_sr412, mb_sr470, mb_sr650
-!			  print '(A,A,3(F10.4))', trim(func_name), "MSR412, MSR470, MSR650: ", get_modis_LER412(ilat,ilon), &
-!			  & get_modis_LER470(ilat,ilon), get_modis_LER650(ilat,ilon)
-!			  print '(A,A,3(F10.4))', trim(func_name), "VSR412, VSR488, VSR670: ", get_viirs_LER412(ilat,ilon), &
-!			  & get_viirs_LER488(ilat,ilon), get_viirs_LER670(ilat,ilon)
-			  print '(A,A,3(F10.4))', trim(func_name), "final SR412, SR470, SR650: ", sr412, sr470, sr650
-			end if
-			
-			status = 1
+
+            if (dflag) then
+!              print '(A,A,14(F10.4))', trim(func_name), "lat, lon: ", lat, lon
+!              print '(A,A,3(F10.4))', trim(func_name), "MBSR412, MBSR470, MBSR650: ", mb_sr412, mb_sr470, mb_sr650
+!              print '(A,A,3(F10.4))', trim(func_name), "MSR412, MSR470, MSR650: ", get_modis_LER412(ilat,ilon), &
+!              & get_modis_LER470(ilat,ilon), get_modis_LER650(ilat,ilon)
+!              print '(A,A,3(F10.4))', trim(func_name), "VSR412, VSR488, VSR670: ", get_viirs_LER412(ilat,ilon), &
+!              & get_viirs_LER488(ilat,ilon), get_viirs_LER670(ilat,ilon)
+              print '(A,A,3(F10.4))', trim(func_name), "final SR412, SR470, SR650: ", sr412, sr470, sr650
+            end if
+
+            status = 1
     end if
     
 !   -- final check
@@ -1285,7 +1226,7 @@ module modis_surface
     
     integer, parameter                  ::  ndegs = 4
     
-    character(len=*), intent(in)        ::  aero_site
+    character(len=255), intent(in)        ::  aero_site
     integer, intent(in)                 ::  month
     real, intent(in)                    ::  raa
     real, intent(in)                    ::  sca
@@ -1356,11 +1297,11 @@ module modis_surface
       case ("Banizoumbou")
         select case (season)
           case (1)
-	    if(ndvi >= 0.15) then
+        if(ndvi >= 0.15) then
               co470 = (/1.02169058e01, 4.243027e-02, 1.54773501e-04, 0.0/)
               co412 = (/6.56567239, 1.46437509e-02, 0.0, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-	    else
+        else
               co412 = (/5.05991244, 4.90682739e-02,0.0,0.0/)
               co470 = (/9.33658552, 7.10523577e-02, -2.60069034e-05,0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -1470,19 +1411,19 @@ module modis_surface
         select case (season)
           case (1)
             if (ndvi >= 0.2) then
-	      co412 = (/3.63552866, 3.80334634e-2, 0.0, 0.0/)
-	      co470 = (/7.1468792, 4.90084709e-2, -5.8487537e-4, 2.65330779e-5/)
-	      co650 = (/0.0, 0.0, 0.0, 0.0/)
-	    else
-	      co412 = (/3.50830056, 4.45759847e-2, 0.0, 0.0/)
-	      co470 = (/7.2185198, 7.14231475e-2, 0.0, 0.0/)
-	      co650 = (/0.0, 0.0, 0.0, 0.0/)
-	    end if
+          co412 = (/3.63552866, 3.80334634e-2, 0.0, 0.0/)
+          co470 = (/7.1468792, 4.90084709e-2, -5.8487537e-4, 2.65330779e-5/)
+          co650 = (/0.0, 0.0, 0.0, 0.0/)
+        else
+          co412 = (/3.50830056, 4.45759847e-2, 0.0, 0.0/)
+          co470 = (/7.2185198, 7.14231475e-2, 0.0, 0.0/)
+          co650 = (/0.0, 0.0, 0.0, 0.0/)
+        end if
           case (2)
-            if(ndvi >= 0.18) then					
-	      co412 = (/8.03123187, 6.31014685e-2, -3.03999188e-4, 0.0/)
-	      co470 = (/8.00850678, 5.36508158e-2, 0.0, 0.0/)
-	      co650 = (/0.0, 0.0, 0.0, 0.0/)
+            if(ndvi >= 0.18) then
+          co412 = (/8.03123187, 6.31014685e-2, -3.03999188e-4, 0.0/)
+          co470 = (/8.00850678, 5.36508158e-2, 0.0, 0.0/)
+          co650 = (/0.0, 0.0, 0.0, 0.0/)
             else
               co412 = (/4.78540468, 4.53379041e-2, 0.0, 0.0/)
               co470 = (/8.55690294, 6.26426162e-2, 0.0, 0.0/)
@@ -1683,7 +1624,7 @@ module modis_surface
             return
         end select
         
-    	!     ------------------------------------
+        !     ------------------------------------
       case ("Fresno_GZ18")
         select case (season)
           case (1)
@@ -1756,9 +1697,9 @@ module modis_surface
         if (fwd_scat) then                      ! forward scattering
           select case (season)
             case (1)
-							co412 = (/4.79872574, -1.56512429e-02, -1.23860221e-03, 5.84017625e-05/)
-							co470 = (/8.05072532, 1.61294620e-02, -6.57200682e-04, 4.10211916e-05/)
-							co650 = (/0.0, 0.0, 0.0, 0.0/)
+                            co412 = (/4.79872574, -1.56512429e-02, -1.23860221e-03, 5.84017625e-05/)
+                            co470 = (/8.05072532, 1.61294620e-02, -6.57200682e-04, 4.10211916e-05/)
+                            co650 = (/0.0, 0.0, 0.0, 0.0/)
             case (2)
               co412 = (/5.34279489, 2.40838594e-03, 0.0, 0.0/)
               co470 = (/8.28211141, 2.88113903e-02, 0.0, 0.0/)
@@ -1783,7 +1724,7 @@ module modis_surface
                 co470 = (/6.89540010, 3.44825524e-02, 4.25223284e-04, 0.0/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
               else
-              	co412 = (/4.68551647, 3.37375535e-03, 3.28094666e-04, 0.0/)
+                  co412 = (/4.68551647, 3.37375535e-03, 3.28094666e-04, 0.0/)
                 co470 = (/7.97076041, 4.07903024e-02, 0.0, 0.0/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
               end if
@@ -1794,45 +1735,45 @@ module modis_surface
           end select
         
         else                                      ! backward scattering
-					select case (season)
-						case (1)
-							co412 = (/4.79872574, -1.56512429e-02, -1.23860221e-03, 5.84017625e-05/)
-							co470 = (/8.05072532, 1.61294620e-02, -6.57200682e-04, 4.10211916e-05/)
-							co650 = (/0.0, 0.0, 0.0, 0.0/)
-						case (2)
-							co412 = (/5.31125838, 1.14257083e-02, 0.0, 0.0/)
-							co470 = (/8.30402936, 4.22170099e-02, 0.0, 0.0/)
-							co650 = (/0.0, 0.0, 0.0, 0.0/)
-						case (3)
-							if (ndvi >= 0.24) then
-								co412 = (/3.26738286, 4.36827818e-02, -1.55895303e-04, -1.20224162e-05/)
-								co470 = (/5.03384478, 7.29893383e-02, 1.31678743e-03, -4.31578699e-05/)
-								co650 = (/0.0, 0.0, 0.0, 0.0/)
-							else
-								co412 = (/4.49283427, 4.04848382e-05, -3.09039795e-04, 1.65524662e-05/)
-								co470 = (/7.34716100, 4.10633137e-02, 2.51289909e-04, -3.32283482e-06/)
-								co650 = (/0.0, 0.0, 0.0, 0.0/)
-							end if
-						case (4)
-							if (ndvi >= 0.21) then
-								co412 = (/3.21406439, 2.84017859e-02, 2.25979209e-04, -1.35954941e-05/)
-								co470 = (/5.32086992, 5.10973584e-02, 1.23563583e-03, -3.14731061e-05/)
-								co650 = (/0.0, 0.0, 0.0, 0.0/)
-							else if (ndvi >= 0.18) then
-								co412 = (/4.03496081, -1.16119226e-02, -4.21409772e-04, 3.26077680e-05/)
-								co470 = (/6.89540010, 3.44825524e-02, 4.25223284e-04, 0.0/)
-								co650 = (/0.0, 0.0, 0.0, 0.0/)
-							else
-								co412 = (/4.68551647, 3.37375535e-03, 3.28094666e-04, 0.0/)
-								co470 = (/7.97076041, 4.07903024e-02, 0.0, 0.0/)
-								co650 = (/0.0, 0.0, 0.0, 0.0/)
-							end if
-						case default
-							print *, "ERROR: Invalid season specified: ", season
-							status = -1
-							return
-					end select
-      	end if
+                    select case (season)
+                        case (1)
+                            co412 = (/4.79872574, -1.56512429e-02, -1.23860221e-03, 5.84017625e-05/)
+                            co470 = (/8.05072532, 1.61294620e-02, -6.57200682e-04, 4.10211916e-05/)
+                            co650 = (/0.0, 0.0, 0.0, 0.0/)
+                        case (2)
+                            co412 = (/5.31125838, 1.14257083e-02, 0.0, 0.0/)
+                            co470 = (/8.30402936, 4.22170099e-02, 0.0, 0.0/)
+                            co650 = (/0.0, 0.0, 0.0, 0.0/)
+                        case (3)
+                            if (ndvi >= 0.24) then
+                                co412 = (/3.26738286, 4.36827818e-02, -1.55895303e-04, -1.20224162e-05/)
+                                co470 = (/5.03384478, 7.29893383e-02, 1.31678743e-03, -4.31578699e-05/)
+                                co650 = (/0.0, 0.0, 0.0, 0.0/)
+                            else
+                                co412 = (/4.49283427, 4.04848382e-05, -3.09039795e-04, 1.65524662e-05/)
+                                co470 = (/7.34716100, 4.10633137e-02, 2.51289909e-04, -3.32283482e-06/)
+                                co650 = (/0.0, 0.0, 0.0, 0.0/)
+                            end if
+                        case (4)
+                            if (ndvi >= 0.21) then
+                                co412 = (/3.21406439, 2.84017859e-02, 2.25979209e-04, -1.35954941e-05/)
+                                co470 = (/5.32086992, 5.10973584e-02, 1.23563583e-03, -3.14731061e-05/)
+                                co650 = (/0.0, 0.0, 0.0, 0.0/)
+                            else if (ndvi >= 0.18) then
+                                co412 = (/4.03496081, -1.16119226e-02, -4.21409772e-04, 3.26077680e-05/)
+                                co470 = (/6.89540010, 3.44825524e-02, 4.25223284e-04, 0.0/)
+                                co650 = (/0.0, 0.0, 0.0, 0.0/)
+                            else
+                                co412 = (/4.68551647, 3.37375535e-03, 3.28094666e-04, 0.0/)
+                                co470 = (/7.97076041, 4.07903024e-02, 0.0, 0.0/)
+                                co650 = (/0.0, 0.0, 0.0, 0.0/)
+                            end if
+                        case default
+                            print *, "ERROR: Invalid season specified: ", season
+                            status = -1
+                            return
+                    end select
+          end if
         
 !     ------------------------------------
       case ("Tinga_Tingana")
@@ -1957,7 +1898,7 @@ module modis_surface
               co412 = (/5.34520098, 3.28317599e-2, 3.17897070e-4, 0.0/)
               co470 = (/6.08505785, 5.89311646e-2, 2.59308378e-4, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-	          end if
+              end if
           case (3)
             co412 = (/4.41373796, 2.74747266e-2, -9.0896914e-5, 0.0/)
             co470 = (/4.84420545, 4.30808241e-2, -5.4624034e-5, 0.0/)
@@ -2499,7 +2440,7 @@ module modis_surface
       else                                      ! backward scattering
         select case (season)
           case (1)
-						if (ndvi >= 0.54) then
+                        if (ndvi >= 0.54) then
               co412 = (/1.8666770, 0.026571400, 0.0, 0.0/)
               co470 = (/3.24662224, 2.49647745e-02, 0.0, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -3322,12 +3263,12 @@ module modis_surface
         &       aot470_91, aot470_92, aot470_93, aot470_94, aot470_95, aot470_96, aot470_995, &
         &       aot412_91_dust, aot412_93_dust, aot412_94_dust, aot412_96_dust, aot412_995_dust, &
         &       aot470_91_dust, aot470_92_dust, aot470_93_dust, aot470_94_dust, aot470_95_dust, &
-        &       aot470_96_dust, aot470_995_dust, ae, status, debug,platform) result(aot500)
+        &       aot470_96_dust, aot470_995_dust, ae, status, debug) result(aot500)
 
     implicit none
     
     character(len=20), parameter  ::  func_name = "get_aot500"
-    character(len=*), intent(in)           ::  platform        
+            
     real, intent(in)          ::  lat
     real, intent(in)          ::  lon
     real, intent(in)          ::  elev            ! -- surface elevation
@@ -3388,10 +3329,10 @@ module modis_surface
       m = count(aero_zones == gzone .AND. (elev < 500 .EQV. aero_elev < 500))
     end if
     
-!		-- create exception for Fresno Valley, Australia - match by region only.
-		if (gzone == 18 .OR. gzone == 12 .OR. (gzone == 26 .OR. gzone == 27) .OR. gzone == 29) then
-			m = count(aero_zones == gzone)
-		end if
+!        -- create exception for Fresno Valley, Australia - match by region only.
+        if (gzone == 18 .OR. gzone == 12 .OR. (gzone == 26 .OR. gzone == 27) .OR. gzone == 29) then
+            m = count(aero_zones == gzone)
+        end if
 
 !   -- create exception for high elevation Tibet/China zone - match by region
 !   only.
@@ -3439,7 +3380,8 @@ module modis_surface
       if (allocated(maero650)) deallocate(maero650, stat=status)
       if (allocated(msiteindx)) deallocate(msiteindx, stat=status)
       if (allocated(sorted)) deallocate(sorted, stat=status)
-      allocate(maero412(m), maero470(m), maero650(m), msiteindx(m), sorted(m), stat=status)
+      allocate(maero412(m), maero470(m), maero650(m), msiteindx(m), &
+               sorted(m), stat=status)
       if (status /= 0) then
         print *, "ERROR: Failed to allocate AERONET 650 SR match arrays: ", status
         return
@@ -3464,10 +3406,10 @@ module modis_surface
                 &  maero412(cnt), maero470(cnt), maero650(cnt)
               end if
             end if
-          case (18, 12, 20, 26, 27, 28, 29, 30, 31)						! Fresno Valley, Australia, only match by region
-          	if (aero_zones(i) == gzone) then
-          		cnt = cnt + 1
-          		maero412(cnt) = aero_sr412(i,season)
+          case (18, 12, 20, 26, 27, 28, 29, 30, 31)                        ! Fresno Valley, Australia, only match by region
+              if (aero_zones(i) == gzone) then
+                  cnt = cnt + 1
+                  maero412(cnt) = aero_sr412(i,season)
               maero470(cnt) = aero_sr470(i,season)
               maero650(cnt) = aero_sr650(i,3)        ! < -- always use summer for 650nm to match refsr650
               msiteindx(cnt) = i
@@ -3478,9 +3420,9 @@ module modis_surface
               end if
             end if
           case (15, 19)          ! Pune, only match by region, added Kanpur and India high elevation 31 January 2018 JLee
-          	if (aero_zones(i) == gzone) then
-          		cnt = cnt + 1
-          		maero412(cnt) = aero_sr412(i,season)
+              if (aero_zones(i) == gzone) then
+                  cnt = cnt + 1
+                  maero412(cnt) = aero_sr412(i,season)
               maero470(cnt) = aero_sr470(i,season)
               maero650(cnt) = aero_sr650(i,3)        ! < -- always use summer for 650nm to match refsr650
               msiteindx(cnt) = i
@@ -3492,8 +3434,8 @@ module modis_surface
             end if
           case (1, 5, 10, 13)         ! N. Africa, Solar Villge (Saudi Arabia)
             if (aero_zones(i) == gzone .AND. aero_types(i) == lc_type) then
-          		cnt = cnt + 1
-          		maero412(cnt) = aero_sr412(i,season)
+                  cnt = cnt + 1
+                  maero412(cnt) = aero_sr412(i,season)
               maero470(cnt) = aero_sr470(i,season)
               maero650(cnt) = aero_sr650(i,3)        ! < -- always use summer for 650nm to match refsr650
               msiteindx(cnt) = i
@@ -3529,12 +3471,12 @@ module modis_surface
           if (refsr650 >= maero650(sorted(i)) .AND. refsr650 < maero650(sorted(i+1))) then
             ii = sorted(i)
             asite = aero_sites(msiteindx(ii))
-            aot500_1 = get_aeronet_aot500(trim(asite), lat, lon, sa, season, ndvi, stdv02, &
+            aot500_1 = get_aeronet_aot500(asite, lat, lon, sa, season, ndvi, stdv02, &
             &          aot412_91, aot412_93, aot412_94, aot412_96, aot412_995, &
             &          aot470_91, aot470_92, aot470_93, aot470_94, aot470_95, aot470_96, aot470_995, &
             &          aot412_91_dust, aot412_93_dust, aot412_94_dust, aot412_96_dust, aot412_995_dust, &
             &          aot470_91_dust, aot470_92_dust, aot470_93_dust, aot470_94_dust, aot470_95_dust, &
-            &          aot470_96_dust, aot470_995_dust, ae, status,platform, debug=dflag)
+            &          aot470_96_dust, aot470_995_dust, ae, status, debug=dflag)
             if (status /= 0) then
               print *, "ERROR: Failed to get AOT@500nm from AERONET site: ", trim(asite), status
               return
@@ -3542,12 +3484,12 @@ module modis_surface
             
             jj = sorted(i+1)
             asite = aero_sites(msiteindx(jj))
-            aot500_2 = get_aeronet_aot500(trim(asite), lat, lon, sa, season, ndvi, stdv02, &
+            aot500_2 = get_aeronet_aot500(asite, lat, lon, sa, season, ndvi, stdv02, &
             &          aot412_91, aot412_93, aot412_94, aot412_96, aot412_995, &
             &          aot470_91, aot470_92, aot470_93, aot470_94, aot470_95, aot470_96, aot470_995, &
             &          aot412_91_dust, aot412_93_dust, aot412_94_dust, aot412_96_dust, aot412_995_dust, &
             &          aot470_91_dust, aot470_92_dust, aot470_93_dust, aot470_94_dust, aot470_95_dust, &
-            &          aot470_96_dust, aot470_995_dust, ae, status,platform, debug=dflag)     
+            &          aot470_96_dust, aot470_995_dust, ae, status, debug=dflag)     
             if (status /= 0) then
               print *, "ERROR: Failed to get AOT@500nm from AERONET site: ", trim(asite), status
               return
@@ -3582,12 +3524,12 @@ module modis_surface
         end if
   
         asite = aero_sites(msiteindx(ii))
-        aot500 = get_aeronet_aot500(trim(asite), lat, lon, sa, season, ndvi, stdv02, &
+        aot500 = get_aeronet_aot500( asite, lat, lon, sa, season, ndvi, stdv02, &
         &          aot412_91, aot412_93, aot412_94, aot412_96, aot412_995, &
         &          aot470_91, aot470_92, aot470_93, aot470_94, aot470_95, aot470_96, aot470_995, &
         &          aot412_91_dust, aot412_93_dust, aot412_94_dust, aot412_96_dust, aot412_995_dust, &
         &          aot470_91_dust, aot470_92_dust, aot470_93_dust, aot470_94_dust, aot470_95_dust, &
-        &          aot470_96_dust, aot470_995_dust, ae, status, platform,debug=dflag)
+        &          aot470_96_dust, aot470_995_dust, ae, status, debug=dflag)
         if (status /= 0) then
           print *, "ERROR: Failed to get AOT at 500nm over AERONET site, single: ", trim(asite), status
           return
@@ -3622,13 +3564,13 @@ module modis_surface
         &       aot470_91, aot470_92, aot470_93, aot470_94, aot470_95, aot470_96, aot470_995, &
         &       aot412_91_dust, aot412_93_dust, aot412_94_dust, aot412_96_dust, aot412_995_dust, &
         &       aot470_91_dust, aot470_92_dust, aot470_93_dust, aot470_94_dust, aot470_95_dust, &
-        &       aot470_96_dust, aot470_995_dust, ae, status,platform, debug) result(aot500)
+        &       aot470_96_dust, aot470_995_dust, ae, status, debug) result(aot500)
 
     implicit none
     
     character(len=20), parameter            ::  func_name = "get_aeronet_aot500"
-    character(len=*), intent(in)            ::  platform
-    character(len=*), intent(in)            ::  aero_site
+    
+    character(len=255), intent(in)            ::  aero_site
     real, intent(in)                        ::  sca           ! scattering angle
     real, intent(in)                        ::  lat, lon
     integer, intent(in)                     ::  season
@@ -3802,7 +3744,7 @@ module modis_surface
 !         -- spring
           case (2)
             aot500 = aot412_93
-	          !if (ndvi >= 0.12) then
+              !if (ndvi >= 0.12) then
             !  aot500 = aot470_94
             !end if 
 !         -- summer
@@ -3837,7 +3779,6 @@ module modis_surface
 !         -- winter
           case (1)
             aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
             if (lon > 85) then !Dhaka University needs more absorbing aerosol model, longitudinal dependence for smooth transition
               if (lon < 90) then
                 model_frac2 = 1.0-(lon-85.0)/5.0
@@ -3853,13 +3794,11 @@ module modis_surface
                 model_frac = model_frac2
               end if
               aot500 = aot412_96*model_frac+aot412_94*(1.0-model_frac)
-              if (platform .eq. 'AHI') aot500 = aot470_96*model_frac+aot470_94*(1.0-model_frac)
             endif
 
 !         -- spring
           case (2)
             aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
             if (aot500 < 0.6) then
               model_frac = 1.0
             elseif (aot500 < 1.2) then
@@ -3868,17 +3807,14 @@ module modis_surface
               model_frac = 0.0
             end if
             aot500 = aot412_96*model_frac+aot412_94*(1.0-model_frac)
-            if (platform .eq. 'AHI') aot500 = aot470_96*model_frac+aot470_94*(1.0-model_frac)
-            
+
 !         -- summer
           case (3)
             aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
             
 !         -- fall
           case (4)
             aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
             if (lon > 85) then
               if (lon < 90) then
                 model_frac2 = 1.0-(lon-85.0)/5.0
@@ -3894,7 +3830,6 @@ module modis_surface
                 model_frac = model_frac2
               end if
               aot500 = aot412_96*model_frac+aot412_94*(1.0-model_frac)
-              if (platform .eq. 'AHI') aot500 = aot470_96*model_frac+aot470_94*(1.0-model_frac)
             endif
 
           case default
@@ -3911,10 +3846,8 @@ module modis_surface
           case (1,2,3,4)
             if (aot412_94 < 1.2) then
               aot500 = aot412_995
-              if (platform .eq. 'AHI') aot500 = aot470_995
             else
               aot500 = aot412_94
-              if (platform .eq. 'AHI') aot500 = aot470_94
             end if
 !            aot500 = aot412_995
 !            aot500 = aot412_94
@@ -4003,7 +3936,7 @@ module modis_surface
             
         end select
         
-			case ("Fresno_GZ18") !------------------------------------------------
+            case ("Fresno_GZ18") !------------------------------------------------
         select case (season)
 
 !         -- winter
@@ -4123,12 +4056,10 @@ module modis_surface
             aot500 = aot470_96
           case (2)
             aot500 = aot412_995
-            if (platform .eq. 'AHI') aot500 = aot470_995
           case (3)
             aot500 = aot470_96
           case (4)
             aot500 = aot412_995
-            if (platform .eq. 'AHI') aot500 = aot470_995
           case default
             print *, "ERROR: Invalid season specified: ", season
             status = -1
@@ -4177,7 +4108,6 @@ module modis_surface
           case (1)
             if (ndvi < 0.28) then
               aot500 = aot412_995
-              if (platform .eq. 'AHI') aot500 = aot470_995
             else
               aot500 = aot470_995
             endif
@@ -4187,14 +4117,11 @@ module modis_surface
           
           case(3)
             aot500 = aot412_995
-            if (platform .eq. 'AHI') aot500 = aot470_995
             if (aot412_995 > 0.2) then
               aot500 = aot412_96
-              if (platform .eq. 'AHI') aot500 = aot470_96
             end if
             if (aot412_995 > 0.3) then
               aot500 = aot412_94
-              if (platform .eq. 'AHI') aot500 = aot470_94
             end if
             
           case (4)
@@ -4218,7 +4145,7 @@ module modis_surface
               aot500 = aot470_92
             end if
           case (2,3)
-          	aot500 = aot470_96
+              aot500 = aot470_96
             if (aot412_94 >= 0.4) then
               aot500 = aot470_94
             end if
@@ -4226,7 +4153,7 @@ module modis_surface
               aot500 = aot470_92
             end if
             if (stdv02 > 0.007) then
-            	aot500 = aot470_995
+                aot500 = aot470_995
             end if
           case default
             print *, "ERROR: Invalid season specified: ", season
@@ -4269,17 +4196,14 @@ module modis_surface
           case (2)
             if (ndvi > 0.4) then
               aot500 = aot412_94
-              if (platform .eq. 'AHI') aot500 = aot470_94
             else
               aot500 = (aot470_96 + aot470_995) / 2.0
             end if
           
           case (3)
             aot500 = aot412_995
-            if (platform .eq. 'AHI') aot500 = aot470_995
             if (aot412_995 < 0.2) then
               aot500 = aot412_96
-              if (platform .eq. 'AHI') aot500 = aot470_96
             end if
             
           case (4)  
@@ -4296,16 +4220,13 @@ module modis_surface
           case (1)
             !aot500 = aot470_96
             aot500 = aot412_93
-            if (platform .eq. 'AHI') aot500 = aot470_93
           case (3,4)
             !aot500 = aot470_96
             aot500 = aot412_995
-            if (platform .eq. 'AHI') aot500 = aot470_995
           case (2)
             if(ndvi < 0.3) then
               !aot500 = aot412_94
               aot500 = aot412_96
-              if (platform .eq. 'AHI') aot500 = aot470_96
             else
               aot500 = aot470_96
             end if
@@ -4343,7 +4264,6 @@ module modis_surface
 !         -- winter
           case (1)
             aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
             if (aot500 < 0.5) then 
               model_frac = 1.0
             elseif (aot500 < 1.0) then 
@@ -4352,11 +4272,10 @@ module modis_surface
               model_frac = 0.0
             end if
             aot500 = aot412_96*model_frac+aot412_94*(1.0-model_frac)
-            if (platform .eq. 'AHI') aot500 = aot470_96*model_frac+aot470_94*(1.0-model_frac)
+
 !         -- spring
           case (2)
             aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
             if (aot500 < 0.6) then
               model_frac = 1.0
             elseif (aot500 < 1.2) then
@@ -4365,15 +4284,14 @@ module modis_surface
               model_frac = 0.0
             end if
             aot500 = aot412_96*model_frac+aot412_94*(1.0-model_frac)
-            if (platform .eq. 'AHI') aot500 = aot470_96*model_frac+aot470_94*(1.0-model_frac)
+
 !         -- summer
           case (3)
             aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
+
 !         -- fall
           case (4)
             aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
             if (lon > 85) then
               if (lon < 90) then
                 model_frac2 = 1.0-(lon-85.0)/5.0
@@ -4389,7 +4307,6 @@ module modis_surface
                 model_frac = model_frac2
               end if
               aot500 = aot412_96*model_frac+aot412_94*(1.0-model_frac)
-              if (platform .eq. 'AHI') aot500 = aot470_96*model_frac+aot470_94*(1.0-model_frac)
             endif
            
           case default
@@ -4408,7 +4325,7 @@ module modis_surface
 !         -- spring
           case (2)
             aot500 = aot412_94
-            if (platform .eq. 'AHI') aot500 = aot470_94
+            
 !         -- summer
           case (3)
             aot500 = aot470_995
@@ -4416,8 +4333,7 @@ module modis_surface
 !         -- fall
           case (4)
             aot500 = aot412_995
-            if (platform .eq. 'AHI') aot500 = aot470_995
-						
+
           case default
             print *, "ERROR: Invalid season specified: ", season
             status = -1
@@ -4441,7 +4357,7 @@ module modis_surface
 !         -- fall
           case (4)
             aot500 = aot470_96
-						
+
           case default
             print *, "ERROR: Invalid season specified: ", season
             status = -1
@@ -4465,7 +4381,7 @@ module modis_surface
 !         -- fall
           case (4)
             aot500 = aot470_96
-						
+
           case default
             print *, "ERROR: Invalid season specified: ", season
             status = -1
@@ -4553,9 +4469,9 @@ module modis_surface
             end if
             aot500 = aot412_96*model_frac+aot412_94*(1.0-model_frac)
 
-!	          if (aot412_94 > 0.5) then
-!	            aot500 = aot412_94
-!	          else
+!              if (aot412_94 > 0.5) then
+!                aot500 = aot412_94
+!              else
 !              aot500 = aot412_96
 !            end if 
 
@@ -4646,19 +4562,15 @@ module modis_surface
         select case (season)
           case (1)            
             aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
           
           case (2)
             aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
             
           case(3)
             aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
 
           case (4)
             aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
             
           case default
             print *, "ERROR: Invalid season specified: ", season
@@ -4670,20 +4582,16 @@ module modis_surface
       case ("NW_India_Desert") !----------------------------------------
         select case (season)
           case (1)            
-            aot500 = aot412_94
-            if (platform .eq. 'AHI') aot500 = aot470_94
+              aot500 = aot412_94
           
           case (2)
             aot500 = aot412_94
-            if (platform .eq. 'AHI') aot500 = aot470_94
                         
           case(3)
             aot500 = aot412_94
-            if (platform .eq. 'AHI') aot500 = aot470_94
 
           case (4)
             aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
             
           case default
             print *, "ERROR: Invalid season specified: ", season
@@ -4768,18 +4676,18 @@ module modis_surface
           enddo
        enddo
        LERstart(1) = 10*(180+floor(eastedge)-1)
-       if (LERstart(1) < 0) LERstart(1) = 0
+       if (LERstart(1) .le. 0) LERstart(1) = 1
        dateline = 3600 - LERstart(1)
        LERedge(1) = 10*(180+(floor(westedge)+2)) + dateline
     else
        LERstart(1) = 10*(180+(floor(minval(long, long > -900.0))-1))
-       if (LERstart(1) < 0) LERstart(1) = 0
+       if (LERstart(1) .le. 0) LERstart(1) = 1
        LERedge(1) = 10*(180+(floor(maxval(long, long > -900.0))+2)) - LERstart(1)
        if (LERedge(1)+LERstart(1) > 3600) LERedge(1) = 3600 - LERstart(1)
     endif
     
     LERstart(2) = 10*(90+(floor(minval(lat, lat > -900.0))-1))
-    if (LERstart(2) < 0) LERstart(2) = 0
+    if (LERstart(2) .le. 0) LERstart(2) = 1
     LERedge(2) = 10*(90+(floor(maxval(lat, lat > -900.0))+2)) - LERstart(2)
     if (LERedge(2)+LERstart(2) > 1800) LERedge(2) = 1800 - LERstart(2)
         
@@ -4933,18 +4841,18 @@ module modis_surface
           enddo
        enddo
        LERstart6(1) = (180+(floor(eastedge)-1))/0.06
-       if (LERstart6(1) < 0) LERstart6(1) = 0
+       if (LERstart6(1) .le. 0) LERstart6(1) = 1
        dateline6 = 6000 - LERstart6(1)
        LERedge6(1) = (180+(floor(westedge)+2))/0.06 + dateline6
     else
        LERstart6(1) = (180+(floor(minval(long, long > -900.0))-1))/0.06
-       if (LERstart6(1) < 0) LERstart6(1) = 0
+       if (LERstart6(1) .le. 0) LERstart6(1) = 1
        LERedge6(1) = (180+(floor(maxval(long, long > -900.0))+2))/0.06 - LERstart6(1)
        if (LERedge6(1)+LERstart6(1) > 6000) LERedge6(1) = 6000 - LERstart6(1)
     endif
 
     LERstart6(2) = (90+(floor(minval(lat, lat > -900.0))-1))/0.06
-    if (LERstart6(2) < 0) LERstart6(2) = 0
+    if (LERstart6(2) .le. 0) LERstart6(2) = 1
     LERedge6(2) = (90+(floor(maxval(lat, lat > -900.0))+2))/0.06 - LERstart6(2)
     if (LERedge6(2)+LERstart6(2) > 3000) LERedge6(2) = 3000 - LERstart6(2)
 
@@ -4984,290 +4892,252 @@ module modis_surface
   end function set_limits6
 
 ! -- Load surface LER coefficient tables.
-  integer function load_hdfLER(modis_ler_file, viirs_ler_file, coeffs_file) RESULT(status)
+  integer function load_hdfLER(lut_file, season) RESULT(status)
 
-    include 'hdf.inc'
-    include 'dffunc.inc'
+!   include 'hdf.f90'
+!   include 'dffunc.f90'
+    use netcdf
+    USE OCIUAAER_Config_Module
 
-    character(len=*), intent(in)    ::  modis_ler_file
-    character(len=*), intent(in)    ::  viirs_ler_file
-    character(len=*), intent(in)    ::  coeffs_file
+    character(len=255), intent(in)    ::  lut_file
+    integer, intent(in)               ::  season
 
-    integer             :: start2(2), stride2(2), edge2(2)
-    integer             :: start4(4), stride4(4), edge4(4)
+    integer             :: start2(3), stride2(3), edges2(3)
+    integer             :: start4(5), stride4(5), edge4(5)
       
-    logical             ::  file_exists
+    character(len=255)    ::  sds_name
+    character(len=255)    ::  dset_name
+    character(len=255)    ::  test_name
+    character(len=255)    ::  group_name
 
-    character(len=255)  ::  sds_name
+    integer               ::  nc_id
+    integer               ::  dim_id
+    integer               ::  dset_id
+    integer               ::  grp_id
     integer             ::  sd_id, sds_index, sds_id
 
-    start2 = (/LERstart(1),LERstart(2)/)
-    edge2 = (/LERedge(1),LERedge(2)/)
-    stride2 = (/1,1/)
+    start2 = (/LERstart(1),LERstart(2),season/)
+    edges2 = (/LERedge(1),LERedge(2),1/)
+    stride2 = (/1,1,1/)
       
-    start4 = (/LERstart(1),LERstart(2),0,0/)
-    edge4 = (/LERedge(1),LERedge(2),4,3/)
-    stride4 = (/1,1,1,1/)
-      
-!   --  Inquire to see if files exist
-    inquire(file=trim(trim(coeffs_file)), exist=file_exists, iostat=status)
-    if (status /= 0) then
-      print *, "ERROR: Unable to inquire about LER file: "//trim(coeffs_file)
-      return
-    end if
-    if (file_exists .eqv. .false.) then
-      print *, "ERROR: LER file does not exist. Please check the config file."
-      return
-    end if
-    
-!   -- Open HDF file.      
-    sd_id = sfstart(trim(coeffs_file), DFACC_READ)
-    if (sd_id == FAIL ) then
-      print *, "ERROR: failed to start SDS interface on LER file: "//trim(coeffs_file)
-      return
+    start4 = (/LERstart(1),LERstart(2),1,1,season/)
+    edge4 = (/LERedge(1),LERedge(2),4,3,1/)
+    stride4 = (/1,1,1,1,1/)
+
+    test_name = trim(lut_file)
+    status = nf90_open(test_name, nf90_nowrite, nc_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
+        return
     end if
 
-    !sds_name = "412_fwd_TP"
-    !status = readLER5(start5, edge5, stride5, sds_name, sd_id, coefs412_fwd_tp)
-    !if (status < 0) goto 90
-
-    !sds_name = "412_all_TP"
-    !status = readLER5(start5, edge5, stride5, sds_name, sd_id, coefs412_all_tp)
-    !if (status < 0) goto 90
+    group_name = 'surface_coeffs'
+    status = nf90_inq_ncid(nc_id, group_name, grp_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
+        return
+    end if
 
     sds_name = "412_fwd"
-    status = readLER5(start4, edge4, stride4, sds_name, sd_id, coefs412_fwd)
+    status = readLER5(start4, edge4, stride4, sds_name, grp_id, coefs412_fwd)
     if (status < 0) goto 90
 
     sds_name = "412_all"
-    status = readLER5(start4, edge4, stride4, sds_name, sd_id, coefs412_all)
+    status = readLER5(start4, edge4, stride4, sds_name, grp_id, coefs412_all)
     if (status < 0) goto 90
 
-    !sds_name = "470_fwd_TP"
-    !status = readLER5(start5, edge5, stride5, sds_name, sd_id, coefs470_fwd_tp)
-    !if (status < 0) goto 90
-
-    !sds_name = "470_all_TP"
-    !status = readLER5(start5, edge5, stride5, sds_name, sd_id, coefs470_all_tp)
-    !if (status < 0) goto 90
-
     sds_name = "470_fwd"
-    status = readLER5(start4, edge4, stride4, sds_name, sd_id, coefs470_fwd)
+    status = readLER5(start4, edge4, stride4, sds_name, grp_id, coefs470_fwd)
     if (status < 0) goto 90
 
     sds_name = "470_all"
-    status = readLER5(start4, edge4, stride4, sds_name, sd_id, coefs470_all)
+    status = readLER5(start4, edge4, stride4, sds_name, grp_id, coefs470_all)
     if (status < 0) goto 90
 
-    !sds_name = "650_fwd_TP"
-    !status = readLER5(start5, edge5, stride5, sds_name, sd_id, coefs650_fwd_tp)
-    !if (status < 0) goto 90
-
-    !sds_name = "650_all_TP"
-    !status = readLER5(start5, edge5, stride5, sds_name, sd_id, coefs650_all_tp)
-    !if (status < 0) goto 90
-
     sds_name = "650_fwd"
-    status = readLER5(start4, edge4, stride4, sds_name, sd_id, coefs650_fwd)
+    status = readLER5(start4, edge4, stride4, sds_name, grp_id, coefs650_fwd)
     if (status < 0) goto 90
 
     sds_name = "650_all"
-    status = readLER5(start4, edge4, stride4, sds_name, sd_id, coefs650_all)
+    status = readLER5(start4, edge4, stride4, sds_name, grp_id, coefs650_all)
     if (status < 0) goto 90
 
-    status = sfend(sd_id)
-    if (status /= 0) then
-      print *, "ERROR: Unable to close LER file: "//trim(coeffs_file)
-      return
+    status = nf90_close(nc_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to close lut_nc4 file: ", status
+        return
     end if
 
 !   -- MODIS, all-angle surface database
-    inquire(file=trim(modis_ler_file), exist=file_exists, iostat=status)
-    if (status /= 0) then
-      print *, "ERROR: Unable to inquire about LER file: "//trim(modis_ler_file)
-      return
+    status = nf90_open(trim(lut_file), nf90_nowrite, nc_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
+        return
     end if
-    if (file_exists .eqv. .false.) then
-      print *, "ERROR: LER file does not exist. Please check the config file."
-      return
-    end if
-    
-    ! Open HDF file.      
-    sd_id = sfstart(trim(modis_ler_file), DFACC_READ)
-    if (sd_id == FAIL ) then
-      print *, "ERROR: failed to start SDS interface on LER file: "//trim(modis_ler_file)
-      return
+
+    group_name = 'modis_surface'
+    status = nf90_inq_ncid(nc_id, group_name, grp_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
+        return
     end if
 
     sds_name = "412_all"
-    status = readLER2(start2, edge2, stride2, sds_name, sd_id, gref412_all)
+    status = readLER2(start2, edges2, stride2, sds_name, grp_id, gref412_all)
     if (status < 0) goto 90
 
     sds_name = "412_fwd"
-    status = readLER2(start2, edge2, stride2, sds_name, sd_id, gref412_fwd)
+    status = readLER2(start2, edges2, stride2, sds_name, grp_id, gref412_fwd)
     if (status < 0) goto 90
 
-    !sds_name = "412_bkd"
-    !status = readLER2(start2, edge2, stride2, sds_name, sd_id, gref412_bkd)
-    !if (status < 0) goto 90
-
     sds_name = "470_all"
-    status = readLER2(start2, edge2, stride2, sds_name, sd_id, gref470_all)
+    status = readLER2(start2, edges2, stride2, sds_name, grp_id, gref470_all)
     if (status < 0) goto 90
 
     sds_name = "470_fwd"
-    status = readLER2(start2, edge2, stride2, sds_name, sd_id, gref470_fwd)
+    status = readLER2(start2, edges2, stride2, sds_name, grp_id, gref470_fwd)
     if (status < 0) goto 90
 
-    !sds_name = "470_bkd"
-    !status = readLER2(start2, edge2, stride2, sds_name, sd_id, gref470_bkd)
-    !if (status < 0) goto 90
-
     sds_name = "650_all"
-    status = readLER2(start2, edge2, stride2, sds_name, sd_id, gref650_all)
+    status = readLER2(start2, edges2, stride2, sds_name, grp_id, gref650_all)
     if (status < 0) goto 90
 
     sds_name = "650_fwd"
-    status = readLER2(start2, edge2, stride2, sds_name, sd_id, gref650_fwd)
+    status = readLER2(start2, edges2, stride2, sds_name, grp_id, gref650_fwd)
     if (status < 0) goto 90
-
-    !sds_name = "650_bkd"
-    !status = readLER2(start2, edge2, stride2, sds_name, sd_id, gref650_bkd)
-    !if (status < 0) goto 90
 
     sds_name = "865_all_all"
-    status = readLER2(start2, edge2, stride2, sds_name, sd_id, gref865_all)
+    status = readLER2(start2, edges2, stride2, sds_name, grp_id, gref865_all)
     if (status < 0) goto 90
 
-    status = sfend(sd_id)
-    if (status /= 0) then
-      print *, "ERROR: Unable to close LER file: "//trim(modis_ler_file)
-      return
+    status = nf90_close(nc_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to close lut_nc4 file: ", status
+        return
     end if
 
 !   -- VIIRS, all-angle surface database
-    inquire(file=trim(viirs_ler_file), exist=file_exists, iostat=status)
-    if (status /= 0) then
-      print *, "ERROR: Unable to inquire about VIIRS LER file: "//trim(viirs_ler_file)
-      return
+    status = nf90_open(trim(lut_file), nf90_nowrite, nc_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
+        return
     end if
-    if (file_exists .eqv. .false.) then
-      print *, "ERROR: VIIRS LER file does not exist. Please check the config file."
-      return
-    end if
-        
-!   -- Open file and read in data.      
-    sd_id = sfstart(trim(viirs_ler_file), DFACC_READ)
-    if (sd_id == FAIL ) then
-      print *, "ERROR: failed to start SDS interface on LER file: "//trim(viirs_ler_file)
-      return
+
+    group_name = 'viirs_surface'
+    status = nf90_inq_ncid(nc_id, group_name, grp_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
+        return
     end if
 
     sds_name = "412_all"
-    status = readLER2(start2, edge2, stride2, sds_name, sd_id, vgref412_all)
+    status = readLER2(start2, edges2, stride2, sds_name, grp_id, vgref412_all)
     if (status < 0) goto 90
 
     sds_name = "488_all"
-    status = readLER2(start2, edge2, stride2, sds_name, sd_id, vgref488_all)
+    status = readLER2(start2, edges2, stride2, sds_name, grp_id, vgref488_all)
     if (status < 0) goto 90
     
     sds_name = "670_all"
-    status = readLER2(start2, edge2, stride2, sds_name, sd_id, vgref670_all)
+    status = readLER2(start2, edges2, stride2, sds_name, grp_id, vgref670_all)
     if (status < 0) goto 90
     
-    status = sfend(sd_id)
-    if (status /= 0) then
-      print *, "ERROR: Unable to close LER file: "//trim(viirs_ler_file)
-      return
+    status = nf90_close(nc_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to close lut_nc4 file: ", status
+        return
     end if
     
-
     ! Close up shop and go home
     goto 100
 
 90  continue
-    print *, "Error reading "//trim(sds_name)//" from file "//trim(modis_ler_file)
+    print *, "Error reading "//trim(sds_name)//" from file "//trim(lut_file)
     return
 100 continue
 
   end function load_hdfLER
 
 ! -- Load 2.2 um surface database
-  integer function load_swir_coeffs(file) result(status) !jlee added 05/16/2017
+  integer function load_swir_coeffs(file, season) result(status) !jlee added 05/16/2017
+
+!   include 'hdf.f90'
+!   include 'dffunc.f90'
+    use netcdf
+    USE OCIUAAER_Config_Module
+
     implicit none
 
-    include 'hdf.inc'
-    include 'dffunc.inc'
-
-    character(len=*), intent(in)  ::  file
-
-    logical                             ::  file_exists
+    character(len=255), intent(in)  ::  file
+    integer, intent(in)   ::  season
 
     ! HDF vars
     character(len=255)    ::  sds_name
+    character(len=255)    ::  dset_name
+    character(len=255)    ::  attr_name
+    character(len=255)    ::  group_name
+
+    integer               ::  nc_id
+    integer               ::  dim_id
+    integer               ::  dset_id
+    integer               ::  grp_id
     integer               ::  sd_id, sds_index, sds_id
-    integer, dimension(2) ::  start2, stride2, edge2
-    integer, dimension(3) ::  start3, stride3, edge3
+    integer, dimension(3) ::  start2, stride2, edges2
+    integer, dimension(4) ::  start3, stride3, edges3
 
     status = -1
 
-    start2 = (/LERstart6(1),LERstart6(2)/)
-    edge2 =  (/LERedge6(1),LERedge6(2)/)
-    stride2 =(/1,1/)
+    start2 = (/LERstart6(1),LERstart6(2),season/)
+    edges2 =  (/LERedge6(1),LERedge6(2),1/)
+    stride2 =(/1,1,1/)
 
-    start3 = (/LERstart6(1),LERstart6(2),0/)
-    edge3 =  (/LERedge6(1),LERedge6(2),3/)
-    stride3 =(/1,1,1/)
+    start3 = (/LERstart6(1),LERstart6(2),1,season/)
+    edges3 =  (/LERedge6(1),LERedge6(2),3,1/)
+    stride3 =(/1,1,1,1/)
 
-    inquire(file=trim(file), exist=file_exists, iostat=status)
-    if (status /= 0) then
-      print *, "ERROR: Unable to inquire about 2.2 um surface database file: ", status
-      return
-    end if
-    if (file_exists .eqv. .false.) then
-      print *, "ERROR: 2.2 um surface database file does not exist. Please check the config file."
-      status = -1
-      return
+    file = cfg%db_nc4
+    status = nf90_open(file, nf90_nowrite, nc_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
+        return
     end if
 
-!   Open HDF and output file.
-!---------------------------------------------------------------------------------------------------
-    sd_id = sfstart(file, DFACC_READ)
-    if (sd_id == FAIL ) then
-      print *,"ERROR: failed to start SDS interface on 2.2 um surface database file: ", sd_id
-      status = -1
-      return 
+    group_name = 'swir_vis_surface_coeffs'
+    status = nf90_inq_ncid(nc_id, group_name, grp_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
+        return
     end if
 
     sds_name = 'coeffs_2250_to_412'
-    status = readSWIR3(start3, edge3, stride3, sds_name, sd_id, swir_coeffs412)
+    status = readSWIR3(start3, edges3, stride3, sds_name, grp_id, swir_coeffs412)
     if (status < 0) goto 90
     !============================================================================
     sds_name = 'stderr_412'
-    status = readSWIR2(start2, edge2, stride2, sds_name, sd_id, swir_stderr412)
+    status = readSWIR2(start2, edges2, stride2, sds_name, grp_id, swir_stderr412)
     if (status < 0) goto 90
     !============================================================================
     sds_name = 'coeffs_2250_to_488'
-    status = readSWIR3(start3, edge3, stride3, sds_name, sd_id, swir_coeffs470)
+    status = readSWIR3(start3, edges3, stride3, sds_name, grp_id, swir_coeffs470)
     if (status < 0) goto 90
     !============================================================================
     sds_name = 'stderr_488'
-    status = readSWIR2(start2, edge2, stride2, sds_name, sd_id, swir_stderr470)
+    status = readSWIR2(start2, edges2, stride2, sds_name, grp_id, swir_stderr470)
     if (status < 0) goto 90
     !============================================================================
     sds_name = 'min_2250_for_488'
-    status = readSWIR2(start2, edge2, stride2, sds_name, sd_id, swir_min)
+    status = readSWIR2(start2, edges2, stride2, sds_name, grp_id, swir_min)
     if (status < 0) goto 90
     !============================================================================
     sds_name = 'max_2250_for_488'
-    status = readSWIR2(start2, edge2, stride2, sds_name, sd_id, swir_max)
+    status = readSWIR2(start2, edges2, stride2, sds_name, grp_id, swir_max)
     if (status < 0) goto 90
     !============================================================================
 
-    status = sfend(sd_id)
-    if (status /= 0) then
-      print *, "ERROR: Unable to close swir vs. vis surf coeffs. file: ", status
-      return
+    status = nf90_close(nc_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to close lut_nc4 file: ", status
+        return
     end if
 
     goto 100
@@ -5383,10 +5253,9 @@ module modis_surface
 
 ! -- Retrieve LER412 value from surface reflectivity coefficient table for pixel at
 ! --  latidx, lonidx in table.
-  real function get_LER412(latidx, lonidx, NDVI, scatAngle, relaz,min_flag) RESULT(LER)
+  real function get_LER412(latidx, lonidx, NDVI, scatAngle, relaz) RESULT(LER)
     integer, intent(in) :: latidx, lonidx
     real, intent(in)    :: NDVI, scatAngle, relaz
-    integer, intent(inout) :: min_flag
 
     integer :: i,j,nidx
     real    :: coefs(4), acoefs(4), ncoefs(4), mcoefs(4), tLER
@@ -5459,17 +5328,15 @@ module modis_surface
 
     if (LER < 0.0) then
       LER = tLER
-      min_flag = 1
     endif
 
   end function get_LER412
 
 ! -- Retrieve LER470 value from surface reflectivity coefficient table for pixel at
 ! --  latidx, lonidx in table.
-  real function get_LER470(latidx, lonidx, NDVI, scatAngle, relaz, min_flag) RESULT(LER)
+  real function get_LER470(latidx, lonidx, NDVI, scatAngle, relaz) RESULT(LER)
     integer, intent(in) :: latidx, lonidx
     real, intent(in)    :: NDVI, scatAngle, relaz
-    integer, intent(inout) :: min_flag
 
     integer :: i,j,nidx
     real    :: coefs(4), acoefs(4), ncoefs(4), mcoefs(4), tLER
@@ -5545,17 +5412,15 @@ module modis_surface
 
     if (LER < 0.0) then
       LER = tLER
-      min_flag = 1
     endif
 
   end function get_LER470
 
 ! -- Retrieve LER650 value from surface reflectivity coefficient table for pixel at
 ! --  latidx, lonidx in table.
-  real function get_LER650(latidx, lonidx, NDVI, scatAngle, relaz,min_flag) RESULT(LER)
+  real function get_LER650(latidx, lonidx, NDVI, scatAngle, relaz) RESULT(LER)
     integer, intent(in) :: latidx, lonidx
     real, intent(in)    :: NDVI, scatAngle, relaz
-    integer, intent(inout) :: min_flag
 
     integer :: i,j,nidx
     real    :: coefs(4), acoefs(4), ncoefs(4), mcoefs(4), tLER
@@ -5598,7 +5463,7 @@ module modis_surface
        ncoefs(:) = coefs650_all(i,j,:,nidx)
        !acoefs(:) = coefs650_all(i,j,:,1,1)
        !mcoefs(:) = coefs650_all(i,j,:,1,2)
-	   tLER = vgref670_all(i,j)!if there is no BRDF value, use VIIRS min ref (Jul 2017 W.KIM)
+       tLER = vgref670_all(i,j)!if there is no BRDF value, use VIIRS min ref (Jul 2017 W.KIM)
     endif
 
     !print *,"relaz = ",relaz,NDVI
@@ -5629,86 +5494,87 @@ module modis_surface
 
     if (LER < 0.0) then
       LER = tLER
-      min_flag = 1
     endif
 
   end function get_LER650
 
   ! Read in LER tables
-  integer function readLER2(start, edge, stride, sds_name, sd_id, outref) RESULT(status)
+  integer function readLER2(start, edge, stride, sds_name, grp_id, outref) RESULT(status)
+
+!   include 'hdf.f90'
+!   include 'dffunc.f90'
+    use netcdf
+
     implicit none
     
-    integer, dimension(2), intent(in)   ::  start, edge, stride
-    integer, intent(in)                 ::  sd_id
-    character (len=255), intent(in)     ::  sds_name
+    integer, dimension(3), intent(in)   ::  start, edge, stride
+    integer, intent(in)                 ::  grp_id
     real, intent(out)                   ::  outref(edge(1),edge(2))
 
-    include 'hdf.inc'
-    include 'dffunc.inc'
-
     ! HDF vars
+    character(len=255)    ::  sds_name
+    character(len=255)    ::  dset_name
+    character(len=255)    ::  attr_name
+    character(len=255)    ::  group_name
+
+    integer               ::  nc_id
+    integer               ::  dim_id
+    integer               ::  dset_id
     integer                           ::  sds_index, sds_id 
-    integer, dimension(2)             ::  tmpedge, tmpstart
+    integer, dimension(3)             ::  tmpedge, tmpstart
     real, dimension(:,:), allocatable ::  tmpout
 
-    sds_index = sfn2index(sd_id, sds_name)
-    if (sds_index == FAIL) then
-      print *, "ERROR: Unable to find index of "//trim(sds_name)//" SDS: ", sds_index
-      status = -1
-      return
+    dset_name = sds_name
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
     end if
-    sds_id = sfselect(sd_id, sds_index)
-    if (sds_id == FAIL) then
-      print *, "ERROR: Unable to select "//trim(sds_name)//" SDS: ", sds_id
-      status = -1
-      return
-    end if
-    
+
     if (dateline .eq. 0) then
-      status = sfrdata(sds_id, start, stride, edge, outref)
-      if (status == FAIL) then
-        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
-        status = -1
-        return
-      end if
+        status = nf90_get_var(grp_id, dset_id, outref, start=start, &
+                              stride=stride, count=edge)
+        if (status /= NF90_NOERR) then
+            print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+            return
+        end if
     else
-      ! The granule straddles the dateline, so we need to make an accommodation
-      tmpedge(:) = edge(:)
-      tmpedge(1) = dateline
-      allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
-      if (status /= 0) then
-        print *, "ERROR: Unable to allocate tmpedge: ", status
-        return
-      end if
-      status = sfrdata(sds_id, start, stride, tmpedge, tmpout)
-      if (status == FAIL) then
-        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
-        status = -1
-        return
-      end if
-      outref(1:dateline, :) = tmpout
-      
-      deallocate(tmpout, stat=status)
-      if (status /= 0) then
-        print *, "Failed to deallocate tmpout: ", status
-        return
-      end if
-      
-      
+        ! The granule straddles the dateline, so we need to make an accommodation
+        tmpedge(:) = edge(:)
+        tmpedge(1) = dateline
+        allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
+        if (status /= 0) then
+            print *, "ERROR: Unable to allocate tmpedge: ", status
+            return
+        end if
+        status = nf90_get_var(grp_id, dset_id, tmpout, start=start, &
+                              stride=stride, count=tmpedge)
+        if (status /= NF90_NOERR) then
+            print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+            return
+        end if
+        outref(1:dateline, :) = tmpout
+
+        deallocate(tmpout, stat=status)
+        if (status /= 0) then
+            print *, "Failed to deallocate tmpout: ", status
+            return
+        end if
+
       tmpstart(:) = start(:)
-      tmpstart(1) = 0
+      tmpstart(1) = 1
       tmpedge(1) = edge(1) - dateline
       allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
       if (status /= 0) then
         print *, "ERROR: Unable to allocate tmpedge: ", status
         return
       end if
-      status = sfrdata(sds_id, tmpstart, stride, tmpedge, tmpout)
-      if (status == FAIL) then
-        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
-        status = -1
-        return
-      end if
+        status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
+                              stride=stride, count=tmpedge)
+        if (status /= NF90_NOERR) then
+            print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+            return
+        end if
       outref(dateline+1:edge(1),:) = tmpout
       
       deallocate(tmpout, stat=status)
@@ -5716,231 +5582,218 @@ module modis_surface
         print *, "Failed to deallocate tmpout: ", status
         return
       end if
-      
     end if
     
-    status = sfendacc(sds_id)
-    if (status == FAIL) then
-      print *, "ERROR: Unable to end access to "//trim(sds_name)//" SDS: ", status
-      return
-    end if
-
     return
-
   end function readLER2
 
   ! Read in LER tables
-  integer function readLER5(start, edge, stride, sds_name, sd_id, outref) RESULT(status)
+  integer function readLER5(start, edge, stride, sds_name, grp_id, outref) RESULT(status)
+
+!   include 'hdf.f90'
+!   include 'dffunc.f90'
+    use netcdf
+
     implicit none
     
     integer, dimension(:), intent(in)       ::  start, edge, stride
-    integer, intent(in)                     ::  sd_id
-    character (len=*), intent(in)           ::  sds_name
+    character(len=255), intent(in)          ::  sds_name
+    integer, intent(in)                     ::  grp_id
     real, dimension(:,:,:,:), intent(inout) ::  outref
     
-    include 'hdf.inc'
-    include 'dffunc.inc'
-
     ! HDF vars
+    character(len=255)    ::  dset_name
+
+    integer               ::  nc_id
+    integer               ::  dim_id
+    integer               ::  dset_id
     integer               ::  sds_index, sds_id 
-    integer, dimension(4) ::  tmpedge, tmpstart
+    integer, dimension(5) ::  tmpedge, tmpstart
     real, dimension(:,:,:,:), allocatable ::  tmpout
     character(len=255)    ::  tmp_name
     integer               ::  rank, ntype, nattrs
-    integer, dimension(4) ::  dims
+    integer, dimension(5) ::  dims
     
     status = -1
     
-    sds_index = sfn2index(sd_id, trim(sds_name))
-    if (sds_index == FAIL) then
-      print *, "ERROR: Unable to find index of "//trim(sds_name)//" SDS: ", sds_index
-      status = -1
-      return
-    end if
-
-    sds_id = sfselect(sd_id, sds_index)
-    if (sds_id == FAIL) then
-      print *, "ERROR: Unable to select "//trim(sds_name)//" SDS: ", sds_id
-      status = -1
-      return
+    dset_name = sds_name
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
     end if
     
     if (dateline .eq. 0) then
-      status = sfrdata(sds_id, start, stride, edge, outref)
-      if (status == FAIL) then
-        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
-        status = -1
-        return
-      end if      
+
+        status = nf90_get_var(grp_id, dset_id, outref, start=start, &
+                              stride=stride, count=edge)
+        if (status /= NF90_NOERR) then
+            print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+            return
+        end if
     else
-      ! The granule straddles the dateline, so we need to make an accommodation
-      tmpedge(:) = edge(:)
-      tmpedge(1) = dateline
-      allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3), tmpedge(4)), stat=status)
-      if (status /= 0) then
-        print *, "ERROR: Unable to allocate tmpedge: ", status
-        return
-      end if
-      status = sfrdata(sds_id, start, stride, tmpedge, tmpout)
-      if (status == FAIL) then
-        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
-        status = -1
-        return
-      end if
-      outref(1:dateline, :, :, :) = tmpout(:,:,:,:)
-      
-      deallocate(tmpout, stat=status)
-      if (status /= 0) then
-        print *, "Failed to deallocate tmpout: ", status
-        return
-      end if
-      
-      tmpstart(:) = start(:)
-      tmpstart(1) = 0
-      tmpedge(1) = edge(1) - dateline
-      allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3), tmpedge(4)), stat=status)
-      if (status /= 0) then
-        print *, "ERROR: Unable to allocate tmpedge: ", status
-        return
-      end if
-      
-      status = sfrdata(sds_id, tmpstart, stride, tmpedge, tmpout)
-      if (status == FAIL) then
-        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
-        status = -1
-        return
-      end if
-      outref(dateline+1:edge(1),:,:,:) = tmpout(:,:,:,:)
+    ! The granule straddles the dateline, so we need to make an accommodation
+        tmpedge(:) = edge(:)
+        tmpedge(1) = dateline
+        allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3), tmpedge(4)), stat=status)
+        if (status /= 0) then
+            print *, "ERROR: Unable to allocate tmpedge: ", status
+            return
+        end if
+        status = nf90_get_var(grp_id, dset_id, tmpout, start=start, &
+                              stride=stride, count=tmpedge)
+        if (status /= NF90_NOERR) then
+            print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+            return
+        end if
+        outref(1:dateline, :, :, :) = tmpout(:,:,:,:)
 
-      deallocate(tmpout, stat=status)
-      if (status /= 0) then
-        print *, "Failed to deallocate tmpout: ", status
-        return
-      end if
+        deallocate(tmpout, stat=status)
+        if (status /= 0) then
+            print *, "Failed to deallocate tmpout: ", status
+            return
+        end if
+
+        tmpstart(:) = start(:)
+        tmpstart(1) = 1
+        tmpedge(1) = edge(1) - dateline
+        allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3), tmpedge(4)), stat=status)
+        if (status /= 0) then
+            print *, "ERROR: Unable to allocate tmpedge: ", status
+            return
+        end if
+        status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
+                              stride=stride, count=tmpedge)
+        if (status /= NF90_NOERR) then
+            print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+            return
+        end if
+        outref(dateline+1:edge(1),:,:,:) = tmpout(:,:,:,:)
+
+        deallocate(tmpout, stat=status)
+        if (status /= 0) then
+           print *, "Failed to deallocate tmpout: ", status
+           return
+        end if
       
     end if
-    
-    status = sfendacc(sds_id)
-    if (status == FAIL) then
-      print *, "ERROR: Unable to end access to "//trim(sds_name)//" SDS: ", status
-      return
-    end if
-
     status = 0
     return
 
   end function readLER5
 
   ! Read in 2.2 um surface database 
-  integer function readSWIR2(start, edge, stride, sds_name, sd_id, outref) RESULT(status)
+  integer function readSWIR2(start, edge, stride, sds_name, grp_id, outref) RESULT(status)
+
+!   include 'hdf.f90'
+!   include 'dffunc.f90'
+    use netcdf
+
     implicit none
 
-    integer, dimension(2), intent(in)   ::  start, edge, stride
-    integer, intent(in)                 ::  sd_id
-    character (len=255), intent(in)     ::  sds_name
+    integer, dimension(3), intent(in)   ::  start, edge, stride
+    integer, intent(in)                 ::  grp_id
     real, intent(out)                   ::  outref(edge(1),edge(2))
 
-    include 'hdf.inc'
-    include 'dffunc.inc'
-
     ! HDF vars
+    character(len=255)    ::  sds_name
+    character(len=255)    ::  dset_name
+    character(len=255)    ::  attr_name
+    character(len=255)    ::  group_name
+
+    integer               ::  nc_id
+    integer               ::  dim_id
+    integer               ::  dset_id
     integer                           ::  sds_index, sds_id
-    integer, dimension(2)             ::  tmpedge, tmpstart
+    integer, dimension(3)             ::  tmpedge, tmpstart
     real, dimension(:,:), allocatable ::  tmpout
 
-    sds_index = sfn2index(sd_id, sds_name)
-    if (sds_index == FAIL) then
-      print *, "ERROR: Unable to find index of "//trim(sds_name)//" SDS: ", sds_index
-      status = -1
-      return
-    end if
-    sds_id = sfselect(sd_id, sds_index)
-    if (sds_id == FAIL) then
-      print *, "ERROR: Unable to select "//trim(sds_name)//" SDS: ", sds_id
-      status = -1
-      return
+    dset_name = sds_name
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
     end if
 
     if (dateline6 .eq. 0) then
-      status = sfrdata(sds_id, start, stride, edge, outref)
-      if (status == FAIL) then
-        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
-        status = -1
-        return
-      end if
+        status = nf90_get_var(grp_id, dset_id, outref, start=start, &
+                              stride=stride, count=edge)
+        if (status /= NF90_NOERR) then
+            print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+            return
+        end if
     else
-      ! The granule straddles the dateline6, so we need to make an accommodation
-      tmpedge(:) = edge(:)
-      tmpedge(1) = dateline6
-      allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
-      if (status /= 0) then
-        print *, "ERROR: Unable to allocate tmpedge: ", status
-        return
-      end if
-      status = sfrdata(sds_id, start, stride, tmpedge, tmpout)
-      if (status == FAIL) then
-        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
-        status = -1
-        return
-      end if
-      outref(1:dateline6, :) = tmpout
+        ! The granule straddles the dateline6, so we need to make an accommodation
+        tmpedge(:) = edge(:)
+        tmpedge(1) = dateline6
+        allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
+        if (status /= 0) then
+            print *, "ERROR: Unable to allocate tmpedge: ", status
+            return
+        end if
+        status = nf90_get_var(grp_id, dset_id, tmpout, start=start, &
+                              stride=stride, count=tmpedge)
+        if (status /= NF90_NOERR) then
+            print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+            return
+        end if
+        outref(1:dateline6, :) = tmpout
 
-      deallocate(tmpout, stat=status)
-      if (status /= 0) then
-        print *, "Failed to deallocate tmpout: ", status
-        return
-      end if
+        deallocate(tmpout, stat=status)
+        if (status /= 0) then
+            print *, "Failed to deallocate tmpout: ", status
+            return
+        end if
 
+        tmpstart(:) = start(:)
+        tmpstart(1) = 1
+        tmpedge(1) = edge(1) - dateline6
+        allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
+        if (status /= 0) then
+            print *, "ERROR: Unable to allocate tmpedge: ", status
+            return
+        end if
+        status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
+                              stride=stride, count=tmpedge)
+        if (status /= NF90_NOERR) then
+            print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+            return
+        end if
+        outref(dateline6+1:edge(1),:) = tmpout
 
-      tmpstart(:) = start(:)
-      tmpstart(1) = 0
-      tmpedge(1) = edge(1) - dateline6
-      allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
-      if (status /= 0) then
-        print *, "ERROR: Unable to allocate tmpedge: ", status
-        return
-      end if
-      status = sfrdata(sds_id, tmpstart, stride, tmpedge, tmpout)
-      if (status == FAIL) then
-        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
-        status = -1
-        return
-      end if
-      outref(dateline6+1:edge(1),:) = tmpout
-
-      deallocate(tmpout, stat=status)
-      if (status /= 0) then
-        print *, "Failed to deallocate tmpout: ", status
-        return
-      end if
-
+        deallocate(tmpout, stat=status)
+        if (status /= 0) then
+            print *, "Failed to deallocate tmpout: ", status
+            return
+        end if
     end if
-
-    status = sfendacc(sds_id)
-    if (status == FAIL) then
-      print *, "ERROR: Unable to end access to "//trim(sds_name)//" SDS: ", status
-      return
-    end if
-
     return
 
   end function readSWIR2
 
   ! Read in 2.2 um surface database 
-  integer function readSWIR3(start, edge, stride, sds_name, sd_id, outref) RESULT(status)
+  integer function readSWIR3(start3, edges3, stride3, sds_name, grp_id, outref) RESULT(status)
+
+!   include 'hdf.f90'
+!   include 'dffunc.f90'
+    use netcdf
+
     implicit none
 
-    integer, dimension(:), intent(in)       ::  start, edge, stride
-    integer, intent(in)                     ::  sd_id
-    character (len=*), intent(in)           ::  sds_name
+    integer, dimension(4), intent(in)     ::  start3, edges3, stride3
+    integer, intent(in)                   ::  grp_id
     real, dimension(:,:,:), intent(inout) ::  outref
-
-    include 'hdf.inc'
-    include 'dffunc.inc'
-
     ! HDF vars
+    character(len=255)    ::  sds_name
+    character(len=255)    ::  dset_name
+    character(len=255)    ::  attr_name
+    character(len=255)    ::  group_name
+
+    integer               ::  nc_id
+    integer               ::  dim_id
+    integer               ::  dset_id
     integer               ::  sds_index, sds_id
-    integer, dimension(3) ::  tmpedge, tmpstart
+    integer, dimension(4) ::  tmpedge, tmpstart
     real, dimension(:,:,:), allocatable ::  tmpout
     character(len=255)    ::  tmp_name
     integer               ::  rank, ntype, nattrs
@@ -5948,84 +5801,127 @@ module modis_surface
 
     status = -1
 
-    sds_index = sfn2index(sd_id, trim(sds_name))
-    if (sds_index == FAIL) then
-      print *, "ERROR: Unable to find index of "//trim(sds_name)//" SDS: ", sds_index
-      status = -1
-      return
-    end if
-
-    sds_id = sfselect(sd_id, sds_index)
-    if (sds_id == FAIL) then
-      print *, "ERROR: Unable to select "//trim(sds_name)//" SDS: ", sds_id
-      status = -1
-      return
+    dset_name = sds_name
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
     end if
 
     if (dateline6 .eq. 0) then
-      status = sfrdata(sds_id, start, stride, edge, outref)
-      if (status == FAIL) then
-        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
-        status = -1
-        return
-      end if
+        status = nf90_get_var(grp_id, dset_id, outref, start=start3, &
+                              stride=stride3, count=edges3)
+        if (status /= NF90_NOERR) then
+            print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+            return
+        end if
     else
-      ! The granule straddles the dateline6, so we need to make an accommodation
-      tmpedge(:) = edge(:)
-      tmpedge(1) = dateline6
-      allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3)), stat=status)
-      if (status /= 0) then
-        print *, "ERROR: Unable to allocate tmpedge: ", status
-        return
-      end if
-      status = sfrdata(sds_id, start, stride, tmpedge, tmpout)
-      if (status == FAIL) then
-        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
-        status = -1
-        return
-      end if
-      outref(1:dateline6, :, :) = tmpout(:,:,:)
+        ! The granule straddles the dateline6, so we need to make an accommodation
+        tmpedge(:) = edges3(:)
+        tmpedge(1) = dateline6
+        allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3)), stat=status)
+        if (status /= 0) then
+            print *, "ERROR: Unable to allocate tmpedge: ", status
+            return
+        end if
+        status = nf90_get_var(grp_id, dset_id, tmpout, start=start3, &
+                              stride=stride3, count=tmpedge)
+        if (status /= NF90_NOERR) then
+            print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+            return
+        end if
+        outref(1:dateline6, :, :) = tmpout
 
-      deallocate(tmpout, stat=status)
-      if (status /= 0) then
-        print *, "Failed to deallocate tmpout: ", status
-        return
-      end if
+        deallocate(tmpout, stat=status)
+        if (status /= 0) then
+            print *, "Failed to deallocate tmpout: ", status
+            return
+        end if
 
-      tmpstart(:) = start(:)
-      tmpstart(1) = 0
-      tmpedge(1) = edge(1) - dateline6
-      allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3)), stat=status)
-      if (status /= 0) then
-        print *, "ERROR: Unable to allocate tmpedge: ", status
-        return
-      end if
+        tmpstart(:) = start3(:)
+        tmpstart(1) = 1
+        tmpedge(1) = edges3(1) - dateline6
+        allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3)), stat=status)
+        if (status /= 0) then
+            print *, "ERROR: Unable to allocate tmpedge: ", status
+            return
+        end if
+        status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
+                              stride=stride3, count=tmpedge)
+        if (status /= NF90_NOERR) then
+            print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+            return
+        end if
+        outref(dateline6+1:edges3(1),:,:) = tmpout
 
-      status = sfrdata(sds_id, tmpstart, stride, tmpedge, tmpout)
-      if (status == FAIL) then
-        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
-        status = -1
-        return
-      end if
-      outref(dateline6+1:edge(1),:,:) = tmpout(:,:,:)
-
-      deallocate(tmpout, stat=status)
-      if (status /= 0) then
-        print *, "Failed to deallocate tmpout: ", status
-        return
-      end if
-
+        deallocate(tmpout, stat=status)
+        if (status /= 0) then
+            print *, "Failed to deallocate tmpout: ", status
+            return
+        end if
     end if
-
-    status = sfendacc(sds_id)
-    if (status == FAIL) then
-      print *, "ERROR: Unable to end access to "//trim(sds_name)//" SDS: ", status
-      return
-    end if
-
-    status = 0
     return
 
+    dset_name = sds_name
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+
+    if (dateline6 .eq. 0) then
+        status = nf90_get_var(grp_id, dset_id, tmpout, start=start3, &
+                              stride=stride3, count=edges3)
+        if (status /= NF90_NOERR) then
+            print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+            return
+        end if
+    else
+        ! The granule straddles the dateline6, so we need to make an accommodation
+        tmpedge(:) = edges3(:)
+        tmpedge(1) = dateline6
+        allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3)), stat=status)
+        if (status /= 0) then
+            print *, "ERROR: Unable to allocate tmpedge: ", status
+            return
+        end if
+        status = nf90_get_var(grp_id, dset_id, tmpout, start=start3, &
+                              stride=stride3, count=tmpedge)
+        if (status /= NF90_NOERR) then
+            print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+            return
+        end if
+        outref(1:dateline6, :, :) = tmpout
+
+        deallocate(tmpout, stat=status)
+        if (status /= 0) then
+            print *, "Failed to deallocate tmpout: ", status
+            return
+        end if
+
+        tmpstart(:) = start3(:)
+        tmpstart(1) = 0
+        tmpedge(1) = edges3(1) - dateline6
+        allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3)), stat=status)
+        if (status /= 0) then
+            print *, "ERROR: Unable to allocate tmpedge: ", status
+            return
+        end if
+        status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
+                              stride=stride3, count=tmpedge)
+        if (status /= NF90_NOERR) then
+            print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+            return
+        end if
+        outref(dateline6+1:edges3(1),:,:) = tmpout
+
+        deallocate(tmpout, stat=status)
+        if (status /= 0) then
+            print *, "Failed to deallocate tmpout: ", status
+            return
+        end if
+    end if
+    return
   end function readSWIR3
   
   integer function latlon_to_index_LER(lat, lon, ilat, ilon) result(status)
@@ -6212,11 +6108,10 @@ module modis_surface
       real                  ::  mb_sr412
       real                  ::  m_sr412
       real                  ::  v_sr412
-      integer               ::  min_flag
       
       ref = -999.0
       
-      mb_sr412 =  get_LER412(ilat, ilon, ndvi, sa, ra,min_flag)
+      mb_sr412 =  get_LER412(ilat, ilon, ndvi, sa, ra)
       if (mb_sr412 < -900.0) then
 !        print *, "ERROR: Undefined MODIS BRDF-corrected surface reflectance found: ", mb_sr412
         return
@@ -6251,11 +6146,10 @@ module modis_surface
       real                  ::  mb_sr470
       real                  ::  m_sr470
       real                  ::  v_sr488
-      integer               ::  min_flag      
       
       ref = -999.0
       
-      mb_sr470 =  get_LER470(ilat, ilon, ndvi, sa, ra, min_flag)
+      mb_sr470 =  get_LER470(ilat, ilon, ndvi, sa, ra)
       if (mb_sr470 < -900.0) then
 !        print *, "ERROR: Undefined MODIS BRDF-corrected surface reflectance found: ", mb_sr470
         return
@@ -6291,11 +6185,10 @@ module modis_surface
       real                  ::  mb_sr650
       real                  ::  m_sr650
       real                  ::  v_sr670
-      integer               ::  min_flag  
-          
+      
       ref = -999.0
       
-      mb_sr650 =  get_LER650(ilat, ilon, ndvi, sa, ra, min_flag)
+      mb_sr650 =  get_LER650(ilat, ilon, ndvi, sa, ra)
       if (mb_sr650 < -900.0) then
 !        print *, "ERROR: Undefined MODIS BRDF-corrected surface reflectance found: ", mb_sr650
         return
@@ -6432,13 +6325,4 @@ module modis_surface
     return
 
   end function get_background_aod
-
-  subroutine check_status(status, str)
-    integer, intent (in) :: status
-    character(len=*), intent (in)    :: str
-    
-    if(status /= 0) then 
-      print *, str, status
-    end if
-  end subroutine check_status    
 end module modis_surface

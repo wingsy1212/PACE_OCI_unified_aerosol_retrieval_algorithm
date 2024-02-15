@@ -1,0 +1,169 @@
+
+[dt_misc]
+gas_coeffs = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/VIIRS_LUT/VIIRS_GAS_COEFS_LBL_v1.dat 
+ext_coeffs = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/VIIRS_LUT/Ocean_Ext_554_modislike 
+aerosol_land_map = /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DT_Land/tbls/VIIRS_LUT/aerosol_land_map.v3
+
+[dtland_aerosol]
+dtland_lut_1 = /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DT_Land/tbls/VIIRS_LUT/lookup_land_w0488.npp3
+dtland_lut_2 = /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DT_Land/tbls/VIIRS_LUT/lookup_land_w0554.v4
+dtland_lut_3 = /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DT_Land/tbls/VIIRS_LUT/lookup_land_w0670.npp3
+dtland_lut_4 = /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DT_Land/tbls/VIIRS_LUT/forpython/lookup_land_w2257.npp3
+
+[dt_binary]
+urban_table = /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DT_Land/tbls/VIIRS_LUT/Urban_Table_10km
+
+[dtocean_viirs_aerosol]
+dtocean_lut_1 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/VIIRS_LUT/big_v1c1.dat.npp4
+dtocean_lut_2 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/VIIRS_LUT/big_v2c1.dat.npp4
+dtocean_lut_3 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/VIIRS_LUT/big_v3c1.dat.npp4
+dtocean_lut_4 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/VIIRS_LUT/big_v4c1.dat.npp4
+dtocean_lut_5 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/VIIRS_LUT/small_v1c1.dat.npp4
+dtocean_lut_6 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/VIIRS_LUT/small_v2c1.dat.npp4
+dtocean_lut_7 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/VIIRS_LUT/small_v3c1.dat.npp4
+dtocean_lut_8 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/VIIRS_LUT/small_v4c1.dat.npp4
+
+[dtocean_pace_aerosol]
+pace_lut_112 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega1/big_v2c1.dat.v01
+pace_lut_113 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega1/big_v3c1.dat.v01
+pace_lut_114 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega1/big_v4c1.dat.v01
+pace_lut_115 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega1/small_v1c1.dat.v0
+pace_lut_116 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega1/small_v2c1.dat.v0
+pace_lut_117 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega1/small_v3c1.dat.v0
+pace_lut_118 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega1/small_v4c1.dat.v0
+
+pace_lut_121 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega2/big_v1c1.dat.v01
+pace_lut_122 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega2/big_v2c1.dat.v01
+pace_lut_123 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega2/big_v3c1.dat.v01
+pace_lut_124 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega2/big_v4c1.dat.v01
+pace_lut_125 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega2/small_v1c1.dat.v0
+pace_lut_126 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega2/small_v2c1.dat.v0
+pace_lut_127 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega2/small_v3c1.dat.v0
+pace_lut_128 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega2/small_v4c1.dat.v0
+
+pace_lut_131 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega3/big_v1c1.dat.v01
+pace_lut_132 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega3/big_v2c1.dat.v01
+pace_lut_133 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega3/big_v3c1.dat.v01
+pace_lut_134 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega3/big_v4c1.dat.v01
+pace_lut_135 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega3/small_v1c1.dat.v0
+pace_lut_136 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega3/small_v2c1.dat.v0
+pace_lut_137 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega3/small_v3c1.dat.v0
+pace_lut_138 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega3/small_v4c1.dat.v0
+
+pace_lut_141 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega4/big_v1c1.dat.v01
+pace_lut_142 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega4/big_v2c1.dat.v01
+pace_lut_143 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega4/big_v3c1.dat.v01
+pace_lut_144 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega4/big_v4c1.dat.v01
+pace_lut_145 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega4/small_v1c1.dat.v0
+pace_lut_146 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega4/small_v2c1.dat.v0
+pace_lut_147 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega4/small_v3c1.dat.v0
+pace_lut_148 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega4/small_v4c1.dat.v0
+
+pace_lut_211 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega1/big_v1c1.dat.v01
+pace_lut_212 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega1/big_v2c1.dat.v01
+pace_lut_213 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega1/big_v3c1.dat.v01
+pace_lut_214 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega1/big_v4c1.dat.v01
+pace_lut_215 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega1/small_v1c1.dat.v0
+pace_lut_216 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega1/small_v2c1.dat.v0
+pace_lut_217 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega1/small_v3c1.dat.v0
+pace_lut_218 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega1/small_v4c1.dat.v0
+
+pace_lut_221 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega2/big_v1c1.dat.v01
+pace_lut_222 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega2/big_v2c1.dat.v01
+pace_lut_223 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega2/big_v3c1.dat.v01
+pace_lut_224 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega2/big_v4c1.dat.v01
+pace_lut_225 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega2/small_v1c1.dat.v0
+pace_lut_226 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega2/small_v2c1.dat.v0
+pace_lut_227 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega2/small_v3c1.dat.v0
+pace_lut_228 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega2/small_v4c1.dat.v0
+
+pace_lut_231 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega3/big_v1c1.dat.v01
+pace_lut_232 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega3/big_v2c1.dat.v01
+pace_lut_233 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega3/big_v3c1.dat.v01
+pace_lut_234 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega3/big_v4c1.dat.v01
+pace_lut_235 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega3/small_v1c1.dat.v0
+pace_lut_236 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega3/small_v2c1.dat.v0
+pace_lut_237 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega3/small_v3c1.dat.v0
+pace_lut_238 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega3/small_v4c1.dat.v0
+
+pace_lut_241 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega4/big_v1c1.dat.v01
+pace_lut_242 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega4/big_v2c1.dat.v01
+pace_lut_243 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega4/big_v3c1.dat.v01
+pace_lut_244 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega4/big_v4c1.dat.v01
+pace_lut_245 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega4/small_v1c1.dat.v0
+pace_lut_246 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega4/small_v2c1.dat.v0
+pace_lut_247 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega4/small_v3c1.dat.v0
+pace_lut_248 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_2/Omega4/small_v4c1.dat.v0
+
+pace_lut_311 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega1/big_v1c1.dat.v01
+pace_lut_312 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega1/big_v2c1.dat.v01
+pace_lut_313 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega1/big_v3c1.dat.v01
+pace_lut_314 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega1/big_v4c1.dat.v01
+pace_lut_315 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega1/small_v1c1.dat.v0
+pace_lut_316 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega1/small_v2c1.dat.v0
+pace_lut_317 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega1/small_v3c1.dat.v0
+pace_lut_318 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega1/small_v4c1.dat.v0
+
+pace_lut_321 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega2/big_v1c1.dat.v01
+pace_lut_322 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega2/big_v2c1.dat.v01
+pace_lut_323 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega2/big_v3c1.dat.v01
+pace_lut_324 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega2/big_v4c1.dat.v01
+pace_lut_325 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega2/small_v1c1.dat.v0
+pace_lut_326 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega2/small_v2c1.dat.v0
+pace_lut_327 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega2/small_v3c1.dat.v0
+pace_lut_328 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega2/small_v4c1.dat.v0
+
+pace_lut_331 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega3/big_v1c1.dat.v01
+pace_lut_332 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega3/big_v2c1.dat.v01
+pace_lut_333 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega3/big_v3c1.dat.v01
+pace_lut_334 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega3/big_v4c1.dat.v01
+pace_lut_335 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega3/small_v1c1.dat.v0
+pace_lut_336 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega3/small_v2c1.dat.v0
+pace_lut_337 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega3/small_v3c1.dat.v0
+pace_lut_338 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega3/small_v4c1.dat.v0
+
+pace_lut_341 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega4/big_v1c1.dat.v01
+pace_lut_342 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega4/big_v2c1.dat.v01
+pace_lut_343 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega4/big_v3c1.dat.v01
+pace_lut_344 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega4/big_v4c1.dat.v01
+pace_lut_345 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega4/small_v1c1.dat.v0
+pace_lut_346 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega4/small_v2c1.dat.v0
+pace_lut_347 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega4/small_v3c1.dat.v0
+pace_lut_348 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_3/Omega4/small_v4c1.dat.v0
+
+pace_lut_411 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega1/big_v1c1.dat.v01
+pace_lut_412 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega1/big_v2c1.dat.v01
+pace_lut_413 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega1/big_v3c1.dat.v01
+pace_lut_414 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega1/big_v4c1.dat.v01
+pace_lut_415 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega1/small_v1c1.dat.v0
+pace_lut_416 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega1/small_v2c1.dat.v0
+pace_lut_417 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega1/small_v3c1.dat.v0
+pace_lut_418 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega1/small_v4c1.dat.v0
+
+pace_lut_421 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega2/big_v1c1.dat.v01
+pace_lut_422 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega2/big_v2c1.dat.v01
+pace_lut_423 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega2/big_v3c1.dat.v01
+pace_lut_424 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega2/big_v4c1.dat.v01
+pace_lut_425 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega2/small_v1c1.dat.v0
+pace_lut_426 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega2/small_v2c1.dat.v0
+pace_lut_427 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega2/small_v3c1.dat.v0
+pace_lut_428 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega2/small_v4c1.dat.v0
+
+pace_lut_431 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega3/big_v1c1.dat.v01
+pace_lut_432 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega3/big_v2c1.dat.v01
+pace_lut_433 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega3/big_v3c1.dat.v01
+pace_lut_434 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega3/big_v4c1.dat.v01
+pace_lut_435 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega3/small_v1c1.dat.v0
+pace_lut_436 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega3/small_v2c1.dat.v0
+pace_lut_437 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega3/small_v3c1.dat.v0
+pace_lut_438 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega3/small_v4c1.dat.v0
+
+pace_lut_441 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega4/big_v1c1.dat.v01
+pace_lut_442 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega4/big_v2c1.dat.v01
+pace_lut_443 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega4/big_v3c1.dat.v01
+pace_lut_444 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega4/big_v4c1.dat.v01
+pace_lut_445 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega4/small_v1c1.dat.v0
+pace_lut_446 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega4/small_v2c1.dat.v0
+pace_lut_447 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega4/small_v3c1.dat.v0
+pace_lut_448 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_4/Omega4/small_v4c1.dat.v0
+

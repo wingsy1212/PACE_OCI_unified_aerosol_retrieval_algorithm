@@ -1,5 +1,5 @@
-gdas1=/home/sam/winhome/nasa/data/oci/pytoast-9/anc/GMAO_MERRA2.20220321T100000.met.nc
-gdas2=/home/sam/winhome/nasa/data/oci/pytoast-9/anc/GMAO_MERRA2.20220321T110000.met.nc
+platform = VIIRS
+output_file = /home/sam/winhome/nasa/uaa/test/uaa_db_land.nc
 output_dir = /home/sam/winhome/nasa/uaa/test
 aero_lut_land = /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DB_Land/tbls/VIIRS_LUT/land_aerosol_luts_20151105.hdf
 aero_lut_dust = /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DB_Land/tbls/VIIRS_LUT/land_aerosol_luts_dust_20170628.hdf
@@ -25,8 +25,4 @@ modis_surf_db=/home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DB_Land/tbls/sfc_tbl/aq
 viirs_surf_db=/home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DB_Land/tbls/sfc_tbl/viirs_surfdb_spring_20170327.hdf
 swir_vis_surf_coeffs=/home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DB_Land/tbls/sfc_tbl/viirs_snpp_swir_vs_vis_surf_coeffs_spring_all_2nd_minimum_20170809.hdf
 swir_vis_surf_coeffs_annual=/home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DB_Land/tbls/sfc_tbl/viirs_snpp_2.2_surface_database_annual_v2_20210515_0.1.hdf
-output_file=/home/sam/winhome/nasa/uaa/test/Pace_L2_Land_DB.20220321.1023.nc
-year=2022
-month=03
-day=21
-platform=VIIRS
+

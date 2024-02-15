@@ -6,6 +6,10 @@ IMPLICIT NONE
 !---------------------------------------------------------------
 !---------------------------------------------------------------
 TYPE, PUBLIC  :: ociuaaer_config_type
+  CHARACTER(LEN=255)      ::  dt_nc4 = 'NULL'
+  CHARACTER(LEN=255)      ::  db_nc4 = 'NULL'
+  CHARACTER(LEN=255)      ::  uv_nc4 = 'NULL'
+
   CHARACTER(LEN=255)      ::  read_nc_landonly = 'NULL'
   CHARACTER(LEN=255)      ::  input_l1file = 'NULL'
   CHARACTER(LEN=255)      ::  proxy_l1file = 'NULL'
@@ -107,6 +111,15 @@ PRINT *, 'Now reading OCIUAAER Configuration file : ',  config_file
 	!
 	!print *, trim(var), trim(val)
 	select case (trim(var))
+   ! netcdf luts
+        case ('dt_nc4')
+            cfg%dt_nc4 = trim(val)
+        case ('db_nc4')
+            cfg%db_nc4 = trim(val)
+        case ('uv_nc4')
+            cfg%uv_nc4 = trim(val)
+
+    ! baseline
         case ('read_nc_landonly')
       cfg%read_nc_landonly = trim(val)
         case ('input_l1file')

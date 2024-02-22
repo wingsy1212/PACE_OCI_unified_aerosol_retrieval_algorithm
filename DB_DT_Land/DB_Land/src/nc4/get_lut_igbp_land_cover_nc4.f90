@@ -40,8 +40,7 @@ subroutine get_lut_igbp_land_cover( lut_file, status)
     edge   = (/ 3600,1800 /)
     stride = (/ 1,1 /)
     
-    lut_file = cfg%db_nc4
-    status = nf90_open(lut_file, nf90_nowrite, nc_id)
+    status = nf90_open(cfg%db_nc4, nf90_nowrite, nc_id)
     if (status /= NF90_NOERR) then
         print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
         return

@@ -24,6 +24,7 @@ dtocean_lut_7 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/VIIRS_LUT/small_v3
 dtocean_lut_8 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/VIIRS_LUT/small_v4c1.dat.npp4
 
 [dtocean_pace_aerosol]
+pace_lut_111 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega1/big_v1c1.dat.v01
 pace_lut_112 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega1/big_v2c1.dat.v01
 pace_lut_113 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega1/big_v3c1.dat.v01
 pace_lut_114 = /home/sam/winhome/nasa/uaa/luts/DT_Ocean/tbls/PACE_LUT/Height_1/Omega1/big_v4c1.dat.v01

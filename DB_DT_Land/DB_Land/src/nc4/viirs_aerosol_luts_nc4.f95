@@ -50,28 +50,29 @@ common /aottbl/ nvalx412, nvalx(12,46,30,10),             &
 
 contains
 
-integer function load_viirs_aerosol_luts(lut_file) result(status)
+integer function load_viirs_aerosol_luts(lut_file1, lut_file2) result(status)
+   USE OCIUAAER_Config_Module
   implicit none
 
-  character(len=255), intent(in)    ::  lut_file
+  character(len=255), intent(in)    ::  lut_file1, lut_file2
   character(len=255)                ::  lut_type
         
 !  print *, 'Reading land LUT...'
   lut_type = 'aerosol_land'
-  status = read_aerosol_lut_file(lut_file, lut_type, default_lut412, default_lut488, default_lut672)
+  status = read_aerosol_lut_file(cfg%db_nc4, lut_type, default_lut412, default_lut488, default_lut672)
   if (status /= 0) then 
     print *, 'ERROR: Failed to read in default land aerosol model LUT: ', status
-    print *, 'File: ', trim(lut_file)
+    print *, 'File: ', trim(cfg%db_nc4)
     return
   end if
 !  print *, 'done.'
   
 !  print *, 'Reading dust LUT...'
   lut_type = 'aerosol_dust'
-  status = read_aerosol_lut_file(lut_file, lut_type, dust_lut412, dust_lut488, dust_lut672)
+  status = read_aerosol_lut_file(cfg%db_nc4, lut_type, dust_lut412, dust_lut488, dust_lut672)
   if (status /= 0) then 
     print *, 'ERROR: Failed to read in dust aerosol model LUT: ', status
-    print *, 'File: ', trim(lut_file)
+    print *, 'File: ', trim(cfg%db_nc4)
     return
   end if
 !  print *, 'done.'
@@ -113,12 +114,8 @@ subroutine unload_viirs_aerosol_luts(status)
 end subroutine unload_viirs_aerosol_luts
 
 integer function read_aerosol_lut_file(lut_file, type, lut412, lut488, lut672) result(status)
-
-!   include 'hdf.f90'
-!   include 'dffunc.f90'
     use netcdf
     USE OCIUAAER_Config_Module
-
     implicit none
 
     character(len=255), intent(in)          ::  lut_file
@@ -144,8 +141,7 @@ integer function read_aerosol_lut_file(lut_file, type, lut412, lut488, lut672) r
     character(len=255)    ::  group_name
     character(len=255)    ::  err_msg
 
-    lut_file = cfg%db_nc4
-    status = nf90_open(lut_file, nf90_nowrite, nc_id)
+    status = nf90_open(cfg%db_nc4, nf90_nowrite, nc_id)
     if (status /= NF90_NOERR) then
         print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
         return
@@ -357,6 +353,45 @@ integer function read_aerosol_lut_file(lut_file, type, lut412, lut488, lut672) r
         return
     end if
 
+    allocate(lut412%nvalx(lut412%nsza,lut412%nvza,lut412%nraa,lut412%naot,lut412%nssa, &
+    & lut412%nsfc), stat=status)
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate nvalx412 data array: ", status
+        return
+    end if
+
+    dset_name = 'nvalx412'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_inquire_variable(grp_id, dset_id, dimids=dimids)
+    status = nf90_inquire_dimension(grp_id, dimids(1), len = dimlen)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Unable to get info on SDS "//trim(dset_name)//": ", status
+        status = -1
+        return
+    end if
+
+    lut412%nvalx  = dimlen
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate SR412 data array: ", status
+        return
+    end if
+
+    start6  = (/1,1,1,1,1,1/)
+    stride6 = (/1,1,1,1,1,1/)
+    edges6  = shape(lut412%nvalx)
+    status = nf90_get_var(grp_id, dset_id, lut412%nvalx , start=start6, &
+                          stride=stride6, count=edges6)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
+    end if
+
 ! -- 488nm
 
     dset_name = 'SZA488_Nodes'
@@ -556,6 +591,44 @@ integer function read_aerosol_lut_file(lut_file, type, lut412, lut488, lut672) r
         return
     end if
 
+    allocate(lut488%nvalx(lut488%nsza,lut488%nvza,lut488%nraa,lut488%naot, &
+      lut488%nssa, lut488%nsfc), stat=status)
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate nvalx488 data array: ", status
+        return
+    end if
+
+    dset_name = 'nvalx488'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_inquire_variable(grp_id, dset_id, dimids=dimids)
+    status = nf90_inquire_dimension(grp_id, dimids(1), len = dimlen)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Unable to get info on SDS "//trim(dset_name)//": ", status
+        status = -1
+        return
+    end if
+
+    lut488%nvalx  = dimlen
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate SR488 data array: ", status
+        return
+    end if
+
+    start6  = (/1,1,1,1,1,1/)
+    stride6 = (/1,1,1,1,1,1/)
+    edges6  = shape(lut488%nvalx)
+    status = nf90_get_var(grp_id, dset_id, lut488%nvalx , start=start6, &
+                          stride=stride6, count=edges6)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
+    end if
 
 ! -- 672nm
 
@@ -751,6 +824,45 @@ integer function read_aerosol_lut_file(lut_file, type, lut412, lut488, lut672) r
     edges1  = (/lut672%nsfc /)
     status = nf90_get_var(grp_id, dset_id, lut672%sfc , start=start1, &
                           stride=stride1, count=edges1)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+        return
+    end if
+
+    allocate(lut672%nvalx(lut672%nsza,lut672%nvza,lut672%nraa,lut672%naot,lut672%nssa, &
+     lut672%nsfc), stat=status)
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate nvalx672 data array: ", status
+        return
+    end if
+
+    dset_name = 'nvalx672'
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+        return
+    end if
+    status = nf90_inquire_variable(grp_id, dset_id, dimids=dimids)
+    status = nf90_inquire_dimension(grp_id, dimids(1), len = dimlen)
+    err_msg = NF90_STRERROR(status)
+    if (status /= NF90_NOERR) then
+        print *, "ERROR: Unable to get info on SDS "//trim(dset_name)//": ", status
+        status = -1
+        return
+    end if
+
+    lut672%nvalx  = dimlen
+    if (status /= 0) then
+        print *, "ERROR: Unable to allocate SR672 data array: ", status
+        return
+    end if
+
+    start6  = (/1,1,1,1,1,1/)
+    stride6 = (/1,1,1,1,1,1/)
+    edges6  = shape(lut672%nvalx)
+    status = nf90_get_var(grp_id, dset_id, lut672%nvalx , start=start6, &
+                          stride=stride6, count=edges6)
     err_msg = NF90_STRERROR(status)
     if (status /= NF90_NOERR) then
         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status

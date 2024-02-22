@@ -4,11 +4,11 @@
 
 
 
-Subroutine compute_Gascorrection(Total_H2o,Total_O3,&
+Subroutine compute_Gascorrection_nc4(Total_H2o,Total_O3,&
    SolZen,SatZen,set_counter_for_Gread,Multi_factor, RTN_NCEP)
 
+   use netcdf
    USE OCIUAAER_Config_Module
-
    implicit None
    save
             include 'read_Sat_MODIS.inc'
@@ -26,19 +26,12 @@ Subroutine compute_Gascorrection(Total_H2o,Total_O3,&
    integer set_counter_for_Gread,Viirs_Table,ik,ij
    character(len=10) :: Sat_Flag
    character * 1 line(132)
-   CHARACTER  (len=255) :: tbl,File_name
 
-   use netcdf
+   integer, dimension (1) :: start1, edge1, stride1
+   integer, dimension (2) :: start2, edge2, stride2
 
-   implicit none
-
-   character(*),           intent (in)      :: lut_file, rfile
-   integer,                intent (out)     :: status
-   integer, dimension (4)                   :: start, edges, stride
-
-   integer                ::  number_type, nattrs
-   integer                ::  sds_id, sds_index, attr_index, hdfid
-   character(len=255)     ::  sds_name
+   integer               ::  status
+   character(len=255)    ::  sds_name
    character(len=255)    ::  dset_name
    character(len=255)    ::  attr_name
    character(len=255)    ::  group_name
@@ -47,145 +40,109 @@ Subroutine compute_Gascorrection(Total_H2o,Total_O3,&
    integer               ::  dim_id
    integer               ::  dset_id
    integer               ::  grp_id
+   integer               ::  cnt
 
-   lut_file = cfg%dt_nc4
+   if (cnt == 0) then
+      status = nf90_open(cfg%dt_nc4, nf90_nowrite, nc_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
+         return
+      end if
 
-   status = nf90_open(lut_file, nf90_nowrite, nc_id)
-   if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
-      return
-   end if
+      group_name = 'gas_coeffs'
+      status = nf90_inq_ncid(nc_id, group_name, grp_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
+         return
+      end if
 
-   group_name = 'gas_coeffs'
-   status = nf90_inq_ncid(nc_id, group_name, grp_id)
-   if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
-      return
-   end if
+      dset_name = 'MOL'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      start1  = (/ 1 /)
+      edge1   = (/ wave_num /)
+      stride1 = (/ 1 /)
+      status = nf90_get_var(grp_id, dset_id, mol, start=start1, &
+         stride=stride1, count=edge1)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      dset_name = 'OPT_O3_CLIM'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      status = nf90_get_var(grp_id, dset_id, opt_o3_clim, start=start1, &
+         stride=stride1, count=edge1)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      dset_name = 'OPT_H2O_CLIM'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      status = nf90_get_var(grp_id, dset_id, opt_h2o_clim, start=start1, &
+         stride=stride1, count=edge1)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      dset_name = 'OPT_CO2_CLIM'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      status = nf90_get_var(grp_id, dset_id, opt_co2_clim, start=start1, &
+         stride=stride1, count=edge1)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      dset_name = 'O3_COEF'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      start2  = (/ 1,1 /)
+      edge2   = (/ wave_num,2 /)
+      stride2 = (/ 1,1 /)
+      status = nf90_get_var(grp_id, dset_id, o3_coef, start=start2, &
+         stride=stride2, count=edge2)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      dset_name = 'H2O_COEF'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      edge2   = (/ wave_num,3 /)
+      status = nf90_get_var(grp_id, dset_id, h2o_coef, start=start2, &
+         stride=stride2, count=edge2)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+       status = nf90_close(nc_id)
+       if (status /= NF90_NOERR) then
+           print *, "ERROR: Failed to close lut_nc4 file: ", status
+           return
+       end if
+       cnt = 1
+   endif
 
-   dset_name = 'MBAND'
-   status = nf90_inq_varid(grp_id, dset_name, dset_id)
-   if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
-      return
-   end if
-   start  = (/ 1 /)
-   edges   = (/ wave_num /)
-   stride = (/ 1 /)
-   status = nf90_get_var(grp_id, dset_id, mband, start=start, &
-      stride=stride, count=edges)
-   if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-      return
-   end if
-   dset_name = 'VBAND'
-   status = nf90_inq_varid(grp_id, dset_name, dset_id)
-   if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
-      return
-   end if
-   status = nf90_get_var(grp_id, dset_id, vband, start=start, &
-      stride=stride, count=edges)
-   if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-      return
-   end if
-   dset_name = 'WAVE'
-   status = nf90_inq_varid(grp_id, dset_name, dset_id)
-   if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
-      return
-   end if
-   status = nf90_get_var(grp_id, dset_id, wave, start=start, &
-      stride=stride, count=edges)
-   if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-      return
-   end if
-   dset_name = 'MOL'
-   status = nf90_inq_varid(grp_id, dset_name, dset_id)
-   if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
-      return
-   end if
-   status = nf90_get_var(grp_id, dset_id, mol, start=start, &
-      stride=stride, count=edges)
-   if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-      return
-   end if
-   dset_name = 'OPT_O3_CLIM'
-   status = nf90_inq_varid(grp_id, dset_name, dset_id)
-   if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
-      return
-   end if
-   status = nf90_get_var(grp_id, dset_id, opt_o3_clim, start=start, &
-      stride=stride, count=edges)
-   if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-      return
-   end if
-   dset_name = 'OPT_H2O_CLIM'
-   status = nf90_inq_varid(grp_id, dset_name, dset_id)
-   if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
-      return
-   end if
-   status = nf90_get_var(grp_id, dset_id, opt_h2o_clim, start=start, &
-      stride=stride, count=edges)
-   if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-      return
-   end if
-   dset_name = 'OPT_CO2_CLIM'
-   status = nf90_inq_varid(grp_id, dset_name, dset_id)
-   if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
-      return
-   end if
-   status = nf90_get_var(grp_id, dset_id, opt_co2_clim, start=start, &
-      stride=stride, count=edges)
-   if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-      return
-   end if
-   dset_name = 'O3_COEF'
-   status = nf90_inq_varid(grp_id, dset_name, dset_id)
-   if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
-      return
-   end if
-   start  = (/ 1,1 /)
-   edges   = (/ wave_num,2 /)
-   stride = (/ 1,1 /)
-   status = nf90_get_var(grp_id, dset_id, o3_coef, start=start, &
-      stride=stride, count=edges)
-   if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-      return
-   end if
-   dset_name = 'H2O_COEF'
-   status = nf90_inq_varid(grp_id, dset_name, dset_id)
-   if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
-      return
-   end if
-   edges   = (/ wave_num,3 /)
-   status = nf90_get_var(grp_id, dset_id, h2o_coef, start=start, &
-      stride=stride, count=edges)
-   if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-      return
-   end if
-    status = nf90_close(nc_id)
-    if (status /= NF90_NOERR) then
-        print *, "ERROR: Failed to close lut_nc4 file: ", status
-        return
-    end if
-
-
-1  format(132 a1)
    Do Iwave =1,wave_num
       RTrans_H2O(Iwave) =1.
       RTrans_O3(Iwave)=1.
@@ -282,8 +239,7 @@ Subroutine compute_Gascorrection(Total_H2o,Total_O3,&
    close(Nfile)
 
    Return
-end  subroutine compute_Gascorrection
-end module  compute_Gascorrection_twoways
+end  subroutine compute_Gascorrection_nc4
 
 
 !*********************************************************************
@@ -361,6 +317,8 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
    !                   JPHI       azimuth
    !        ref_rayall      radiance(l/fo),fo=1 FOR RAYLEIGH TAUA=0.0
 
+
+   use netcdf
    USE OCIUAAER_Config_Module
    IMPLICIT NONE
    SAVE
@@ -395,19 +353,16 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
    Real Ext_554_small(Lut_indx,NUMCASES),Ext_554_large(Lut_indx,NUMCASEB)
    character * 1 cWS
    character ( len=10):: Sat_Flag
-   CHARACTER  (len=255) :: tbl,file_name,Extension,File
 
-   use netcdf
+   integer, dimension (1)                   :: start1, edge1, stride1
+   integer, dimension (2)                   :: start2, edge2, stride2
+   integer, dimension (3)                   :: start3, edge3, stride3
+   integer, dimension (4)                   :: start4, edge4, stride4
+   integer, dimension (5)                   :: start5, edge5, stride5
+   integer, dimension (7)                   :: start7, edge7, stride7
 
-   implicit none
-
-   character(*),           intent (in)      :: lut_file, rfile
-   integer,                intent (out)     :: status
-   integer, dimension (4)                   :: start, edges, stride
-
-   integer                ::  number_type, nattrs
-   integer                ::  sds_id, sds_index, attr_index, hdfid
-   character(len=255)     ::  sds_name
+   integer               ::  status
+   character(len=255)    ::  sds_name
    character(len=255)    ::  dset_name
    character(len=255)    ::  attr_name
    character(len=255)    ::  group_name
@@ -417,9 +372,7 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
    integer               ::  dset_id
    integer               ::  grp_id
 
-   lut_file = cfg%dt_nc4
-
-   status = nf90_open(lut_file, nf90_nowrite, nc_id)
+   status = nf90_open(cfg%dt_nc4, nf90_nowrite, nc_id)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
       return
@@ -438,20 +391,20 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1 /)
-   edges   = (/ 4,NUMCASES /)
-   stride = (/ 1,1 /)
-   status = nf90_get_var(grp_id, dset_id, Ext_554_small, start=start, &
-      stride=stride, count=edges)
+   start2  = (/ 1,1 /)
+   edge2   = (/ 4,NUMCASES /)
+   stride2 = (/ 1,1 /)
+   status = nf90_get_var(grp_id, dset_id, Ext_554_small, start=start2, &
+      stride=stride2, count=edge2)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,NUMCASES /)
-   edges   = (/ 4,NUMCASEB /)
-   stride = (/ 1,1 /)
-   status = nf90_get_var(grp_id, dset_id, Ext_554_large, start=start, &
-      stride=stride, count=edges)
+   start2  = (/ 1,NUMCASES /)
+   edge2   = (/ 4,NUMCASEB /)
+   stride2 = (/ 1,1 /)
+   status = nf90_get_var(grp_id, dset_id, Ext_554_large, start=start2, &
+      stride=stride2, count=edge2)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -470,11 +423,11 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1 /)
-   edges   = (/ NTH0 /)
-   stride = (/ 1 /)
-   status = nf90_get_var(grp_id, dset_id, THET0, start=start, &
-      stride=stride, count=edges)
+   start1  = (/ 1 /)
+   edge1   = (/ NTH0 /)
+   stride1 = (/ 1 /)
+   status = nf90_get_var(grp_id, dset_id, THET0, start=start1, &
+      stride=stride1, count=edge1)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -486,11 +439,11 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1 /)
-   edges   = (/ NTHET /)
-   stride = (/ 1 /)
-   status = nf90_get_var(grp_id, dset_id, THET, start=start, &
-      stride=stride, count=edges)
+   start1  = (/ 1 /)
+   edge1   = (/ NTHET /)
+   stride1 = (/ 1 /)
+   status = nf90_get_var(grp_id, dset_id, THET, start=start1, &
+      stride=stride1, count=edge1)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -502,11 +455,11 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1 /)
-   edges   = (/ NPHI /)
-   stride = (/ 1 /)
-   status = nf90_get_var(grp_id, dset_id, PHC, start=start, &
-      stride=stride, count=edges)
+   start1  = (/ 1 /)
+   edge1   = (/ NPHI /)
+   stride1 = (/ 1 /)
+   status = nf90_get_var(grp_id, dset_id, PHC, start=start1, &
+      stride=stride1, count=edge1)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -518,11 +471,11 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1 /)
-   edges   = (/ NWAV /)
-   stride = (/ 1 /)
-   status = nf90_get_var(grp_id, dset_id, WAVE, start=start, &
-      stride=stride, count=edges)
+   start1  = (/ 1 /)
+   edge1   = (/ NWAV /)
+   stride1 = (/ 1 /)
+   status = nf90_get_var(grp_id, dset_id, WAVE, start=start1, &
+      stride=stride1, count=edge1)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -534,20 +487,20 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1 /)
-   edges   = (/ NUMCASES /)
-   stride = (/ 1 /)
-   status = nf90_get_var(grp_id, dset_id, RGSS, start=start, &
-      stride=stride, count=edges)
+   start1  = (/ 1 /)
+   edge1   = (/ NUMCASES /)
+   stride1 = (/ 1 /)
+   status = nf90_get_var(grp_id, dset_id, RGSS, start=start1, &
+      stride=stride1, count=edge1)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ NUMCASES /)
-   edges   = (/ NUMCASEB /)
-   stride = (/ 1 /)
-   status = nf90_get_var(grp_id, dset_id, RGSB, start=start, &
-      stride=stride, count=edges)
+   start1  = (/ NUMCASES /)
+   edge1   = (/ NUMCASEB /)
+   stride1 = (/ 1 /)
+   status = nf90_get_var(grp_id, dset_id, RGSB, start=start1, &
+      stride=stride1, count=edge1)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -559,20 +512,20 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1 /)
-   edges   = (/ NUMCASES /)
-   stride = (/ 1 /)
-   status = nf90_get_var(grp_id, dset_id, SIGMAS, start=start, &
-      stride=stride, count=edges)
+   start1  = (/ 1 /)
+   edge1   = (/ NUMCASES /)
+   stride1 = (/ 1 /)
+   status = nf90_get_var(grp_id, dset_id, SIGMAS, start=start1, &
+      stride=stride1, count=edge1)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ NUMCASES /)
-   edges   = (/ NUMCASEB /)
-   stride = (/ 1 /)
-   status = nf90_get_var(grp_id, dset_id, SIGMAB, start=start, &
-      stride=stride, count=edges)
+   start1  = (/ NUMCASES /)
+   edge1   = (/ NUMCASEB /)
+   stride1 = (/ 1 /)
+   status = nf90_get_var(grp_id, dset_id, SIGMAB, start=start1, &
+      stride=stride1, count=edge1)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -584,20 +537,20 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1 /)
-   edges   = (/ NUMCASES /)
-   stride = (/ 1 /)
-   status = nf90_get_var(grp_id, dset_id, EFFRADSMALL, start=start, &
-      stride=stride, count=edges)
+   start1  = (/ 1 /)
+   edge1   = (/ NUMCASES /)
+   stride1 = (/ 1 /)
+   status = nf90_get_var(grp_id, dset_id, EFFRADSMALL, start=start1, &
+      stride=stride1, count=edge1)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ NUMCASES /)
-   edges   = (/ NUMCASEB /)
-   stride = (/ 1 /)
-   status = nf90_get_var(grp_id, dset_id, EFFRADBIG, start=start, &
-      stride=stride, count=edges)
+   start1  = (/ NUMCASES /)
+   edge1   = (/ NUMCASEB /)
+   stride1 = (/ 1 /)
+   status = nf90_get_var(grp_id, dset_id, EFFRADBIG, start=start1, &
+      stride=stride1, count=edge1)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -609,20 +562,20 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,1 /)
-   edges   = (/ LUT_INDX,NUMCASES,4 /)
-   stride = (/ 1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, MOMEMTSSMALL, start=start, &
-      stride=stride, count=edges)
+   start3  = (/ 1,1,1 /)
+   edge3   = (/ LUT_INDX,NUMCASES,4 /)
+   stride3 = (/ 1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, MOMENTSSMALL, start=start3, &
+      stride=stride3, count=edge3)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,NUMCASES,1 /)
-   edges   = (/ LUT_INDX,NUMCASEB,4 /)
-   stride = (/ 1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, MOMEMTSBIG, start=start, &
-      stride=stride, count=edges)
+   start3  = (/ 1,NUMCASES,1 /)
+   edge3   = (/ LUT_INDX,NUMCASEB,4 /)
+   stride3 = (/ 1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, MOMENTSBIG, start=start3, &
+      stride=stride3, count=edge3)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -634,20 +587,20 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1 /)
-   edges   = (/ LUT_INDX,NUMCASES /)
-   stride = (/ 1,1 /)
-   status = nf90_get_var(grp_id, dset_id, MOMEMTSSMALL, start=start, &
-      stride=stride, count=edges)
+   start2  = (/ 1,1 /)
+   edge2   = (/ LUT_INDX,NUMCASES /)
+   stride2 = (/ 1,1 /)
+   status = nf90_get_var(grp_id, dset_id, MOMENTSSMALL, start=start2, &
+      stride=stride2, count=edge2)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,NUMCASES /)
-   edges   = (/ LUT_INDX,NUMCASEB /)
-   stride = (/ 1,1 /)
-   status = nf90_get_var(grp_id, dset_id, MOMEMTSBIG, start=start, &
-      stride=stride, count=edges)
+   start2  = (/ 1,NUMCASES /)
+   edge2   = (/ LUT_INDX,NUMCASEB /)
+   stride2 = (/ 1,1 /)
+   status = nf90_get_var(grp_id, dset_id, MOMENTSBIG, start=start2, &
+      stride=stride2, count=edge2)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -659,20 +612,20 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,1 /)
-   edges   = (/ LUT_INDX,NUMCASES,NWAV /)
-   stride = (/ 1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, ALBEDOSMALL, start=start, &
-      stride=stride, count=edges)
+   start3  = (/ 1,1,1 /)
+   edge3   = (/ LUT_INDX,NUMCASES,NWAV /)
+   stride3 = (/ 1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, ALBEDOSMALL, start=start3, &
+      stride=stride3, count=edge3)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,NUMCASES,1 /)
-   edges   = (/ LUT_INDX,NUMCASEB,NWAV /)
-   stride = (/ 1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, ALBEDOBIG, start=start, &
-      stride=stride, count=edges)
+   start3  = (/ 1,NUMCASES,1 /)
+   edge3   = (/ LUT_INDX,NUMCASEB,NWAV /)
+   stride3 = (/ 1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, ALBEDOBIG, start=start3, &
+      stride=stride3, count=edge3)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -684,20 +637,20 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,1 /)
-   edges   = (/ LUT_INDX,NUMCASES,NWAV /)
-   stride = (/ 1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, ASSYMSMALL, start=start, &
-      stride=stride, count=edges)
+   start3  = (/ 1,1,1 /)
+   edge3   = (/ LUT_INDX,NUMCASES,NWAV /)
+   stride3 = (/ 1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, ASSYMSMALL, start=start3, &
+      stride=stride3, count=edge3)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,NUMCASES,1 /)
-   edges   = (/ LUT_INDX,NUMCASEB,NWAV /)
-   stride = (/ 1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, ASSYMBIG, start=start, &
-      stride=stride, count=edges)
+   start3  = (/ 1,NUMCASES,1 /)
+   edge3   = (/ LUT_INDX,NUMCASEB,NWAV /)
+   stride3 = (/ 1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, ASSYMBIG, start=start3, &
+      stride=stride3, count=edge3)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -709,20 +662,20 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,1 /)
-   edges   = (/ LUT_INDX,NUMCASES,NWAV /)
-   stride = (/ 1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, EXTSMALL, start=start, &
-      stride=stride, count=edges)
+   start3  = (/ 1,1,1 /)
+   edge3   = (/ LUT_INDX,NUMCASES,NWAV /)
+   stride3 = (/ 1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, EXTSMALL, start=start3, &
+      stride=stride3, count=edge3)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,NUMCASES,1 /)
-   edges   = (/ LUT_INDX,NUMCASEB,NWAV /)
-   stride = (/ 1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, EXTBIG, start=start, &
-      stride=stride, count=edges)
+   start3  = (/ 1,NUMCASES,1 /)
+   edge3   = (/ LUT_INDX,NUMCASEB,NWAV /)
+   stride3 = (/ 1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, EXTBIG, start=start3, &
+      stride=stride3, count=edge3)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -734,20 +687,20 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,1 /)
-   edges   = (/ LUT_INDX,NUMCASES,NWAV /)
-   stride = (/ 1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, BACKSCTTSMALL, start=start, &
-      stride=stride, count=edges)
+   start3  = (/ 1,1,1 /)
+   edge3   = (/ LUT_INDX,NUMCASES,NWAV /)
+   stride3 = (/ 1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, BACKSCTTSMALL, start=start3, &
+      stride=stride3, count=edge3)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,NUMCASES,1 /)
-   edges   = (/ LUT_INDX,NUMCASEB,NWAV /)
-   stride = (/ 1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, BACKSCTTBIG, start=start, &
-      stride=stride, count=edges)
+   start3  = (/ 1,NUMCASES,1 /)
+   edge3   = (/ LUT_INDX,NUMCASEB,NWAV /)
+   stride3 = (/ 1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, BACKSCTTBIG, start=start3, &
+      stride=stride3, count=edge3)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -759,20 +712,20 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,1 /)
-   edges   = (/ NUMCASES,NWAV,NTAU /)
-   stride = (/ 1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, TAUAS, start=start, &
-      stride=stride, count=edges)
+   start3  = (/ 1,1,1 /)
+   edge3   = (/ NUMCASES,NWAV,NTAU /)
+   stride3 = (/ 1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, TAUAS, start=start3, &
+      stride=stride3, count=edge3)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,NUMCASES,1 /)
-   edges   = (/ NUMCASEB,NWAV,NTAU /)
-   stride = (/ 1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, TAUAB, start=start, &
-      stride=stride, count=edges)
+   start3  = (/ 1,NUMCASES,1 /)
+   edge3   = (/ NUMCASEB,NWAV,NTAU /)
+   stride3 = (/ 1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, TAUAB, start=start3, &
+      stride=stride3, count=edge3)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -784,20 +737,20 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,1,1,1 /)
-   edges   = (/ LUT_INDX,NTH0,NTAU,NWAV,NUMCASES /)
-   stride = (/ 1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, ALBEDO_R_SMALL, start=start, &
-      stride=stride, count=edges)
+   start5  = (/ 1,1,1,1,1 /)
+   edge5   = (/ LUT_INDX,NTH0,NTAU,NWAV,NUMCASES /)
+   stride5 = (/ 1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, ALBEDO_R_SMALL, start=start5, &
+      stride=stride5, count=edge5)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,1,1,NUMCASES /)
-   edges   = (/ LUT_INDX,NTH0,NTAU,NWAV,NUMCASEB /)
-   stride = (/ 1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, ALBEDO_R_BIG, start=start, &
-      stride=stride, count=edges)
+   start5  = (/ 1,1,1,1,NUMCASES /)
+   edge5   = (/ LUT_INDX,NTH0,NTAU,NWAV,NUMCASEB /)
+   stride5 = (/ 1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, ALBEDO_R_BIG, start=start5, &
+      stride=stride5, count=edge5)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -809,20 +762,20 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,1,1,1 /)
-   edges   = (/ LUT_INDX,NTH0,NTAU,NWAV,NUMCASES /)
-   stride = (/ 1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, ALBEDO_T_SMALL, start=start, &
-      stride=stride, count=edges)
+   start5  = (/ 1,1,1,1,1 /)
+   edge5   = (/ LUT_INDX,NTH0,NTAU,NWAV,NUMCASES /)
+   stride5 = (/ 1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, ALBEDO_T_SMALL, start=start5, &
+      stride=stride5, count=edge5)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,1,1,NUMCASES /)
-   edges   = (/ LUT_INDX,NTH0,NTAU,NWAV,NUMCASEB /)
-   stride = (/ 1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, ALBEDO_T_BIG, start=start, &
-      stride=stride, count=edges)
+   start5  = (/ 1,1,1,1,NUMCASES /)
+   edge5   = (/ LUT_INDX,NTH0,NTAU,NWAV,NUMCASEB /)
+   stride5 = (/ 1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, ALBEDO_T_BIG, start=start5, &
+      stride=stride5, count=edge5)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -834,20 +787,20 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,1,1,1,1,1 /)
-   edges   = (/ LUT_INDX,NPHI,NTHET,NTH0,NTAU,NWAV,NUMCASES /)
-   stride = (/ 1,1,1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, AINTS, start=start, &
-      stride=stride, count=edges)
+   start7  = (/ 1,1,1,1,1,1,1 /)
+   edge7   = (/ LUT_INDX,NPHI,NTHET,NTH0,NTAU,NWAV,NUMCASES /)
+   stride7 = (/ 1,1,1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, AINTS, start=start7, &
+      stride=stride7, count=edge7)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,1,1,1,1,NUMCASES /)
-   edges   = (/ LUT_INDX,NPHI,NTHET,NTH0,NTAU,NWAV,NUMCASEB /)
-   stride = (/ 1,1,1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, AINTB, start=start, &
-      stride=stride, count=edges)
+   start7  = (/ 1,1,1,1,1,1,NUMCASES /)
+   edge7   = (/ LUT_INDX,NPHI,NTHET,NTH0,NTAU,NWAV,NUMCASEB /)
+   stride7 = (/ 1,1,1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, AINTB, start=start7, &
+      stride=stride7, count=edge7)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -870,20 +823,23 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
    H1_AINTB_uv1,H1_AINTB_uv2,H2_AINTB_uv1,H2_AINTB_uv2,&
    H3_AINTB_uv1,H3_AINTB_uv2,H4_AINTB_uv1,H4_AINTB_uv2,&
    TAUAB,JPHI,ref_rayall_uv,Iomega,&
-   EXTSMALL,ALBEDOSMALL,EXTbig,ALBEDOBIG,Iheigt,Num_iomega,&
-   Num_heigt)
+   EXTSMALL,ALBEDOSMALL,EXTbig,ALBEDOBIG,Iheight,Num_iomega,&
+   NUM_HEIGHT)
+
+   use netcdf
    USE OCIUAAER_Config_Module
    IMPLICIT NONE
    SAVE
    INCLUDE 'mod04.inc'
-   CHARACTER*132 LINE
-   INTEGER Icase,IFILE,IPHI,ITAU,ITH,ITH0,&
-      IWAV,IJ,Iopt_read,NNwave,Num_iomega,Num_heigt
-   REAL  EXTSMALL(Num_iomega,Num_heigt,Numcases,NWAV_uv)
-   REAL  ALBEDOSMALL(Num_iomega,Num_heigt,Numcases,NWAV_uv)
-   REAL  EXTBIG(Num_iomega,Num_heigt,NUMCASEB,NWAV_uv)
-   REAL  ALBEDOBIG(Num_iomega,Num_heigt,NUMCASEB,NWAV_uv)
 
+   INTEGER Icase,IFILE,IPHI,ITAU,ITH,ITH0,&
+      IWAV,IJ,Iopt_read,NNwave,Num_iomega,NUM_HEIGHT
+   REAL  EXTSMALL(Num_iomega,NUM_HEIGHT,Numcases,NWAV_uv)
+   REAL  ALBEDOSMALL(Num_iomega,NUM_HEIGHT,Numcases,NWAV_uv)
+   REAL  EXTBIG(Num_iomega,NUM_HEIGHT,NUMCASEB,NWAV_uv)
+   REAL  ALBEDOBIG(Num_iomega,Num_height,NUMCASEB,NWAV_uv)
+
+   INTEGER JPHI(NPHI),IWS,Iomega,Mode_F,Mode_C,Iheight
    REAL  PHC(NPHI),THET(NTHET),THET0(NTH0),WAVE(NWAV)
    REAL  TAUAS(NUMCASES,NWAV,NTAU)
    REAL  TAUAB(NUMCASEB,NWAV,NTAU)
@@ -903,21 +859,15 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
    real H2_AINTB_uv2(Num_iomega,NWIND, NPHI, NTHET, NTH0, NTAU,NUMCASEB)
    real H3_AINTB_uv2(Num_iomega,NWIND, NPHI, NTHET, NTH0, NTAU,NUMCASEB)
    real H4_AINTB_uv2(Num_iomega,NWIND, NPHI, NTHET, NTH0, NTAU,NUMCASEB)
-   Real  ref_rayall(Num_iomega,Num_heigt,NWIND,NPHI,NTHET,NTH0,NWAV),AA
-   Real  ref_rayall_uv(Num_iomega,NWIND,NPHI,NTHET,NTH0,NWAV,Num_heigt),AA
+   Real  ref_rayall(Num_iomega,NUM_HEIGHT,NWIND,NPHI,NTHET,NTH0,NWAV),AA
+   Real  ref_rayall_uv(Num_iomega,NWIND,NPHI,NTHET,NTH0,NWAV,NUM_HEIGHT)
    CHARACTER*1 cWS,kws,hhh
-   CHARACTER  (len=255) :: file_name ,Extension,file_dir
+   integer  status
+   integer, dimension (1)  :: start1, edge1, stride1
+   integer, dimension (4)  :: start4, edge4, stride4
+   integer, dimension (7)  :: start7, edge7, stride7
+   integer, dimension (9)  :: start9, edge9, stride9
 
-   use netcdf
-
-   implicit none
-
-   character(*),           intent (in)      :: lut_file, rfile
-   integer,                intent (out)     :: status
-   integer, dimension (4)                   :: start, edges, stride
-
-   integer                ::  number_type, nattrs
-   integer                ::  sds_id, sds_index, attr_index, hdfid
    character(len=255)     ::  sds_name
    character(len=255)    ::  dset_name
    character(len=255)    ::  attr_name
@@ -928,9 +878,7 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
    integer               ::  dset_id
    integer               ::  grp_id
 
-   lut_file = cfg%dt_nc4
-
-   status = nf90_open(lut_file, nf90_nowrite, nc_id)
+   status = nf90_open(cfg%dt_nc4, nf90_nowrite, nc_id)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
       return
@@ -949,11 +897,11 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1 /)
-   edges   = (/ NTH0 /)
-   stride = (/ 1 /)
-   status = nf90_get_var(grp_id, dset_id, THET0, start=start, &
-      stride=stride, count=edges)
+   start1  = (/ 1 /)
+   edge1   = (/ NTH0 /)
+   stride1 = (/ 1 /)
+   status = nf90_get_var(grp_id, dset_id, THET0, start=start1, &
+      stride=stride1, count=edge1)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -965,11 +913,11 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1 /)
-   edges   = (/ NTHET /)
-   stride = (/ 1 /)
-   status = nf90_get_var(grp_id, dset_id, THET, start=start, &
-      stride=stride, count=edges)
+   start1  = (/ 1 /)
+   edge1   = (/ NTHET /)
+   stride1 = (/ 1 /)
+   status = nf90_get_var(grp_id, dset_id, THET, start=start1, &
+      stride=stride1, count=edge1)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -981,11 +929,11 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1 /)
-   edges   = (/ NPHI /)
-   stride = (/ 1 /)
-   status = nf90_get_var(grp_id, dset_id, PHC, start=start, &
-      stride=stride, count=edges)
+   start1  = (/ 1 /)
+   edge1   = (/ NPHI /)
+   stride1 = (/ 1 /)
+   status = nf90_get_var(grp_id, dset_id, PHC, start=start1, &
+      stride=stride1, count=edge1)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -997,11 +945,11 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1 /)
-   edges   = (/ NWAV /)
-   stride = (/ 1 /)
-   status = nf90_get_var(grp_id, dset_id, WAVE, start=start, &
-      stride=stride, count=edges)
+   start1  = (/ 1 /)
+   edge1   = (/ NWAV /)
+   stride1 = (/ 1 /)
+   status = nf90_get_var(grp_id, dset_id, WAVE, start=start1, &
+      stride=stride1, count=edge1)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1015,20 +963,20 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,1,1 /)
-   edges   = (/ NUM_IOMEGA,NUM_HEIGHT,NUMCASES,NWAV_UV /)
-   stride = (/ 1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, ALBEDOSMALL, start=start, &
-      stride=stride, count=edges)
+   start4  = (/ 1,1,1,1 /)
+   edge4   = (/ NUM_IOMEGA,NUM_HEIGHT,NUMCASES,NWAV_UV /)
+   stride4 = (/ 1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, ALBEDOSMALL, start=start4, &
+      stride=stride4, count=edge4)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,NUMCASES,1 /)
-   edges   = (/ NUM_IOMEGA,NUM_HEIGHT,NUMCASEB,NWAV_UV /)
-   stride = (/ 1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, ALBEDOBIG, start=start, &
-      stride=stride, count=edges)
+   start4  = (/ 1,1,NUMCASES,1 /)
+   edge4   = (/ NUM_IOMEGA,NUM_HEIGHT,NUMCASEB,NWAV_UV /)
+   stride4 = (/ 1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, ALBEDOBIG, start=start4, &
+      stride=stride4, count=edge4)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1042,20 +990,20 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,1,1 /)
-   edges   = (/ NUM_IOMEGA,NUM_HEIGHT,NUMCASES,NWAV_UV /)
-   stride = (/ 1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, ALBEDOSMALL, start=start, &
-      stride=stride, count=edges)
+   start4  = (/ 1,1,1,1 /)
+   edge4   = (/ NUM_IOMEGA,NUM_HEIGHT,NUMCASES,NWAV_UV /)
+   stride4 = (/ 1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, ALBEDOSMALL, start=start4, &
+      stride=stride4, count=edge4)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,NUMCASES,1 /)
-   edges   = (/ NUM_IOMEGA,NUM_HEIGHT,NUMCASEB,NWAV_UV /)
-   stride = (/ 1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, ALBEDOBIG, start=start, &
-      stride=stride, count=edges)
+   start4  = (/ 1,1,NUMCASES,1 /)
+   edge4   = (/ NUM_IOMEGA,NUM_HEIGHT,NUMCASEB,NWAV_UV /)
+   stride4 = (/ 1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, ALBEDOBIG, start=start4, &
+      stride=stride4, count=edge4)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1070,11 +1018,11 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
       return
    end if
 
-   start  = (/ 1,1,1,1,1,1,1 /)
-   edges   = (/ NUM_IOMEGA,NWIND,NPHI,NTHET,NTH0,NWAV_UV,NUM_HEIGHT /)
-   stride = (/ 1,1,1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, ref_rayall_uv, start=start, &
-      stride=stride, count=edges)
+   start7  = (/ 1,1,1,1,1,1,1 /)
+   edge7   = (/ NUM_IOMEGA,NWIND,NPHI,NTHET,NTH0,NWAV_UV,NUM_HEIGHT /)
+   stride7 = (/ 1,1,1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, ref_rayall_uv, start=start7, &
+      stride=stride7, count=edge7)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1091,39 +1039,39 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
 
    !   ---- H1
 
-   start  = (/ 1,1,1,1,1,1,1,1,1 /)
-   edges   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASES /)
-   stride = (/ 1,1,1,1,1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, H1_AINTS_UV1, start=start, &
-      stride=stride, count=edges)
+   start9  = (/ 1,1,1,1,1,1,1,1,1 /)
+   edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASES /)
+   stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, H1_AINTS_UV1, start=start9, &
+      stride=stride9, count=edge9)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,1,1,1,1,1,1,NUMCASES /)
-   edges   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
-   stride = (/ 1,1,1,1,1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, H1_AINTB_UV1, start=start, &
-      stride=stride, count=edges)
+   start9  = (/ 1,1,1,1,1,1,1,1,NUMCASES /)
+   edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
+   stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, H1_AINTB_UV1, start=start9, &
+      stride=stride9, count=edge9)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
 
-   start  = (/ 1,1,1,1,1,1,1,2,1 /)
-   edges   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASES /)
-   stride = (/ 1,1,1,1,1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, H1_AINTS_UV2, start=start, &
-      stride=stride, count=edges)
+   start9  = (/ 1,1,1,1,1,1,1,2,1 /)
+   edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASES /)
+   stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, H1_AINTS_UV2, start=start9, &
+      stride=stride9, count=edge9)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,1,1,1,1,1,2,NUMCASES /)
-   edges   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
-   stride = (/ 1,1,1,1,1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, H1_AINTB_UV2, start=start, &
-      stride=stride, count=edges)
+   start9  = (/ 1,1,1,1,1,1,1,2,NUMCASES /)
+   edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
+   stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, H1_AINTB_UV2, start=start9, &
+      stride=stride9, count=edge9)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1131,39 +1079,39 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
 
    !   ---- H2
 
-   start  = (/ 1,2,1,1,1,1,1,1,1 /)
-   edges   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASES /)
-   stride = (/ 1,1,1,1,1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, H2_AINTS_UV1, start=start, &
-      stride=stride, count=edges)
+   start9  = (/ 1,2,1,1,1,1,1,1,1 /)
+   edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASES /)
+   stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, H2_AINTS_UV1, start=start9, &
+      stride=stride9, count=edge9)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,2,1,1,1,1,1,1,NUMCASES /)
-   edges   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
-   stride = (/ 1,1,1,1,1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, H2_AINTB_UV1, start=start, &
-      stride=stride, count=edges)
+   start9  = (/ 1,2,1,1,1,1,1,1,NUMCASES /)
+   edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
+   stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, H2_AINTB_UV1, start=start9, &
+      stride=stride9, count=edge9)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
 
-   start  = (/ 1,2,1,1,1,1,1,2,1 /)
-   edges   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASES /)
-   stride = (/ 1,1,1,1,1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, H2_AINTS_UV2, start=start, &
-      stride=stride, count=edges)
+   start9  = (/ 1,2,1,1,1,1,1,2,1 /)
+   edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASES /)
+   stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, H2_AINTS_UV2, start=start9, &
+      stride=stride9, count=edge9)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,2,1,1,1,1,1,2,NUMCASES /)
-   edges   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
-   stride = (/ 1,1,1,1,1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, H2_AINTB_UV2, start=start, &
-      stride=stride, count=edges)
+   start9  = (/ 1,2,1,1,1,1,1,2,NUMCASES /)
+   edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
+   stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, H2_AINTB_UV2, start=start9, &
+      stride=stride9, count=edge9)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1172,39 +1120,39 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
 
    !   ---- H3
 
-   start  = (/ 1,3,1,1,1,1,1,1,1 /)
-   edges   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASES /)
-   stride = (/ 1,1,1,1,1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, H3_AINTS_UV1, start=start, &
-      stride=stride, count=edges)
+   start9  = (/ 1,3,1,1,1,1,1,1,1 /)
+   edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASES /)
+   stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, H3_AINTS_UV1, start=start9, &
+      stride=stride9, count=edge9)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,3,1,1,1,1,1,1,NUMCASES /)
-   edges   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
-   stride = (/ 1,1,1,1,1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, H3_AINTB_UV1, start=start, &
-      stride=stride, count=edges)
+   start9  = (/ 1,3,1,1,1,1,1,1,NUMCASES /)
+   edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
+   stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, H3_AINTB_UV1, start=start9, &
+      stride=stride9, count=edge9)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
 
-   start  = (/ 1,3,1,1,1,1,1,2,1 /)
-   edges   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASES /)
-   stride = (/ 1,1,1,1,1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, H3_AINTS_UV2, start=start, &
-      stride=stride, count=edges)
+   start9  = (/ 1,3,1,1,1,1,1,2,1 /)
+   edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASES /)
+   stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, H3_AINTS_UV2, start=start9, &
+      stride=stride9, count=edge9)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,3,1,1,1,1,1,2,NUMCASES /)
-   edges   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
-   stride = (/ 1,1,1,1,1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, H3_AINTB_UV2, start=start, &
-      stride=stride, count=edges)
+   start9  = (/ 1,3,1,1,1,1,1,2,NUMCASES /)
+   edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
+   stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, H3_AINTB_UV2, start=start9, &
+      stride=stride9, count=edge9)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1212,39 +1160,39 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
 
    !   ---- H4
 
-   start  = (/ 1,4,1,1,1,1,1,1,1 /)
-   edges   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASES /)
-   stride = (/ 1,1,1,1,1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, H4_AINTS_UV1, start=start, &
-      stride=stride, count=edges)
+   start9  = (/ 1,4,1,1,1,1,1,1,1 /)
+   edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASES /)
+   stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, H4_AINTS_UV1, start=start9, &
+      stride=stride9, count=edge9)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,4,1,1,1,1,1,1,NUMCASES /)
-   edges   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
-   stride = (/ 1,1,1,1,1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, H4_AINTB_UV1, start=start, &
-      stride=stride, count=edges)
+   start9  = (/ 1,4,1,1,1,1,1,1,NUMCASES /)
+   edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
+   stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, H4_AINTB_UV1, start=start9, &
+      stride=stride9, count=edge9)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
 
-   start  = (/ 1,4,1,1,1,1,1,2,1 /)
-   edges   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASES /)
-   stride = (/ 1,1,1,1,1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, H4_AINTS_UV2, start=start, &
-      stride=stride, count=edges)
+   start9  = (/ 1,4,1,1,1,1,1,2,1 /)
+   edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASES /)
+   stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, H4_AINTS_UV2, start=start9, &
+      stride=stride9, count=edge9)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,4,1,1,1,1,1,2,NUMCASES /)
-   edges   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
-   stride = (/ 1,1,1,1,1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, H4_AINTB_UV2, start=start, &
-      stride=stride, count=edges)
+   start9  = (/ 1,4,1,1,1,1,1,2,NUMCASES /)
+   edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
+   stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, H4_AINTB_UV2, start=start9, &
+      stride=stride9, count=edge9)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1261,7 +1209,7 @@ END
 
 
 !*************************************************
-SUBROUTINE AEROSOL_MAP_NC4(lut_file, IMONTH,AEROSOL)
+SUBROUTINE AEROSOL_MAP_NC4(HANDLE_LUTMAP, IMONTH,AEROSOL)
    !----------------------------------------------------
    !!F90
 
@@ -1278,27 +1226,25 @@ SUBROUTINE AEROSOL_MAP_NC4(lut_file, IMONTH,AEROSOL)
    !!OUTPUT PARAMETERS
    !    AEROSOL     360x180 map of aerosol type for appropriate season
 
+   use netcdf
    USE OCIUAAER_Config_Module
    IMPLICIT none
 
    INTEGER IMONTH, IMONTH1,iseason
    INTEGER HANDLE_LUTMAP
-   INTEGER nlon, nlat
+   INTEGER nlon, nlat, ilon, ilat
    PARAMETER (nlon = 360, nlat = 180)
    INTEGER AEROSOL(nlon,nlat)
    INTEGER AEROSOL_all(nlon,nlat,4)
    CHARACTER  (len=255) ::file_name ,Extension
-   use netcdf
 
-   implicit none
+   CHARACTER*3 MMMs(4), MMM
+   DATA MMMs/'DJF','MAM','JJA','SON'/
 
-   character(*),           intent (in)      :: lut_file, rfile
-   integer,                intent (out)     :: status
-   integer, dimension (4)                   :: start, edges, stride
+   integer                :: status
+   integer, dimension (3) :: start3, edge3, stride3
 
-   integer                ::  number_type, nattrs
-   integer                ::  sds_id, sds_index, attr_index, hdfid
-   character(len=255)     ::  sds_name
+   character(len=255)    ::  sds_name
    character(len=255)    ::  dset_name
    character(len=255)    ::  attr_name
    character(len=255)    ::  group_name
@@ -1308,9 +1254,7 @@ SUBROUTINE AEROSOL_MAP_NC4(lut_file, IMONTH,AEROSOL)
    integer               ::  dset_id
    integer               ::  grp_id
 
-   lut_file = cfg%dt_nc4
-
-   status = nf90_open(lut_file, nf90_nowrite, nc_id)
+   status = nf90_open(cfg%dt_nc4, nf90_nowrite, nc_id)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
       return
@@ -1329,11 +1273,11 @@ SUBROUTINE AEROSOL_MAP_NC4(lut_file, IMONTH,AEROSOL)
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,1 /)
-   edges   = (/ nlon,nlat,4 /)
-   stride = (/ 1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, AEROSOL_all, start=start, &
-      stride=stride, count=edges)
+   start3  = (/ 1,1,1 /)
+   edge3   = (/ nlon,nlat,4 /)
+   stride3 = (/ 1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, AEROSOL_all, start=start3, &
+      stride=stride3, count=edge3)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1404,6 +1348,8 @@ SUBROUTINE RNLOOKUP_NC4(&
    !   opth=(0.0,0.25,0.50,1.0,2.0,3.0,5.0)
    !   lhght = number of hght(observation heights)              1
    !   hght=(80.0 km)
+
+   use netcdf
    USE OCIUAAER_Config_Module
    IMPLICIT NONE
    INCLUDE 'mod04_land.inc'
@@ -1426,20 +1372,18 @@ SUBROUTINE RNLOOKUP_NC4(&
    CHARACTER*1 LINE(132)
    character (len =10):: Sat_Flag
    REAL  Omega0(NLTAU,NLWAV,NLTABLE),ROD(NLWAV),GOD(NLWAV)
-   CHARACTER  (len=255) ::  file_name,Extension
    SAVE
 
-   use netcdf
+   integer                     :: status
+   integer, dimension (1)      :: start1, edge1, stride1
+   integer, dimension (3)      :: start3, edge3, stride3
+   integer, dimension (4)      :: start4, edge4, stride4
+   integer, dimension (5)      :: start5, edge5, stride5
+   integer, dimension (6)      :: start6, edge6, stride6
 
-   implicit none
-
-   character(*),           intent (in)      :: lut_file, rfile
-   integer,                intent (out)     :: status
-   integer, dimension (4)                   :: start, edges, stride
-
-   integer                ::  number_type, nattrs
-   integer                ::  sds_id, sds_index, attr_index, hdfid
-   character(len=255)     ::  sds_name
+   integer               ::  number_type, nattrs
+   integer               ::  sds_id, sds_index, attr_index, hdfid
+   character(len=255)    ::  sds_name
    character(len=255)    ::  dset_name
    character(len=255)    ::  attr_name
    character(len=255)    ::  group_name
@@ -1449,9 +1393,7 @@ SUBROUTINE RNLOOKUP_NC4(&
    integer               ::  dset_id
    integer               ::  grp_id
 
-   lut_file = cfg%dt_nc4
-
-   status = nf90_open(lut_file, nf90_nowrite, nc_id)
+   status = nf90_open(cfg%dt_nc4, nf90_nowrite, nc_id)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
       return
@@ -1470,11 +1412,11 @@ SUBROUTINE RNLOOKUP_NC4(&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1 /)
-   edges   = (/ NLTHET0 /)
-   stride = (/ 1 /)
-   status = nf90_get_var(grp_id, dset_id, THET0_NL, start=start, &
-      stride=stride, count=edges)
+   start1  = (/ 1 /)
+   edge1   = (/ NLTHET0 /)
+   stride1  = (/ 1 /)
+   status = nf90_get_var(grp_id, dset_id, THET0_NL, start=start1, &
+      stride=stride1, count=edge1)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1486,11 +1428,11 @@ SUBROUTINE RNLOOKUP_NC4(&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1 /)
-   edges   = (/ NLTHE /)
-   stride = (/ 1 /)
-   status = nf90_get_var(grp_id, dset_id, THE_NL, start=start, &
-      stride=stride, count=edges)
+   start1  = (/ 1 /)
+   edge1   = (/ NLTHE /)
+   stride1  = (/ 1 /)
+   status = nf90_get_var(grp_id, dset_id, THE_NL, start=start1, &
+      stride=stride1, count=edge1)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1502,11 +1444,11 @@ SUBROUTINE RNLOOKUP_NC4(&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1 /)
-   edges   = (/ NLPHI /)
-   stride = (/ 1 /)
-   status = nf90_get_var(grp_id, dset_id, PHI_NL, start=start, &
-      stride=stride, count=edges)
+   start1  = (/ 1 /)
+   edge1   = (/ NLPHI /)
+   stride1  = (/ 1 /)
+   status = nf90_get_var(grp_id, dset_id, PHI_NL, start=start1, &
+      stride=stride1, count=edge1)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1518,11 +1460,11 @@ SUBROUTINE RNLOOKUP_NC4(&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1 /)
-   edges   = (/ NLTHET0 /)
-   stride = (/ 1 /)
-   status = nf90_get_var(grp_id, dset_id, THET0_NL, start=start, &
-      stride=stride, count=edges)
+   start1  = (/ 1 /)
+   edge1   = (/ NLTHET0 /)
+   stride1  = (/ 1 /)
+   status = nf90_get_var(grp_id, dset_id, MU0_NL, start=start1, &
+      stride=stride1, count=edge1)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1534,11 +1476,11 @@ SUBROUTINE RNLOOKUP_NC4(&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1 /)
-   edges   = (/ NLWAV /)
-   stride = (/ 1 /)
-   status = nf90_get_var(grp_id, dset_id, WAV_NL, start=start, &
-      stride=stride, count=edges)
+   start1  = (/ 1 /)
+   edge1   = (/ NLWAV /)
+   stride1  = (/ 1 /)
+   status = nf90_get_var(grp_id, dset_id, WAV_NL, start=start1, &
+      stride=stride1, count=edge1)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1550,8 +1492,8 @@ SUBROUTINE RNLOOKUP_NC4(&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   status = nf90_get_var(grp_id, dset_id, ROD, start=start, &
-      stride=stride, count=edges)
+   status = nf90_get_var(grp_id, dset_id, ROD, start=start1, &
+      stride=stride1, count=edge1)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1563,8 +1505,8 @@ SUBROUTINE RNLOOKUP_NC4(&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   status = nf90_get_var(grp_id, dset_id, GOD, start=start, &
-      stride=stride, count=edges)
+   status = nf90_get_var(grp_id, dset_id, GOD, start=start1, &
+      stride=stride1, count=edge1)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1576,11 +1518,11 @@ SUBROUTINE RNLOOKUP_NC4(&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,1 /)
-   edges   = (/ NLTAU,NLWAV,NLTABLE /)
-   stride = (/ 1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, SSA_NL0, start=start, &
-      stride=stride, count=edges)
+   start3  = (/ 1,1,1 /)
+   edge3   = (/ NLTAU,NLWAV,NLTABLE /)
+   stride3 = (/ 1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, SSA_NL0, start=start3, &
+      stride=stride3, count=edge3)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1592,8 +1534,8 @@ SUBROUTINE RNLOOKUP_NC4(&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   status = nf90_get_var(grp_id, dset_id, QEXT_NL0, start=start, &
-      stride=stride, count=edges)
+   status = nf90_get_var(grp_id, dset_id, QEXT_NL0, start=start3, &
+      stride=stride3, count=edge3)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1605,8 +1547,8 @@ SUBROUTINE RNLOOKUP_NC4(&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   status = nf90_get_var(grp_id, dset_id, BEXT_NL0, start=start, &
-      stride=stride, count=edges)
+   status = nf90_get_var(grp_id, dset_id, BEXT_NL0, start=start3, &
+      stride=stride3, count=edge3)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1618,8 +1560,8 @@ SUBROUTINE RNLOOKUP_NC4(&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   status = nf90_get_var(grp_id, dset_id, VEXT_NL0, start=start, &
-      stride=stride, count=edges)
+   status = nf90_get_var(grp_id, dset_id, VEXT_NL0, start=start3, &
+      stride=stride3, count=edge3)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1631,8 +1573,8 @@ SUBROUTINE RNLOOKUP_NC4(&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   status = nf90_get_var(grp_id, dset_id, MEXT_NL0, start=start, &
-      stride=stride, count=edges)
+   status = nf90_get_var(grp_id, dset_id, MEXT_NL0, start=start3, &
+      stride=stride3, count=edge3)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1644,8 +1586,8 @@ SUBROUTINE RNLOOKUP_NC4(&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   status = nf90_get_var(grp_id, dset_id, MASSCOEF_NL0, start=start, &
-      stride=stride, count=edges)
+   status = nf90_get_var(grp_id, dset_id, MASSCOEF_NL0, start=start3, &
+      stride=stride3, count=edge3)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1657,8 +1599,8 @@ SUBROUTINE RNLOOKUP_NC4(&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   status = nf90_get_var(grp_id, dset_id, OPTH_NL0, start=start, &
-      stride=stride, count=edges)
+   status = nf90_get_var(grp_id, dset_id, OPTH_NL0, start=start3, &
+      stride=stride3, count=edge3)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1670,11 +1612,11 @@ SUBROUTINE RNLOOKUP_NC4(&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,1,1 /)
-   edges   = (/ NLTHET0,NLTAU,NLWAV,NLTABLE /)
-   stride = (/ 1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, SBAR_NL0, start=start, &
-      stride=stride, count=edges)
+   start4  = (/ 1,1,1,1 /)
+   edge4   = (/ NLTHET0,NLTAU,NLWAV,NLTABLE /)
+   stride4 = (/ 1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, SBAR_NL0, start=start4, &
+      stride=stride4, count=edge4)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1686,8 +1628,8 @@ SUBROUTINE RNLOOKUP_NC4(&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   status = nf90_get_var(grp_id, dset_id, FD_NL0, start=start, &
-      stride=stride, count=edges)
+   status = nf90_get_var(grp_id, dset_id, FD_NL0, start=start4, &
+      stride=stride4, count=edge4)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1699,11 +1641,11 @@ SUBROUTINE RNLOOKUP_NC4(&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,1,1,1 /)
-   edges   = (/ NLTHE,NLTHET0,NLTAU,NLWAV,NLTABLE /)
-   stride = (/ 1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, T_NL0, start=start, &
-      stride=stride, count=edges)
+   start5  = (/ 1,1,1,1,1 /)
+   edge5   = (/ NLTHE,NLTHET0,NLTAU,NLWAV,NLTABLE /)
+   stride5 = (/ 1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, T_NL0, start=start5, &
+      stride=stride5, count=edge5)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1715,11 +1657,11 @@ SUBROUTINE RNLOOKUP_NC4(&
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
       return
    end if
-   start  = (/ 1,1,1,1,1 /)
-   edges   = (/ NLPHI,NLTHE,NLTHET0,NLTAU,NLWAV,NLTABLE /)
-   stride = (/ 1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, INT_NL0, start=start, &
-      stride=stride, count=edges)
+   start6  = (/ 1,1,1,1,1,1 /)
+   edge6   = (/ NLPHI,NLTHE,NLTHET0,NLTAU,NLWAV,NLTABLE /)
+   stride6 = (/ 1,1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, INT_NL0, start=start6, &
+      stride=stride6, count=edge6)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1730,6 +1672,20 @@ SUBROUTINE RNLOOKUP_NC4(&
       print *, "ERROR: Failed to close lut_nc4 file: ", status
       return
    end if
+
+    QEXT_NL0(1,:,:) = QEXT_NL0(2,:,:)
+    BEXT_NL0(1,:,:) = BEXT_NL0(2,:,:)
+    VEXT_NL0(1,:,:) = VEXT_NL0(2,:,:)
+    MEXT_NL0(1,:,:) = MEXT_NL0(2,:,:)
+    MASSCOEF_NL0(1,:,:) = MASSCOEF_NL0(2,:,:)
+    DO ITAB=1,NLTABLE
+    DO ITAU=1,NLTAU
+    DO IWAV=1,NLWAV
+    EXTNORM_NL0(ITAU,IWAV,ITAB) = &
+        QEXT_NL0(ITAU,IWAV,ITAB) / QEXT_NL0(ITAU,iwave_553,ITAB)
+    ENDDO
+    ENDDO
+    ENDDO
 
    RETURN
 END

@@ -13,7 +13,7 @@
 ! HISTORY: Jul 10, 2014
 !==============================================================================
  USE InterpolationModule
- USE HDF5
+ use netcdf
  USE OCIUAAER_Config_Module
  
  IMPLICIT NONE
@@ -114,16 +114,11 @@
 
 ! File, group, dataset and attribute names.
   CHARACTER(LEN=*), INTENT(IN) :: lut_fn
-  CHARACTER(LEN=256) :: group_name, dataset_name, attribute_name
-
-! HID_T type integers.
-  INTEGER(HID_T) :: file_id, group_id, dataset_id, datatype_id, attribute_id
-
 ! HSIZE_T type integer.
-  INTEGER(HSIZE_T) :: wavdims(nwav_aac), aoddims(naod_aac), coddims(ncod_aac)
-  INTEGER(HSIZE_T) :: szadims(nsza_aac), vzadims(nvza_aac), raadims(nraa_aac)
-  INTEGER(HSIZE_T) :: ssadims(nssa_aac), salbdims(nsalb_aac)
-  INTEGER(HSIZE_T), DIMENSION(7) :: dims7
+  INTEGER :: wavdims(nwav_aac), aoddims(naod_aac), coddims(ncod_aac)
+  INTEGER :: szadims(nsza_aac), vzadims(nvza_aac), raadims(nraa_aac)
+  INTEGER :: ssadims(nssa_aac), salbdims(nsalb_aac)
+  INTEGER, DIMENSION(7) :: dims7
 
   
 ! Regular four-byte integer.
@@ -195,113 +190,143 @@
 							    uvaimie_800zhgt7_aac_dsto, uvaimie_800zhgt8_aac_dsto
  
 !--------------------------------------------------------------------------------------------------------------------------------------------------
+      integer, dimension (1) :: start1, edge1, stride1
+      integer, dimension (7) :: start7, edge7, stride7
 
+      character(len=255)    ::  sds_name
+      character(len=255)    ::  dset_name
+      character(len=255)    ::  attr_name
+      character(len=255)    ::  group_name
 
-! Open SSA388 climatology file.
-! Open the file. Error check.    
-  CALL H5Fopen_f(cfg%uv_nc4, H5F_ACC_RDONLY_F, file_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-!  PRINT *, 'Now reading... ', lut_fn
+      integer               ::  nc_id
+      integer               ::  dim_id
+      integer               ::  dset_id
+      integer               ::  grp_id
 
-! Open DATA group.
-  group_name = "/omacalut"
-  CALL H5Gopen_f(file_id, group_name, group_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+      status = nf90_open(cfg%uv_nc4, nf90_nowrite, nc_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to open UV lut_nc4 file: ", status
+         return
+      end if
 
-  ALLOCATE( wavetbl_aac(nwav_aac), aodtbl_aac(naod_aac), &
-             codtbl_aac(ncod_aac), szatbl_aac(nsza_aac), &
-             vzatbl_aac(nvza_aac), raatbl_aac(nraa_aac), &
-	     ssatbl_aac(nssa_aac),salbtbl_aac(nsalb_aac) )
+      group_name = 'omacalut'
+      status = nf90_inq_ncid(nc_id, group_name, grp_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
+         return
+      end if
 
-!
-  dataset_name = "NumberOfWavelength"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  !dims = SHAPE(wavetbl_aac)
-  CALL H5Dread_f(dataset_id, datatype_id, wavetbl_aac, wavdims, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-!
-  dataset_name = "NumberOfAerosolOpticalDepth"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  !dims = SHAPE(aodtbl_aac)
-  CALL H5Dread_f(dataset_id, datatype_id, aodtbl_aac, aoddims, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-!
-  dataset_name = "NumberOfCloudOpticalDepth"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  !dims = SHAPE(codtbl_aac)
-  CALL H5Dread_f(dataset_id, datatype_id, codtbl_aac, coddims, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-!
-  dataset_name = "NumberOfSolarZenithAngle"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  !dims = SHAPE(szatbl_aac)
-  CALL H5Dread_f(dataset_id, datatype_id, szatbl_aac, szadims, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-!
-  dataset_name = "NumberOfViewingZenithAngle"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  !dims = SHAPE(vzatbl_aac)
-  CALL H5Dread_f(dataset_id, datatype_id, vzatbl_aac, vzadims, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-!
-  dataset_name = "NumberOfRelativeAzimuthAngle"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  !dims = SHAPE(raatbl_aac)
-  CALL H5Dread_f(dataset_id, datatype_id, raatbl_aac, raadims, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-!
-  dataset_name = "NumberOfSingleScatteringAlbedoDust"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  !dims = SHAPE(ssatbl_aac)
-  CALL H5Dread_f(dataset_id, datatype_id, ssatbl_aac, ssadims, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-!
-  dataset_name = "NumberOfSurfaceAlbedo"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  !dims = SHAPE(salbtbl_aac)
-  CALL H5Dread_f(dataset_id, datatype_id, salbtbl_aac, salbdims, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+     ALLOCATE( wavetbl_aac(nwav_aac), aodtbl_aac(naod_aac), &
+                codtbl_aac(ncod_aac), szatbl_aac(nsza_aac), &
+                vzatbl_aac(nvza_aac), raatbl_aac(nraa_aac), &
+                ssatbl_aac(nssa_aac),salbtbl_aac(nsalb_aac) )
 
+      dset_name = 'NumberOfWavelength'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      start1  = (/ 1 /)
+      edge1   = (/ nwav_aac /)
+      stride1 = (/ 1 /)
+      status = nf90_get_var(grp_id, dset_id, wavetbl_aac, start=start1, &
+         stride=stride1, count=edge1)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      dset_name = 'NumberOfAerosolOpticalDepth'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      edge1   = (/ naod_aac /)
+      status = nf90_get_var(grp_id, dset_id, aodtbl_aac, start=start1, &
+         stride=stride1, count=edge1)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      dset_name = 'NumberOfCloudOpticalDepth'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      edge1   = (/ ncod_aac /)
+      status = nf90_get_var(grp_id, dset_id, codtbl_aac, start=start1, &
+         stride=stride1, count=edge1)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      dset_name = 'NumberOfSolarZenithAngle'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      edge1   = (/ nsza_aac /)
+      status = nf90_get_var(grp_id, dset_id, szatbl_aac, start=start1, &
+         stride=stride1, count=edge1)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      dset_name = 'NumberOfViewingZenithAngle'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      edge1   = (/ nvza_aac /)
+      status = nf90_get_var(grp_id, dset_id, vzatbl_aac, start=start1, &
+         stride=stride1, count=edge1)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      dset_name = 'NumberOfRelativeAzimuthAngle'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      edge1   = (/ nraa_aac /)
+      status = nf90_get_var(grp_id, dset_id, raatbl_aac, start=start1, &
+         stride=stride1, count=edge1)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      dset_name = 'NumberOfSingleScatteringAlbedoDust'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      edge1   = (/ nssa_aac /)
+      status = nf90_get_var(grp_id, dset_id, ssatbl_aac, start=start1, &
+         stride=stride1, count=edge1)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      dset_name = 'NumberOfSurfaceAlbedo'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      edge1   = (/ nsalb_aac /)
+      status = nf90_get_var(grp_id, dset_id, salbtbl_aac, start=start1, &
+         stride=stride1, count=edge1)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
 
     !! Allocate memory
 
@@ -380,202 +405,250 @@
 ! FOR SMOKE
 !
 !
-  dataset_name = "Radiance388_SMOKE_PRESLEV1013_AERHGT3p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_1013zhgt3_aac_smk)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_1013zhgt3_aac_smk, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_SMOKE_PRESLEV1013_AERHGT3p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   start7  = (/ 1,1,1,1,1,1,1 /)
+   edge7   = SHAPE(rad388_1013zhgt3_aac_smk)
+   stride7 = (/ 1,1,1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, rad388_1013zhgt3_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_1013zhgt3_aac_smk = rad388_1013zhgt3_aac_smk / sflux_lutaac
 !
-  dataset_name = "UVAIMie_SMOKE_PRESLEV1013_AERHGT3p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_1013zhgt3_aac_smk)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_1013zhgt3_aac_smk, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_SMOKE_PRESLEV1013_AERHGT3p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_1013zhgt3_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_1013zhgt3_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_1013zhgt3_aac_smk = uvaimie_1013zhgt3_aac_smk
 !
-  dataset_name = "Radiance388_SMOKE_PRESLEV1013_AERHGT4p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_1013zhgt4_aac_smk)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_1013zhgt4_aac_smk, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_SMOKE_PRESLEV1013_AERHGT4p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_1013zhgt4_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, rad388_1013zhgt4_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_1013zhgt4_aac_smk = rad388_1013zhgt4_aac_smk / sflux_lutaac
 !
-  dataset_name = "UVAIMie_SMOKE_PRESLEV1013_AERHGT4p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_1013zhgt4_aac_smk)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_1013zhgt4_aac_smk, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_SMOKE_PRESLEV1013_AERHGT4p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_1013zhgt4_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_1013zhgt4_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_1013zhgt4_aac_smk = uvaimie_1013zhgt4_aac_smk
 !
-  dataset_name = "Radiance388_SMOKE_PRESLEV1013_AERHGT5p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_1013zhgt5_aac_smk)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_1013zhgt5_aac_smk, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_SMOKE_PRESLEV1013_AERHGT5p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_1013zhgt5_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, rad388_1013zhgt5_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_1013zhgt5_aac_smk = rad388_1013zhgt5_aac_smk / sflux_lutaac
 !
-  dataset_name = "UVAIMie_SMOKE_PRESLEV1013_AERHGT5p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_1013zhgt5_aac_smk)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_1013zhgt5_aac_smk, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_SMOKE_PRESLEV1013_AERHGT5p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_1013zhgt5_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_1013zhgt5_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_1013zhgt5_aac_smk = uvaimie_1013zhgt5_aac_smk
 !
-  dataset_name = "Radiance388_SMOKE_PRESLEV1013_AERHGT6p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_1013zhgt6_aac_smk)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_1013zhgt6_aac_smk, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_SMOKE_PRESLEV1013_AERHGT6p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_1013zhgt6_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, rad388_1013zhgt6_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_1013zhgt6_aac_smk = rad388_1013zhgt6_aac_smk / sflux_lutaac
 !
-  dataset_name = "UVAIMie_SMOKE_PRESLEV1013_AERHGT6p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_1013zhgt6_aac_smk)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_1013zhgt6_aac_smk, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_SMOKE_PRESLEV1013_AERHGT6p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_1013zhgt6_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_1013zhgt6_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_1013zhgt6_aac_smk = uvaimie_1013zhgt6_aac_smk
 
 !
 ! --- Read 800 hPa files ----------------------------------------------------------------------
 !
-  dataset_name = "Radiance388_SMOKE_PRESLEV0800_AERHGT5p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_800zhgt5_aac_smk)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_800zhgt5_aac_smk, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_SMOKE_PRESLEV0800_AERHGT5p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_800zhgt5_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, rad388_800zhgt5_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_800zhgt5_aac_smk = rad388_800zhgt5_aac_smk / sflux_lutaac
 !
-  dataset_name = "UVAIMie_SMOKE_PRESLEV0800_AERHGT5p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_800zhgt5_aac_smk)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_800zhgt5_aac_smk, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_SMOKE_PRESLEV0800_AERHGT5p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_800zhgt5_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_800zhgt5_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_800zhgt5_aac_smk = uvaimie_800zhgt5_aac_smk
 !
-  dataset_name = "Radiance388_SMOKE_PRESLEV0800_AERHGT6p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_800zhgt6_aac_smk)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_800zhgt6_aac_smk, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_SMOKE_PRESLEV0800_AERHGT6p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_800zhgt6_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, rad388_800zhgt6_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_800zhgt6_aac_smk = rad388_800zhgt6_aac_smk / sflux_lutaac
 !
-  dataset_name = "UVAIMie_SMOKE_PRESLEV0800_AERHGT6p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_800zhgt6_aac_smk)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_800zhgt6_aac_smk, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_SMOKE_PRESLEV0800_AERHGT6p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_800zhgt6_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_800zhgt6_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_800zhgt6_aac_smk = uvaimie_800zhgt6_aac_smk
 !
-  dataset_name = "Radiance388_SMOKE_PRESLEV0800_AERHGT7p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_800zhgt7_aac_smk)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_800zhgt7_aac_smk, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_SMOKE_PRESLEV0800_AERHGT7p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_800zhgt7_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, rad388_800zhgt7_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_800zhgt7_aac_smk = rad388_800zhgt7_aac_smk / sflux_lutaac
 !
-  dataset_name = "UVAIMie_SMOKE_PRESLEV0800_AERHGT7p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_800zhgt7_aac_smk)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_800zhgt7_aac_smk, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_SMOKE_PRESLEV0800_AERHGT7p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_800zhgt7_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_800zhgt7_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_800zhgt7_aac_smk = uvaimie_800zhgt7_aac_smk
 !
-  dataset_name = "Radiance388_SMOKE_PRESLEV0800_AERHGT8p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_800zhgt8_aac_smk)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_800zhgt8_aac_smk, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_SMOKE_PRESLEV0800_AERHGT8p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_800zhgt8_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, rad388_800zhgt8_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_800zhgt8_aac_smk = rad388_800zhgt8_aac_smk / sflux_lutaac
 !
-  dataset_name = "UVAIMie_SMOKE_PRESLEV0800_AERHGT8p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_800zhgt8_aac_smk)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_800zhgt8_aac_smk, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_SMOKE_PRESLEV0800_AERHGT8p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_800zhgt8_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_800zhgt8_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_800zhgt8_aac_smk = uvaimie_800zhgt8_aac_smk
-  
-
 
 !
 
@@ -584,199 +657,247 @@
 ! FOR DUST
 !
 
-  dataset_name = "Radiance388_DUST_PRESLEV1013_AERHGT3p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_1013zhgt3_aac_dst)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_1013zhgt3_aac_dst, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_DUST_PRESLEV1013_AERHGT3p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_1013zhgt3_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, rad388_1013zhgt3_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_1013zhgt3_aac_dst = rad388_1013zhgt3_aac_dst / sflux_lutaac
 !
-  dataset_name = "UVAIMie_DUST_PRESLEV1013_AERHGT3p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_1013zhgt3_aac_dst)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_1013zhgt3_aac_dst, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_DUST_PRESLEV1013_AERHGT3p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_1013zhgt3_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_1013zhgt3_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_1013zhgt3_aac_dst = uvaimie_1013zhgt3_aac_dst
 !
-  dataset_name = "Radiance388_DUST_PRESLEV1013_AERHGT4p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_1013zhgt4_aac_dst)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_1013zhgt4_aac_dst, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_DUST_PRESLEV1013_AERHGT4p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_1013zhgt4_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, rad388_1013zhgt4_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_1013zhgt4_aac_dst = rad388_1013zhgt4_aac_dst / sflux_lutaac
 !
-  dataset_name = "UVAIMie_DUST_PRESLEV1013_AERHGT4p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_1013zhgt4_aac_dst)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_1013zhgt4_aac_dst, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_DUST_PRESLEV1013_AERHGT4p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_1013zhgt4_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_1013zhgt4_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_1013zhgt4_aac_dst = uvaimie_1013zhgt4_aac_dst
 !
-  dataset_name = "Radiance388_DUST_PRESLEV1013_AERHGT5p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_1013zhgt5_aac_dst)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_1013zhgt5_aac_dst, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_DUST_PRESLEV1013_AERHGT5p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_1013zhgt5_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, rad388_1013zhgt5_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_1013zhgt5_aac_dst = rad388_1013zhgt5_aac_dst / sflux_lutaac
 !
-  dataset_name = "UVAIMie_DUST_PRESLEV1013_AERHGT5p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_1013zhgt5_aac_dst)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_1013zhgt5_aac_dst, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_DUST_PRESLEV1013_AERHGT5p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_1013zhgt5_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_1013zhgt5_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_1013zhgt5_aac_dst = uvaimie_1013zhgt5_aac_dst
 !
-  dataset_name = "Radiance388_DUST_PRESLEV1013_AERHGT6p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_1013zhgt6_aac_dst)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_1013zhgt6_aac_dst, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_DUST_PRESLEV1013_AERHGT6p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_1013zhgt6_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, rad388_1013zhgt6_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_1013zhgt6_aac_dst = rad388_1013zhgt6_aac_dst / sflux_lutaac
 !
-  dataset_name = "UVAIMie_DUST_PRESLEV1013_AERHGT6p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_1013zhgt6_aac_dst)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_1013zhgt6_aac_dst, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_DUST_PRESLEV1013_AERHGT6p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_1013zhgt6_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_1013zhgt6_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_1013zhgt6_aac_dst = uvaimie_1013zhgt6_aac_dst
 
 !
 ! --- Read 800 hPa files ----------------------------------------------------------------------
 !
-  dataset_name = "Radiance388_DUST_PRESLEV0800_AERHGT5p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_800zhgt5_aac_dst)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_800zhgt5_aac_dst, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_DUST_PRESLEV0800_AERHGT5p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_800zhgt5_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, rad388_800zhgt5_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_800zhgt5_aac_dst = rad388_800zhgt5_aac_dst / sflux_lutaac
 !
-  dataset_name = "UVAIMie_DUST_PRESLEV0800_AERHGT5p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_800zhgt5_aac_dst)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_800zhgt5_aac_dst, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_DUST_PRESLEV0800_AERHGT5p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_800zhgt5_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_800zhgt5_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_800zhgt5_aac_dst = uvaimie_800zhgt5_aac_dst
 !
-  dataset_name = "Radiance388_DUST_PRESLEV0800_AERHGT6p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_800zhgt6_aac_dst)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_800zhgt6_aac_dst, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_DUST_PRESLEV0800_AERHGT6p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_800zhgt6_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, rad388_800zhgt6_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_800zhgt6_aac_dst = rad388_800zhgt6_aac_dst / sflux_lutaac
 !
-  dataset_name = "UVAIMie_DUST_PRESLEV0800_AERHGT6p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_800zhgt6_aac_dst)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_800zhgt6_aac_dst, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_DUST_PRESLEV0800_AERHGT6p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_800zhgt6_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_800zhgt6_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_800zhgt6_aac_dst = uvaimie_800zhgt6_aac_dst
 !
-  dataset_name = "Radiance388_DUST_PRESLEV0800_AERHGT7p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_800zhgt7_aac_dst)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_800zhgt7_aac_dst, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_DUST_PRESLEV0800_AERHGT7p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_800zhgt7_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, rad388_800zhgt7_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_800zhgt7_aac_dst = rad388_800zhgt7_aac_dst / sflux_lutaac
 !
-  dataset_name = "UVAIMie_DUST_PRESLEV0800_AERHGT7p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_800zhgt7_aac_dst)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_800zhgt7_aac_dst, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_DUST_PRESLEV0800_AERHGT7p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_800zhgt7_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_800zhgt7_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_800zhgt7_aac_dst = uvaimie_800zhgt7_aac_dst
 !
-  dataset_name = "Radiance388_DUST_PRESLEV0800_AERHGT8p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_800zhgt8_aac_dst)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_800zhgt8_aac_dst, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_DUST_PRESLEV0800_AERHGT8p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_800zhgt8_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, rad388_800zhgt8_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_800zhgt8_aac_dst = rad388_800zhgt8_aac_dst / sflux_lutaac
 !
-  dataset_name = "UVAIMie_DUST_PRESLEV0800_AERHGT8p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_800zhgt8_aac_dst)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_800zhgt8_aac_dst, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_DUST_PRESLEV0800_AERHGT8p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_800zhgt8_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_800zhgt8_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_800zhgt8_aac_dst = uvaimie_800zhgt8_aac_dst
  
 
@@ -784,199 +905,247 @@
 ! FOR DUSTO OVER OCEAN
 !
 
-  dataset_name = "Radiance388_DUSTO_PRESLEV1013_AERHGT3p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_1013zhgt3_aac_dsto)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_1013zhgt3_aac_dsto, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_DUSTO_PRESLEV1013_AERHGT3p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_1013zhgt3_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, rad388_1013zhgt3_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_1013zhgt3_aac_dsto = rad388_1013zhgt3_aac_dsto / sflux_lutaac
 !
-  dataset_name = "UVAIMie_DUSTO_PRESLEV1013_AERHGT3p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_1013zhgt3_aac_dsto)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_1013zhgt3_aac_dsto, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_DUSTO_PRESLEV1013_AERHGT3p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_1013zhgt3_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_1013zhgt3_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_1013zhgt3_aac_dsto = uvaimie_1013zhgt3_aac_dsto
 !
-  dataset_name = "Radiance388_DUSTO_PRESLEV1013_AERHGT4p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_1013zhgt4_aac_dsto)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_1013zhgt4_aac_dsto, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_DUSTO_PRESLEV1013_AERHGT4p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_1013zhgt4_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, rad388_1013zhgt4_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_1013zhgt4_aac_dsto = rad388_1013zhgt4_aac_dsto / sflux_lutaac
 !
-  dataset_name = "UVAIMie_DUSTO_PRESLEV1013_AERHGT4p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_1013zhgt4_aac_dsto)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_1013zhgt4_aac_dsto, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_DUSTO_PRESLEV1013_AERHGT4p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_1013zhgt4_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_1013zhgt4_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_1013zhgt4_aac_dsto = uvaimie_1013zhgt4_aac_dsto
 !
-  dataset_name = "Radiance388_DUSTO_PRESLEV1013_AERHGT5p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_1013zhgt5_aac_dsto)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_1013zhgt5_aac_dsto, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_DUSTO_PRESLEV1013_AERHGT5p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_1013zhgt5_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, rad388_1013zhgt5_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_1013zhgt5_aac_dsto = rad388_1013zhgt5_aac_dsto / sflux_lutaac
 !
-  dataset_name = "UVAIMie_DUSTO_PRESLEV1013_AERHGT5p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_1013zhgt5_aac_dsto)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_1013zhgt5_aac_dsto, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_DUSTO_PRESLEV1013_AERHGT5p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_1013zhgt5_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_1013zhgt5_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_1013zhgt5_aac_dsto = uvaimie_1013zhgt5_aac_dsto
 !
-  dataset_name = "Radiance388_DUSTO_PRESLEV1013_AERHGT6p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_1013zhgt6_aac_dsto)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_1013zhgt6_aac_dsto, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_DUSTO_PRESLEV1013_AERHGT6p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_1013zhgt6_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, rad388_1013zhgt6_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_1013zhgt6_aac_dsto = rad388_1013zhgt6_aac_dsto / sflux_lutaac
 !
-  dataset_name = "UVAIMie_DUSTO_PRESLEV1013_AERHGT6p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_1013zhgt6_aac_dsto)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_1013zhgt6_aac_dsto, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_DUSTO_PRESLEV1013_AERHGT6p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_1013zhgt6_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_1013zhgt6_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_1013zhgt6_aac_dsto = uvaimie_1013zhgt6_aac_dsto
 
 !
 ! --- Read 800 hPa files ----------------------------------------------------------------------
 !
-  dataset_name = "Radiance388_DUSTO_PRESLEV0800_AERHGT5p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_800zhgt5_aac_dsto)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_800zhgt5_aac_dsto, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_DUSTO_PRESLEV0800_AERHGT5p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_800zhgt5_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, rad388_800zhgt5_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_800zhgt5_aac_dsto = rad388_800zhgt5_aac_dsto / sflux_lutaac
 !
-  dataset_name = "UVAIMie_DUSTO_PRESLEV0800_AERHGT5p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_800zhgt5_aac_dsto)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_800zhgt5_aac_dsto, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_DUSTO_PRESLEV0800_AERHGT5p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_800zhgt5_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_800zhgt5_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_800zhgt5_aac_dsto = uvaimie_800zhgt5_aac_dsto
 !
-  dataset_name = "Radiance388_DUSTO_PRESLEV0800_AERHGT6p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_800zhgt6_aac_dsto)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_800zhgt6_aac_dsto, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_DUSTO_PRESLEV0800_AERHGT6p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_800zhgt6_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, rad388_800zhgt6_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_800zhgt6_aac_dsto = rad388_800zhgt6_aac_dsto / sflux_lutaac
 !
-  dataset_name = "UVAIMie_DUSTO_PRESLEV0800_AERHGT6p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_800zhgt6_aac_dsto)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_800zhgt6_aac_dsto, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_DUSTO_PRESLEV0800_AERHGT6p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_800zhgt6_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_800zhgt6_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_800zhgt6_aac_dsto = uvaimie_800zhgt6_aac_dsto
 !
-  dataset_name = "Radiance388_DUSTO_PRESLEV0800_AERHGT7p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_800zhgt7_aac_dsto)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_800zhgt7_aac_dsto, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_DUSTO_PRESLEV0800_AERHGT7p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_800zhgt7_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, rad388_800zhgt7_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_800zhgt7_aac_dsto = rad388_800zhgt7_aac_dsto / sflux_lutaac
 !
-  dataset_name = "UVAIMie_DUSTO_PRESLEV0800_AERHGT7p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_800zhgt7_aac_dsto)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_800zhgt7_aac_dsto, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_DUSTO_PRESLEV0800_AERHGT7p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_800zhgt7_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_800zhgt7_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_800zhgt7_aac_dsto = uvaimie_800zhgt7_aac_dsto
 !
-  dataset_name = "Radiance388_DUSTO_PRESLEV0800_AERHGT8p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(rad388_800zhgt8_aac_dsto)
-  CALL H5Dread_f(dataset_id, datatype_id, rad388_800zhgt8_aac_dsto, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'Radiance388_DUSTO_PRESLEV0800_AERHGT8p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_800zhgt8_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, rad388_800zhgt8_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   rad388_800zhgt8_aac_dsto = rad388_800zhgt8_aac_dsto / sflux_lutaac
 !
-  dataset_name = "UVAIMie_DUSTO_PRESLEV0800_AERHGT8p00_aac"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(uvaimie_800zhgt8_aac_dsto)
-  CALL H5Dread_f(dataset_id, datatype_id, uvaimie_800zhgt8_aac_dsto, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+   dset_name = 'UVAIMie_DUSTO_PRESLEV0800_AERHGT8p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_800zhgt8_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_800zhgt8_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
   uvaimie_800zhgt8_aac_dsto = uvaimie_800zhgt8_aac_dsto
  
     
@@ -1166,15 +1335,12 @@
             uvaimie_800zhgt5_aac_dsto, uvaimie_800zhgt6_aac_dsto, uvaimie_800zhgt7_aac_dsto, uvaimie_800zhgt8_aac_dsto, STAT=status)
 
 !
-  CALL H5fclose_f(file_id, hdf_err)
-! 
-  RETURN
- 
-! Very simple error handling (way too simple).
-90 WRITE(6,99)
-99 FORMAT("Error in subroutine Aerosol LUT Reader!")
-  STOP
 
+90   status = nf90_close(nc_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to close lut_nc4 file: ", status
+      return
+   end if
 !
  END SUBROUTINE Read_aac_LUTparams
 

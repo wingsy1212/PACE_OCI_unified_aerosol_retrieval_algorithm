@@ -411,33 +411,19 @@ end function create_dbdt_pace
 ! -- Returns -1 on failure, otherwise 0.
 !-----------------------------------------------------------------------------------------
   integer function load_dbdt_region_table(dbdt_file, month) result(status)
-    implicit none
-
-!   include 'hdf.f90'
-!   include 'dffunc.f90'
     use netcdf
     USE OCIUAAER_Config_Module
-        
+    implicit none
+
     character(len=*), intent(in)      ::  dbdt_file
     integer, intent(in)               ::  month
-
-    character(len=255)                ::  sds_name
-    integer                           ::  sd_id, sds_index, sds_id
-    integer, dimension(2)             ::  start2, stride2, edges2
 
     character(len=2)                  ::  str_month
     logical                           ::  file_exists
 
     character(len=255), parameter     ::  func_name = "load_dbdt_region_table"
 
-    status = -1
-
-!   -- check input parameters make sense and files exist.
-    if (month > 12 .OR. month < 1) then
-      print *, trim(func_name) // ": Invalid month specified: ", month
-      status = -1
-      return
-    end if
+    integer, dimension(2)             ::  start, edge, stride
 
     character(len=255)    ::  sds_name
     character(len=255)    ::  dset_name
@@ -449,12 +435,20 @@ end function create_dbdt_pace
     integer               ::  dset_id
     integer               ::  grp_id
 
+    status = -1
+
+!   -- check input parameters make sense and files exist.
+    if (month > 12 .OR. month < 1) then
+      print *, trim(func_name) // ": Invalid month specified: ", month
+      status = -1
+      return
+    end if
+
     start  = (/ 1,1 /)
     edge   = (/ 1440,720 /)
     stride = (/ 1,1 /)
 
-    dbdt_file = cfg%db_nc4
-    status = nf90_open(dbdt_file, nf90_nowrite, nc_id)
+    status = nf90_open(cfg%db_nc4, nf90_nowrite, nc_id)
     if (status /= NF90_NOERR) then
         print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
         return

@@ -12,15 +12,12 @@ module landcover
   contains
   
   integer function load_landcover(lc_file) result(status)
-    
-!   include 'hdf.f90'
-!   include 'dffunc.f90'
     use netcdf
     USE OCIUAAER_Config_Module
 
     implicit none
   
-    character(len=255), intent(in)  ::  lc_file
+    character(*), intent(in)  ::  lc_file
 
     character(len=255)    ::  sds_name
     integer               ::  sd_id, sds_id, sds_index
@@ -38,8 +35,7 @@ module landcover
     character(len=255)    ::  group_name
     character(len=255)    ::  err_msg
 
-    lc_file = cfg%db_nc4
-    status = nf90_open(lc_file, nf90_nowrite, nc_id)
+    status = nf90_open(cfg%db_nc4, nf90_nowrite, nc_id)
     if (status /= NF90_NOERR) then
         print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
         return

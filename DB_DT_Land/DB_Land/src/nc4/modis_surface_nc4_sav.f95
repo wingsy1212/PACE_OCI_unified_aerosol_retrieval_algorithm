@@ -1,81 +1,81 @@
 module modis_surface
-!-----------------------------------------------------------------------------------------
-! Module to organize functions related the surface reflectivity calculations and tables
-!   for Aqua MODIS.
-!
-! Corey Bettenhausen
-! Science Systems and Applications, Inc
-! NASA Goddard Space Flight Center
-!
-! Jeremy Warner
-! Science Systems and Applications, Inc
-! NASA Goddard Space Flight Center
-!-----------------------------------------------------------------------------------------
-  implicit none
+   !-----------------------------------------------------------------------------------------
+   ! Module to organize functions related the surface reflectivity calculations and tables
+   !   for Aqua MODIS.
+   !
+   ! Corey Bettenhausen
+   ! Science Systems and Applications, Inc
+   ! NASA Goddard Space Flight Center
+   !
+   ! Jeremy Warner
+   ! Science Systems and Applications, Inc
+   ! NASA Goddard Space Flight Center
+   !-----------------------------------------------------------------------------------------
+   implicit none
 
-  private
+   private
   
-  public  ::  load_terrainflg_tables, load_seasonal_desert 
-  public  ::  load_swir_coeffs
-  public  ::  get_swir_coeffs412, get_swir_coeffs470
-  public  ::  get_swir_stderr412, get_swir_stderr470
-  public  ::  get_swir_range 
-  public  ::  get_brdfcorr_sr
-  public  ::  load_brdf, unload_brdf
-  public  ::  get_aot500
-  public  ::  terrain_flag_new, terrain_flag, sfc_elev_std
-  public  ::  set_limits, load_hdfLER, set_limits6
-  public  ::  get_LER412, get_LER470, get_LER650, get_LER865
-  public  ::  get_modis_LER412, get_modis_LER470, get_modis_LER650, get_modis_LER865
-  public  ::  get_viirs_LER412, get_viirs_LER488, get_viirs_LER670
-  public  ::  get_viirs_modisbrdf_LER412, get_viirs_modisbrdf_LER488, get_viirs_modisbrdf_LER670
-  public  ::  latlon_to_index_ler,check_status
-  public  ::  get_geographic_zone, get_sfc_elev_std, get_background_aod! 9 January 2018 JLee
-  private ::  readLER5, readLER2
+   public  ::  load_terrainflg_tables, load_seasonal_desert
+   public  ::  load_swir_coeffs
+   public  ::  get_swir_coeffs412, get_swir_coeffs470
+   public  ::  get_swir_stderr412, get_swir_stderr470
+   public  ::  get_swir_range
+   public  ::  get_brdfcorr_sr
+   public  ::  load_brdf, unload_brdf
+   public  ::  get_aot500
+   public  ::  terrain_flag_new, terrain_flag, sfc_elev_std
+   public  ::  set_limits, load_hdfLER, set_limits6
+   public  ::  get_LER412, get_LER470, get_LER650, get_LER865
+   public  ::  get_modis_LER412, get_modis_LER470, get_modis_LER650, get_modis_LER865
+   public  ::  get_viirs_LER412, get_viirs_LER488, get_viirs_LER670
+   public  ::  get_viirs_modisbrdf_LER412, get_viirs_modisbrdf_LER488, get_viirs_modisbrdf_LER670
+   public  ::  latlon_to_index_ler,check_status
+   public  ::  get_geographic_zone, get_sfc_elev_std, get_background_aod! 9 January 2018 JLee
+   private ::  readLER5, readLER2
   
-!   -- brdf650    = summer surface reflectivity at 650nm, used to transfer BRDF from 
-!                     AERONET site to pixel location.
-!   -- aero_sites = list of AERONET site names as listed on the AERONET website
-!   -- aero_zones = geographical zone index of site based upon seawifs_terrainflag_*.hdf input
-!   -- aero_types = land cover type of AERONET site based upon landcover_*.hdf input 
-!   -- aero_elev  = elevation of AERONET site in meters from surface_pressure_*.hdf input
-!   -- aero_sr*   = surface reflectance of AERONET site based on surface database at 135 degrees in
-!                     winter(1), spring(2), summer(3), and fall(4).
-  real, dimension(:,:), allocatable               ::  brdf650
-  character(len=255), dimension(:), allocatable   ::  aero_sites
-  integer, dimension(:), allocatable              ::  aero_zones
-  integer, dimension(:), allocatable              ::  aero_types
-  integer, dimension(:), allocatable              ::  aero_elev
-  real, dimension(:,:), allocatable               ::  aero_sr412, aero_sr470, aero_sr650, aero_bgaod
+   !   -- brdf650    = summer surface reflectivity at 650nm, used to transfer BRDF from
+   !                     AERONET site to pixel location.
+   !   -- aero_sites = list of AERONET site names as listed on the AERONET website
+   !   -- aero_zones = geographical zone index of site based upon seawifs_terrainflag_*.hdf input
+   !   -- aero_types = land cover type of AERONET site based upon landcover_*.hdf input
+   !   -- aero_elev  = elevation of AERONET site in meters from surface_pressure_*.hdf input
+   !   -- aero_sr*   = surface reflectance of AERONET site based on surface database at 135 degrees in
+   !                     winter(1), spring(2), summer(3), and fall(4).
+   real, dimension(:,:), allocatable               ::  brdf650
+   character(len=255), dimension(:), allocatable   ::  aero_sites
+   integer, dimension(:), allocatable              ::  aero_zones
+   integer, dimension(:), allocatable              ::  aero_types
+   integer, dimension(:), allocatable              ::  aero_elev
+   real, dimension(:,:), allocatable               ::  aero_sr412, aero_sr470, aero_sr650, aero_bgaod
 
-  integer,dimension(3600,1800)  ::  terrain_flag_new
-  real, dimension(3600,1800)    ::  terrain_flag, sfc_elev_std
-  real, dimension(360,180)    ::  bg_aod! 9 January 2018 JLee
+   integer,dimension(3600,1800)  ::  terrain_flag_new
+   real, dimension(3600,1800)    ::  terrain_flag, sfc_elev_std
+   real, dimension(360,180)    ::  bg_aod! 9 January 2018 JLee
 
-  integer                                         :: LERstart(2), LERedge(2), dateline
-  integer                                         :: LERstart6(2), LERedge6(2), dateline6
-  real, dimension(:,:,:,:), allocatable         :: coefs650_fwd, coefs470_fwd, coefs412_fwd
-  real, dimension(:,:,:,:), allocatable         :: coefs650_all, coefs470_all, coefs412_all
+   integer                                  :: LERstart(2), LERedge(2), dateline
+   integer                                  :: LERstart6(2), LERedge6(2), dateline6
+   real, dimension(:,:,:,:), allocatable  :: coefs650_fwd, coefs470_fwd, coefs412_fwd
+   real, dimension(:,:,:,:), allocatable  :: coefs650_all, coefs470_all, coefs412_all
 
-  real, dimension(:,:), allocatable               :: gref412_all, gref412_fwd
-  real, dimension(:,:), allocatable               :: gref470_all, gref470_fwd
-  real, dimension(:,:), allocatable               :: gref650_all, gref650_fwd
-  real, dimension(:,:), allocatable               :: gref865_all  !gref*_all = MODIS min reflectance
+   real, dimension(:,:), allocatable        :: gref412_all, gref412_fwd
+   real, dimension(:,:), allocatable        :: gref470_all, gref470_fwd
+   real, dimension(:,:), allocatable        :: gref650_all, gref650_fwd
+   real, dimension(:,:), allocatable        :: gref865_all
   
-! -- VIIRS, all-angle surface database
-  real, dimension(:,:), allocatable               :: vgref412_all
-  real, dimension(:,:), allocatable               :: vgref488_all
-  real, dimension(:,:), allocatable               :: vgref670_all !Vgref*_all = VIIRS min reflectance
+   ! -- VIIRS, all-angle surface database
+   real, dimension(:,:), allocatable        :: vgref412_all
+   real, dimension(:,:), allocatable        :: vgref488_all
+   real, dimension(:,:), allocatable        :: vgref670_all
 
-! -- 2.2 um surface database
-  real, dimension(:,:,:), allocatable             :: swir_coeffs412, swir_coeffs470
-  real, dimension(:,:), allocatable            		:: swir_stderr412, swir_stderr470
-  real, dimension(:,:), allocatable               :: swir_min, swir_max
+   ! -- 2.2 um surface database
+   real, dimension(:,:,:), allocatable      :: swir_coeffs412, swir_coeffs470
+   real, dimension(:,:), allocatable        :: swir_stderr412, swir_stderr470
+   real, dimension(:,:), allocatable        :: swir_min, swir_max
   
-  real, parameter   ::  NDVI1_CUTOFF = 0.18
-  real, parameter   ::  NDVI2_CUTOFF = 0.35
+   real, parameter   ::  NDVI1_CUTOFF = 0.18
+   real, parameter   ::  NDVI2_CUTOFF = 0.35
 
-  contains
+contains
 
    ! @TODO: should rename this to load_geozone_table or something even more descriptive.
    integer function load_terrainflg_tables(tflg_file, season) result(status)
@@ -715,34 +715,34 @@ module modis_surface
       return
    end function load_brdf
 
-! -- deallocate brdf650 array and AERONET site and surface reflectivity variables.
-  subroutine unload_brdf(status) 
-    implicit none
+   ! -- deallocate brdf650 array and AERONET site and surface reflectivity variables.
+   subroutine unload_brdf(status)
+      implicit none
+
+      integer, intent(inout)    ::  status
     
-    integer, intent(inout)    ::  status
+      deallocate(brdf650, aero_sites, aero_types, aero_zones, stat=status)
+      if (status /= 0) then
+         print *, "ERROR: Unable to deallocate BRDF data: ", status
+         return
+      end if
     
-    deallocate(brdf650, aero_sites, aero_types, aero_zones, stat=status)
-    if (status /= 0) then
-      print *, "ERROR: Unable to deallocate BRDF data: ", status
+      deallocate(aero_sr412, aero_sr470, aero_sr650, aero_bgaod, stat=status)
+      if (status /= 0) then
+         print *, "ERROR: Unable to deallocate AERONET SR arrays: ", status
+         return
+      end if
+    
       return
-    end if
     
-    deallocate(aero_sr412, aero_sr470, aero_sr650, aero_bgaod, stat=status)
-    if (status /= 0) then
-      print *, "ERROR: Unable to deallocate AERONET SR arrays: ", status
-      return
-    end if
-    
-    return
-    
-  end subroutine unload_brdf
+   end subroutine unload_brdf
   
-! -- calculate and return the BRDF-corrected surface reflectivity for pixel at lat,lon 
+! -- calculate and return the BRDF-corrected surface reflectivity for pixel at lat,lon
 ! --  based on matching AERONET BRDF's.
 ! -- return codes:
 ! --  0 = success
 ! -- -1 = failure due to no AERONET BRDF
-! -- -2 = failure due to no baseline surface reflectivity values. 
+! -- -2 = failure due to no baseline surface reflectivity values.
   integer function get_brdfcorr_sr(lat, lon, ra, sa, vza, amf, elev, month, ndvi, stdv, gzone, lc_type, bgaod, &
                                  & sr412, sr470, sr650, use_alternate_brdf, debug) result(status)
     
@@ -792,7 +792,7 @@ module modis_surface
         
     real                  ::  mb_sr412, mb_sr470, mb_sr650
     real                  ::  m_sr412, m_sr470, m_sr650
-    real                  ::  v_sr412, v_sr488, v_sr670  
+    real                  ::  v_sr412, v_sr488, v_sr670
       
     dflag = .false.
     min_flag  = 0
@@ -841,31 +841,31 @@ module modis_surface
       m = count(aero_zones == gzone .AND. (elev < 500 .EQV. aero_elev < 500))
     end if
     
-!		-- create exception for Fresno Valley, Australia, tropical Sahel, Mexico_City - match by region only.
-		if (gzone == 18 .OR. gzone == 12 .OR. (gzone == 26 .OR. gzone == 27) .OR. gzone == 29) then
-			m = count(aero_zones == gzone)
-		end if
+!     -- create exception for Fresno Valley, Australia, tropical Sahel, Mexico_City - match by region only.
+      if (gzone == 18 .OR. gzone == 12 .OR. (gzone == 26 .OR. gzone == 27) .OR. gzone == 29) then
+         m = count(aero_zones == gzone)
+      end if
 
-!		-- create exception for high elevation Tibet/China zone - match by region only.
-		if (gzone == 28) then
-			  m = count(aero_zones == gzone)
-		end if
+!     -- create exception for high elevation Tibet/China zone - match by region only.
+      if (gzone == 28) then
+           m = count(aero_zones == gzone)
+      end if
 
-!		-- create exception for Jaipur zone - match by region only.
-		if (gzone == 20) then
-			  m = count(aero_zones == gzone)
-		end if
-		
-		!		-- create exception for NW_India_Desert zone - match by region only.
-		if (gzone == 30) then
-			  m = count(aero_zones == gzone)
-		end if
-		
-!		-- create exception for Pune - match by region only.		
-		if (gzone == 19) then
-			m = count(aero_zones == gzone)
-		end if
-		
+!     -- create exception for Jaipur zone - match by region only.
+      if (gzone == 20) then
+           m = count(aero_zones == gzone)
+      end if
+
+      !     -- create exception for NW_India_Desert zone - match by region only.
+      if (gzone == 30) then
+           m = count(aero_zones == gzone)
+      end if
+
+!     -- create exception for Pune - match by region only.
+      if (gzone == 19) then
+         m = count(aero_zones == gzone)
+      end if
+
 !   -- create exception for Kanpur - match by region only, 9 January 2018 JLee
     if (gzone == 15) then
       m = count(aero_zones == gzone)
@@ -878,10 +878,10 @@ module modis_surface
     end if
 
 !   -- create exception for Barren North America, geozone =31 to ignore elevation above 750m.
-    if (gzone == 31 .AND. elev < 750) then 
+    if (gzone == 31 .AND. elev < 750) then
       m = count(aero_zones == gzone)
     end if
-    
+
 !   -- if barren, use surface tables except in zone 2 (morocco), 12 (australia), and 14 (S. America)
     if (gzone /= 2 .AND. gzone /= 12 .AND. gzone /= 14 .AND. gzone /= 28 .AND. &
     &   gzone /= 10 .AND. gzone /= 20 .AND. gzone /= 30 .AND. gzone /= 31) then
@@ -890,7 +890,7 @@ module modis_surface
     
     if (m > 0) then
 !     -- allocate our arrays to store the matching AERONET data.
-!     -- no explicit deallocate() as these should automatically be 
+!     -- no explicit deallocate() as these should automatically be
 !     -- deallocated when the function ends.
       if (allocated(maero412)) deallocate(maero412, stat=status)
       if (allocated(maero470)) deallocate(maero470, stat=status)
@@ -924,10 +924,10 @@ module modis_surface
               end if
             end if
           
-          case (18, 12, 20, 26, 27, 28, 29, 30, 31)						! Fresno Valley, only match by region
-          	if (aero_zones(i) == gzone) then
-          		cnt = cnt + 1
-          		maero412(cnt) = aero_sr412(i,season)
+          case (18, 12, 20, 26, 27, 28, 29, 30, 31)                  ! Fresno Valley, only match by region
+            if (aero_zones(i) == gzone) then
+               cnt = cnt + 1
+               maero412(cnt) = aero_sr412(i,season)
               maero470(cnt) = aero_sr470(i,season)
               maero650(cnt) = aero_sr650(i,3)        ! < -- always use summer for 650nm to match refsr650
               mbgaod(cnt)   = aero_bgaod(i,season)
@@ -939,10 +939,10 @@ module modis_surface
               end if
             end if
             
-          case (15, 19)						! Pune, only match by region, added Kanpur and India high elevation 31 January 2018 JLee
-          	if (aero_zones(i) == gzone) then
-          		cnt = cnt + 1
-          		maero412(cnt) = aero_sr412(i,season)
+          case (15, 19)                ! Pune, only match by region, added Kanpur and India high elevation 31 January 2018 JLee
+            if (aero_zones(i) == gzone) then
+               cnt = cnt + 1
+               maero412(cnt) = aero_sr412(i,season)
               maero470(cnt) = aero_sr470(i,season)
               maero650(cnt) = aero_sr650(i,3)        ! < -- always use summer for 650nm to match refsr650
               mbgaod(cnt)   = aero_bgaod(i,season)
@@ -1036,7 +1036,7 @@ module modis_surface
             end if
             sr470 = sr470 * normfrac
             
-            status = 0 
+            status = 0
             
             if (dflag) then
               print '(A,A,F11.6)', trim(func_name),", Pixel Ref 650 SR: ", refsr650
@@ -1074,7 +1074,7 @@ module modis_surface
 
         ! correction to baseline adjustment factor for background aod, 10 January 2018 JLee
 !        if ((gzone == 15) .and. bgaod > 0.0 .and. mbgaod(ii) > 0.0 &
-!        &  .and. bgaod < mbgaod(ii)) then 
+!        &  .and. bgaod < mbgaod(ii)) then
 !          if (ndvi < 0.3 .and. elev > 450) then
 !!            select case (season)
 !!              case (1)
@@ -1097,15 +1097,15 @@ module modis_surface
 !              case default
 !                aod_corr_factor = 0.0
 !            end select
-!            xnorm_412_f1 = ab412 / (ac412+(maero412(ii)-ac412)*(aod_corr_factor*bgaod/mbgaod(ii)+(1.0-aod_corr_factor)))   
+!            xnorm_412_f1 = ab412 / (ac412+(maero412(ii)-ac412)*(aod_corr_factor*bgaod/mbgaod(ii)+(1.0-aod_corr_factor)))
 !          else
 !            xnorm_412_f1 = ab412 / (ac412+(maero412(ii)-ac412)*(0.1*bgaod/mbgaod(ii)+0.9))
 !          end if
-!        else       
+!        else
           xnorm_412_f1 = ab412 / maero412(ii)
 !        end if
 
-        sr412 = get_viirs_LER412(ilat, ilon) 
+        sr412 = get_viirs_LER412(ilat, ilon)
         if (sr412 < -900.0) then
           status = -2
           return
@@ -1141,7 +1141,7 @@ module modis_surface
 !          else
 !            xnorm_470_f1 = ab470 / (ac470+(maero470(ii)-ac470)*(0.1*bgaod/mbgaod(ii)+0.9))
 !          end if
-!        else 
+!        else
           xnorm_470_f1 = ab470 / maero470(ii)
 !        end if
 
@@ -1170,27 +1170,27 @@ module modis_surface
       end if
       
 !   -- no AERONET sites (m==0), use table values.
-    else   
+    else
     
     sr412 = -999.0
     sr470 = -999.0
-    sr650 = -999.0     
-	  sr412 = get_LER412(ilat, ilon, ndvi, sa, ra, min_flag)    !get_viirs_modisbrdf_LER* ->get_LER*
-	  sr470 = get_LER470(ilat, ilon, ndvi, sa, ra, min_flag)    !7.5.2017 W.Kim
-	  sr650 = get_LER650(ilat, ilon, ndvi, sa, ra, min_flag)    
+    sr650 = -999.0
+     sr412 = get_LER412(ilat, ilon, ndvi, sa, ra, min_flag)    !get_viirs_modisbrdf_LER* ->get_LER*
+     sr470 = get_LER470(ilat, ilon, ndvi, sa, ra, min_flag)    !7.5.2017 W.Kim
+     sr650 = get_LER650(ilat, ilon, ndvi, sa, ra, min_flag)
 
-			
-			if (dflag) then
-!			  print '(A,A,14(F10.4))', trim(func_name), "lat, lon: ", lat, lon
-!			  print '(A,A,3(F10.4))', trim(func_name), "MBSR412, MBSR470, MBSR650: ", mb_sr412, mb_sr470, mb_sr650
-!			  print '(A,A,3(F10.4))', trim(func_name), "MSR412, MSR470, MSR650: ", get_modis_LER412(ilat,ilon), &
-!			  & get_modis_LER470(ilat,ilon), get_modis_LER650(ilat,ilon)
-!			  print '(A,A,3(F10.4))', trim(func_name), "VSR412, VSR488, VSR670: ", get_viirs_LER412(ilat,ilon), &
-!			  & get_viirs_LER488(ilat,ilon), get_viirs_LER670(ilat,ilon)
-			  print '(A,A,3(F10.4))', trim(func_name), "final SR412, SR470, SR650: ", sr412, sr470, sr650
-			end if
-			
-			status = 1
+
+         if (dflag) then
+!          print '(A,A,14(F10.4))', trim(func_name), "lat, lon: ", lat, lon
+!          print '(A,A,3(F10.4))', trim(func_name), "MBSR412, MBSR470, MBSR650: ", mb_sr412, mb_sr470, mb_sr650
+!          print '(A,A,3(F10.4))', trim(func_name), "MSR412, MSR470, MSR650: ", get_modis_LER412(ilat,ilon), &
+!          & get_modis_LER470(ilat,ilon), get_modis_LER650(ilat,ilon)
+!          print '(A,A,3(F10.4))', trim(func_name), "VSR412, VSR488, VSR670: ", get_viirs_LER412(ilat,ilon), &
+!          & get_viirs_LER488(ilat,ilon), get_viirs_LER670(ilat,ilon)
+           print '(A,A,3(F10.4))', trim(func_name), "final SR412, SR470, SR650: ", sr412, sr470, sr650
+         end if
+
+         status = 1
     end if
     
 !   -- final check
@@ -1207,9 +1207,9 @@ module modis_surface
           
   end function get_brdfcorr_sr
 
-! -- returns surface reflectivity based on AERONET site (aero_site) BRDF and input 
-! --  geometry.  Helper function for get_bdrfcorr_sr(). Returns -1 on failure, 
-! --  otherwise 0. 
+! -- returns surface reflectivity based on AERONET site (aero_site) BRDF and input
+! --  geometry.  Helper function for get_bdrfcorr_sr(). Returns -1 on failure,
+! --  otherwise 0.
   integer function get_aeronet_brdf_sr(aero_site, month, raa, sca, vza, ndvi, stdv, s412, s470,           &
   &                                     s650, c412, c470, c650, use_alternate_brdf, debug) result(status)
 
@@ -1238,9 +1238,9 @@ module modis_surface
     logical, intent(in), optional       ::  use_alternate_brdf
     logical, intent(in), optional       ::  debug
 
-    real, dimension(ndegs)              ::  co412 
+    real, dimension(ndegs)              ::  co412
     real, dimension(ndegs)              ::  co470
-    real, dimension(ndegs)              ::  co650                                                          
+    real, dimension(ndegs)              ::  co650
     
     integer                             ::  season
     
@@ -1263,7 +1263,7 @@ module modis_surface
 
     c412 = -999.0
     c470 = -999.0
-    c650 = -999.0   
+    c650 = -999.0
  
 !   -- get season from month
     select case (month)
@@ -1290,11 +1290,11 @@ module modis_surface
       case ("Banizoumbou")
         select case (season)
           case (1)
-	    if(ndvi >= 0.15) then
+       if(ndvi >= 0.15) then
               co470 = (/1.02169058e01, 4.243027e-02, 1.54773501e-04, 0.0/)
               co412 = (/6.56567239, 1.46437509e-02, 0.0, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-	    else
+       else
               co412 = (/5.05991244, 4.90682739e-02,0.0,0.0/)
               co470 = (/9.33658552, 7.10523577e-02, -2.60069034e-05,0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -1320,7 +1320,7 @@ module modis_surface
               co412 = (/6.36294769, 5.40543846e-02, -1.71327907e-04, 0.0/)
               co470 = (/1.06517369e01, 6.01331952e-02, 0.0, 0.0/)
               
-!             -- allow AERONET AOT<=1.0 rather than 0.5              
+!             -- allow AERONET AOT<=1.0 rather than 0.5
 !              co412 = (/5.72731182, 3.27134511e-02, 2.74284048e-04, 0.0/)
 !              co470 = (/1.04276182e01, 8.12197464e-02, -4.61564311e-04, 0.0/)
 !              co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -1358,7 +1358,7 @@ module modis_surface
               co412 = (/4.78430658, 3.2201042e-02, -1.62743787e-04, 6.68624319e-06/)
               co470 = (/7.8706363, 5.51922546e-02, 0.0, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-            else 
+            else
               co412 = (/5.239379, 4.142642525e-02, 1.66142711e-05, 0.0/)
               co470 = (/9.09596194, 6.99428916e-02, -2.528929176e-04, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -1370,7 +1370,7 @@ module modis_surface
         end select
         
 !     ------------------------------------
-      case ("Kanpur")     
+      case ("Kanpur")
         select case (season)
           case (1)
             co412 = (/4.5439484, 7.12450582e-2, 5.1565853e-4, 0.0/)
@@ -1404,19 +1404,19 @@ module modis_surface
         select case (season)
           case (1)
             if (ndvi >= 0.2) then
-	      co412 = (/3.63552866, 3.80334634e-2, 0.0, 0.0/)
-	      co470 = (/7.1468792, 4.90084709e-2, -5.8487537e-4, 2.65330779e-5/)
-	      co650 = (/0.0, 0.0, 0.0, 0.0/)
-	    else
-	      co412 = (/3.50830056, 4.45759847e-2, 0.0, 0.0/)
-	      co470 = (/7.2185198, 7.14231475e-2, 0.0, 0.0/)
-	      co650 = (/0.0, 0.0, 0.0, 0.0/)
-	    end if
+         co412 = (/3.63552866, 3.80334634e-2, 0.0, 0.0/)
+         co470 = (/7.1468792, 4.90084709e-2, -5.8487537e-4, 2.65330779e-5/)
+         co650 = (/0.0, 0.0, 0.0, 0.0/)
+       else
+         co412 = (/3.50830056, 4.45759847e-2, 0.0, 0.0/)
+         co470 = (/7.2185198, 7.14231475e-2, 0.0, 0.0/)
+         co650 = (/0.0, 0.0, 0.0, 0.0/)
+       end if
           case (2)
-            if(ndvi >= 0.18) then					
-	      co412 = (/8.03123187, 6.31014685e-2, -3.03999188e-4, 0.0/)
-	      co470 = (/8.00850678, 5.36508158e-2, 0.0, 0.0/)
-	      co650 = (/0.0, 0.0, 0.0, 0.0/)
+            if(ndvi >= 0.18) then
+         co412 = (/8.03123187, 6.31014685e-2, -3.03999188e-4, 0.0/)
+         co470 = (/8.00850678, 5.36508158e-2, 0.0, 0.0/)
+         co650 = (/0.0, 0.0, 0.0, 0.0/)
             else
               co412 = (/4.78540468, 4.53379041e-2, 0.0, 0.0/)
               co470 = (/8.55690294, 6.26426162e-2, 0.0, 0.0/)
@@ -1433,7 +1433,7 @@ module modis_surface
               co650 = (/0.0, 0.0, 0.0, 0.0/)
             end if
             
-          case (4)            
+          case (4)
            if (ndvi < 0.36) then
               co412 = (/3.3600304, 4.07091256e-2, -6.36564712e-4, 0.0/)
               co470 = (/6.00156726, 5.32555429e-2, -2.03417949e-4, 0.0/)
@@ -1514,14 +1514,14 @@ module modis_surface
             co470 = (/7.4044324,  8.1265848e-2, 4.9485414e-4, 0.0/)
             co650 = (/0.0, 0.0, 0.0, 0.0/)
           case (2)
-            if (ndvi < 0.18) then 
+            if (ndvi < 0.18) then
               co412 = (/5.89152474, 4.52651696e-2, 2.68647127e-4, 0.0/)
               co470 = (/7.30775670, 7.62461937e-2, -3.21229444e-4, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
             else
               co412 = (/5.30165348, 2.39439950e-2, 7.06604780e-4, 0.0/)
               co470 = (/6.28190845, 6.15060495e-2, 1.20706642e-4, 0.0/)
-              co650 = (/0.0, 0.0, 0.0, 0.0/)  
+              co650 = (/0.0, 0.0, 0.0, 0.0/)
             end if
           case (3)
             co412 = (/5.6957808, 5.3492403e-2, -2.1731312e-4, 0.0/)
@@ -1529,7 +1529,7 @@ module modis_surface
             co650 = (/0.0, 0.0, 0.0, 0.0/)
           case (4)
             co412 = (/5.4468575, 4.9992086e-2, 1.0863964e-05, 0.0/)
-            co470 = (/6.1302000, 6.7842888e-2, 6.9728565e-05, 0.0/)         
+            co470 = (/6.1302000, 6.7842888e-2, 6.9728565e-05, 0.0/)
             co650 = (/0.0, 0.0, 0.0, 0.0/)
           case default
             print *, "ERROR: Invalid season specified: ", season
@@ -1617,7 +1617,7 @@ module modis_surface
             return
         end select
         
-    	!     ------------------------------------
+      !     ------------------------------------
       case ("Fresno_GZ18")
         select case (season)
           case (1)
@@ -1674,7 +1674,7 @@ module modis_surface
           case (3)
             co412 = (/6.6297657, 3.1107265e-02, -1.2153919e-04, 0.0/)
             co470 = (/6.8517577, 5.2723244e-02, -4.9795072e-04, 0.0/)
-            co650 = (/0.0, 0.0, 0.0, 0.0/)            
+            co650 = (/0.0, 0.0, 0.0, 0.0/)
           case (4)
             co412 = (/6.1744159, 1.5031182e-02, 0.0, 0.0/)
             co470 = (/6.7001040, 2.5827169e-02, 0.0, 0.0/)
@@ -1690,9 +1690,9 @@ module modis_surface
         if (fwd_scat) then                      ! forward scattering
           select case (season)
             case (1)
-							co412 = (/4.79872574, -1.56512429e-02, -1.23860221e-03, 5.84017625e-05/)
-							co470 = (/8.05072532, 1.61294620e-02, -6.57200682e-04, 4.10211916e-05/)
-							co650 = (/0.0, 0.0, 0.0, 0.0/)
+                     co412 = (/4.79872574, -1.56512429e-02, -1.23860221e-03, 5.84017625e-05/)
+                     co470 = (/8.05072532, 1.61294620e-02, -6.57200682e-04, 4.10211916e-05/)
+                     co650 = (/0.0, 0.0, 0.0, 0.0/)
             case (2)
               co412 = (/5.34279489, 2.40838594e-03, 0.0, 0.0/)
               co470 = (/8.28211141, 2.88113903e-02, 0.0, 0.0/)
@@ -1717,7 +1717,7 @@ module modis_surface
                 co470 = (/6.89540010, 3.44825524e-02, 4.25223284e-04, 0.0/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
               else
-              	co412 = (/4.68551647, 3.37375535e-03, 3.28094666e-04, 0.0/)
+               co412 = (/4.68551647, 3.37375535e-03, 3.28094666e-04, 0.0/)
                 co470 = (/7.97076041, 4.07903024e-02, 0.0, 0.0/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
               end if
@@ -1728,46 +1728,46 @@ module modis_surface
           end select
         
         else                                      ! backward scattering
-					select case (season)
-						case (1)
-							co412 = (/4.79872574, -1.56512429e-02, -1.23860221e-03, 5.84017625e-05/)
-							co470 = (/8.05072532, 1.61294620e-02, -6.57200682e-04, 4.10211916e-05/)
-							co650 = (/0.0, 0.0, 0.0, 0.0/)
-						case (2)
-							co412 = (/5.31125838, 1.14257083e-02, 0.0, 0.0/)
-							co470 = (/8.30402936, 4.22170099e-02, 0.0, 0.0/)
-							co650 = (/0.0, 0.0, 0.0, 0.0/)
-						case (3)
-							if (ndvi >= 0.24) then
-								co412 = (/3.26738286, 4.36827818e-02, -1.55895303e-04, -1.20224162e-05/)
-								co470 = (/5.03384478, 7.29893383e-02, 1.31678743e-03, -4.31578699e-05/)
-								co650 = (/0.0, 0.0, 0.0, 0.0/)
-							else
-								co412 = (/4.49283427, 4.04848382e-05, -3.09039795e-04, 1.65524662e-05/)
-								co470 = (/7.34716100, 4.10633137e-02, 2.51289909e-04, -3.32283482e-06/)
-								co650 = (/0.0, 0.0, 0.0, 0.0/)
-							end if
-						case (4)
-							if (ndvi >= 0.21) then
-								co412 = (/3.21406439, 2.84017859e-02, 2.25979209e-04, -1.35954941e-05/)
-								co470 = (/5.32086992, 5.10973584e-02, 1.23563583e-03, -3.14731061e-05/)
-								co650 = (/0.0, 0.0, 0.0, 0.0/)
-							else if (ndvi >= 0.18) then
-								co412 = (/4.03496081, -1.16119226e-02, -4.21409772e-04, 3.26077680e-05/)
-								co470 = (/6.89540010, 3.44825524e-02, 4.25223284e-04, 0.0/)
-								co650 = (/0.0, 0.0, 0.0, 0.0/)
-							else
-								co412 = (/4.68551647, 3.37375535e-03, 3.28094666e-04, 0.0/)
-								co470 = (/7.97076041, 4.07903024e-02, 0.0, 0.0/)
-								co650 = (/0.0, 0.0, 0.0, 0.0/)
-							end if
-						case default
-							print *, "ERROR: Invalid season specified: ", season
-							status = -1
-							return
-					end select
-      	end if
-        
+               select case (season)
+                  case (1)
+                     co412 = (/4.79872574, -1.56512429e-02, -1.23860221e-03, 5.84017625e-05/)
+                     co470 = (/8.05072532, 1.61294620e-02, -6.57200682e-04, 4.10211916e-05/)
+                     co650 = (/0.0, 0.0, 0.0, 0.0/)
+                  case (2)
+                     co412 = (/5.31125838, 1.14257083e-02, 0.0, 0.0/)
+                     co470 = (/8.30402936, 4.22170099e-02, 0.0, 0.0/)
+                     co650 = (/0.0, 0.0, 0.0, 0.0/)
+                  case (3)
+                     if (ndvi >= 0.24) then
+                        co412 = (/3.26738286, 4.36827818e-02, -1.55895303e-04, -1.20224162e-05/)
+                        co470 = (/5.03384478, 7.29893383e-02, 1.31678743e-03, -4.31578699e-05/)
+                        co650 = (/0.0, 0.0, 0.0, 0.0/)
+                     else
+                        co412 = (/4.49283427, 4.04848382e-05, -3.09039795e-04, 1.65524662e-05/)
+                        co470 = (/7.34716100, 4.10633137e-02, 2.51289909e-04, -3.32283482e-06/)
+                        co650 = (/0.0, 0.0, 0.0, 0.0/)
+                     end if
+                  case (4)
+                     if (ndvi >= 0.21) then
+                        co412 = (/3.21406439, 2.84017859e-02, 2.25979209e-04, -1.35954941e-05/)
+                        co470 = (/5.32086992, 5.10973584e-02, 1.23563583e-03, -3.14731061e-05/)
+                        co650 = (/0.0, 0.0, 0.0, 0.0/)
+                     else if (ndvi >= 0.18) then
+                        co412 = (/4.03496081, -1.16119226e-02, -4.21409772e-04, 3.26077680e-05/)
+                        co470 = (/6.89540010, 3.44825524e-02, 4.25223284e-04, 0.0/)
+                        co650 = (/0.0, 0.0, 0.0, 0.0/)
+                     else
+                        co412 = (/4.68551647, 3.37375535e-03, 3.28094666e-04, 0.0/)
+                        co470 = (/7.97076041, 4.07903024e-02, 0.0, 0.0/)
+                        co650 = (/0.0, 0.0, 0.0, 0.0/)
+                     end if
+                  case default
+                     print *, "ERROR: Invalid season specified: ", season
+                     status = -1
+                     return
+               end select
+         end if
+
 !     ------------------------------------
       case ("Tinga_Tingana")
         if (fwd_scat) then                      ! forward scattering
@@ -1811,7 +1811,7 @@ module modis_surface
               co412 = (/8.87184595, -1.57754324e-02, 0.0, 0.0/)
               co470 = (/1.19334546e01, 8.68690821e-03, 0.0, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-            else 
+            else
               co412 = (/9.09342651, -4.17208574e-02, 0.0, 0.0/)
               co470 = (/1.23033719e01, -5.36893150e-02, -8.53259219e-04, 7.49332728e-05/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -1854,7 +1854,7 @@ module modis_surface
               co470 = (/1.24428324e01, 3.71238324e-02, -6.76748814e-04, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
               
-            else 
+            else
               co412 = (/9.41753918, -2.67338094e-02, -8.88155712e-04, 0.0/)
               co470 = (/1.34852983e01, 1.12436978e-02, -1.61943826e-03, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -1864,7 +1864,7 @@ module modis_surface
               co412 = (/8.83070860, -1.51364763e-03, 8.54079578e-04, 0.0/)
               co470 = (/1.20956002e01, 3.68362395e-02, 7.40851587e-04, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-            else 
+            else
               co412 = (/8.88610258, -2.01943966e-02, 1.61198594e-03, 4.14828495e-06/)
               co470 = (/1.20856901e01, 3.26791012e-02, 2.03660386e-03, -1.72052223e-05/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -1881,7 +1881,7 @@ module modis_surface
           case (1)
             co412 = (/6.08251454, 8.6508708e-02, 1.4521957e-03, 0.0/)
             co470 = (/5.80924919, 6.4047214e-02, 1.4495468e-03, 0.0/)
-            co650 = (/0.0, 0.0, 0.0, 0.0/)            
+            co650 = (/0.0, 0.0, 0.0, 0.0/)
           case (2)
             if (ndvi >= 0.3) then
               co412 = (/4.59092762, 3.22065937e-2, 1.72682251e-4, 0.0/)
@@ -1891,7 +1891,7 @@ module modis_surface
               co412 = (/5.34520098, 3.28317599e-2, 3.17897070e-4, 0.0/)
               co470 = (/6.08505785, 5.89311646e-2, 2.59308378e-4, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-	          end if
+             end if
           case (3)
             co412 = (/4.41373796, 2.74747266e-2, -9.0896914e-5, 0.0/)
             co470 = (/4.84420545, 4.30808241e-2, -5.4624034e-5, 0.0/)
@@ -1995,7 +1995,7 @@ module modis_surface
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
               end if
             case (2)
-              if (ndvi < 0.32) then 
+              if (ndvi < 0.32) then
                 co412 = (/4.18631389, 2.5289862e-02, -9.62343375e-04, 3.39909450e-05/)
                 co470 = (/5.32132814, 5.63754659e-02, -9.39866104e-04, 2.88986833e-05/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2009,7 +2009,7 @@ module modis_surface
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
               end if
             case (3)
-              if (ndvi < 0.27) then 
+              if (ndvi < 0.27) then
                 co412 = (/4.37627766, 8.01305335e-03, 8.12666253e-04, -1.00058657e-05/)
                 co470 = (/5.52675332, 4.58968534e-02, 5.09676314e-04, -9.71283147e-06/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2019,7 +2019,7 @@ module modis_surface
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
               end if
             case (4)
-              if (ndvi < 0.27) then 
+              if (ndvi < 0.27) then
                 co412 = (/3.90506839, 0.0, 0.0, 0.0/)
                 co470 = (/4.55176618, 0.0, 0.0, 0.0/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2046,7 +2046,7 @@ module modis_surface
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
               end if
             case (2)
-              if (ndvi < 0.32) then 
+              if (ndvi < 0.32) then
                 co412 = (/3.77066492, 1.58922076e-02, 3.03098949e-04, 0.0/)
                 co470 = (/5.03028472, 5.31452578e-02, 1.26507640e-04, 0.0/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2060,7 +2060,7 @@ module modis_surface
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
               end if
             case (3)
-              if (ndvi < 0.27) then 
+              if (ndvi < 0.27) then
                 co412 = (/4.42122008, -1.43446348e-03, -1.26690140e-04, 1.39839144e-05/)
                 co470 = (/5.56874754, 3.92057334e-02, -2.26222735e-04, 1.30731833e-05/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2070,7 +2070,7 @@ module modis_surface
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
               end if
             case (4)
-              if (ndvi < 0.27) then 
+              if (ndvi < 0.27) then
                 co412 = (/3.16438602, 6.46839077e-02, 0.0, 0.0/)
                 co470 = (/4.63876927, 9.09174541e-02, 0.0, 0.0/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2097,11 +2097,11 @@ module modis_surface
               else
                 co412 = (/2.94527862, 0.0,0.0,0.0/)
                 co470 = (/5.422391543, 7.49454787e-03,0.0,0.0/)
-                co650 = (/0.0, 0.0, 0.0, 0.0/)              
+                co650 = (/0.0, 0.0, 0.0, 0.0/)
               end if
               
             case (2)
-              if (ndvi >= 0.5) then                 
+              if (ndvi >= 0.5) then
                 co412 = (/2.11712331, 1.89785795e-02, -3.36702190e-04, 1.02791555e-05/)
                 co470 = (/4.12074484, 3.94824004e-02, 0.0, 0.0/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2117,7 +2117,7 @@ module modis_surface
               end if
 
             case (3)
-              if (ndvi >= 0.32) then 
+              if (ndvi >= 0.32) then
                 co412 = (/2.84519284, 2.72442032e-2, 0.0, 0.0/)
                 co470 = (/6.15825559, 3.47664076e-2, 1.9403065e-4, 0.0/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2125,7 +2125,7 @@ module modis_surface
                 !co412 = (/2.04842972, 2.45804399e-02, 0.0, 0.0/)
                 !co470 = (/5.86019014, 2.96439063e-02, 0.0, 0.0/)
                 !co650 = (/0.0, 0.0, 0.0, 0.0/)
-              else 
+              else
                 co412 = (/2.6482836, 4.0263797e-2, 0.0, 0.0/)
                 co470 = (/7.06495618, 4.88471232e-2, -8.39825079e-5, 0.0/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2136,7 +2136,7 @@ module modis_surface
                 
               end if
             
-            case (4) 
+            case (4)
               co412 = (/2.97435558, 1.72237964e-02, 0.0, 0.0/)
               co470 = (/7.41527891, 5.88402071e-02, 7.96356631e-05, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2156,7 +2156,7 @@ module modis_surface
               co650 = (/0.0, 0.0, 0.0, 0.0/)
                             
             case (2)
-              if (ndvi >= 0.45) then 
+              if (ndvi >= 0.45) then
                 co412 = (/3.42708429, 2.01945894e-02, 5.70725971e-04, 0.0/)
                 co470 = (/4.23230444, 3.76471806e-02, 6.98131497e-04, 0.0/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2190,7 +2190,7 @@ module modis_surface
       case ("Carpentras")
           select case (season)
             case (1)
-              if (ndvi >= 0.36) then 
+              if (ndvi >= 0.36) then
                 co412 = (/3.63305224, 1.57411548e-2, 0.0, 0.0/)
                 co470 = (/5.12339543, 3.27343565e-2, 0.0, 0.0/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2206,7 +2206,7 @@ module modis_surface
 !              co650 = (/0.0, 0.0, 0.0, 0.0/)
               
             case (2)
-              if (ndvi < 0.3) then 
+              if (ndvi < 0.3) then
                 co412 = (/5.31754912, 5.6181342e-2, 0.0, 0.0/)
                 co470 = (/7.21956575, 8.6234168e-2, 0.0, 0.0/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2220,7 +2220,7 @@ module modis_surface
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
               end if
 
-!              -- 25km BRDF              
+!              -- 25km BRDF
 !              if (ndvi >= 0.46) then
 !                co412 = (/2.97987530, 2.27364122e-02, 9.88588305e-04, 0.0/)
 !                co470 = (/4.54948280, 4.06782524e-02, 6.53794050e-04, 0.0/)
@@ -2250,7 +2250,7 @@ module modis_surface
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
               end if
 
-!              -- 25km BRDF 
+!              -- 25km BRDF
 !              if (ndvi >= 0.46) then
 !                co412 = (/4.33893052, 4.70373358e-02, 2.55311732e-04, -4.89431042e-06/)
 !                co470 = (/2.72831822, 1.99844060e-02, 4.82744505e-04, 0.0/)
@@ -2300,7 +2300,7 @@ module modis_surface
                 co412 = (/6.79254216, 6.60335364e-02, 0.0, 0.0/)
                 co470 = (/9.05448478, 1.01175023e-01, 1.31793002e-02, 0.0/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
-              else  
+              else
                 co412 = (/6.63306271, 4.20332840e-02, 1.87758245e-04, 0.0/)
                 co470 = (/8.71407292, 7.83112414e-02, 1.01125671e-03, 0.0/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2310,7 +2310,7 @@ module modis_surface
                 co412 = (/6.22897476, 0.0, 0.0, 0.0/)
                 co470 = (/8.73022491, 0.0, 0.0, 0.0/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
-              else  
+              else
                 co412 = (/5.83693596, 2.94875730e-02, 4.27587428e-04, 0.0/)
                 co470 = (/8.12482274, 5.32465081e-02, 0.0, 0.0/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2320,7 +2320,7 @@ module modis_surface
                 co412 = (/9.20319079, 7.41965188e-02, -1.80650001e-04, 0.0/)
                 co470 = (/6.17664662, 7.45518438e-02, -3.64408664e-04, -1.05957912e-05/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
-              else  
+              else
                 co412 = (/8.20920358, 5.96572455e-02, 7.20029748e-04, 1.07035450e-05/)
                 co470 = (/6.35028669, 3.72669462e-02, 1.39396118e-04, 1.09315712e-05/)
                 co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2343,7 +2343,7 @@ module modis_surface
             co470 = (/4.5157122, 5.7494184e-2, 2.3163434e-4, 0.0/)
             co650 = (/0.0, 0.0, 0.0, 0.0/)
 
-          case (3) 
+          case (3)
           !Pune is unable to perform BRDF study at summer due to monsoon
             !use fall for summer, 26 January 2018, JLee TEST
             co412 = (/1.6509085, 3.2402477e-2, 1.5609563e-3, 0.0/)
@@ -2433,7 +2433,7 @@ module modis_surface
       else                                      ! backward scattering
         select case (season)
           case (1)
-						if (ndvi >= 0.54) then
+                  if (ndvi >= 0.54) then
               co412 = (/1.8666770, 0.026571400, 0.0, 0.0/)
               co470 = (/3.24662224, 2.49647745e-02, 0.0, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2509,7 +2509,7 @@ module modis_surface
             else
               co412 = (/1.36446568, 0.0, 0.0, 0.0/)
               co470 = (/2.92020512, -1.43458296e-02, -1.39739540e-03, 3.21024412e-05/)
-              co650 = (/0.0, 0.0, 0.0, 0.0/)            
+              co650 = (/0.0, 0.0, 0.0, 0.0/)
             end if
 !            co412 = (/1.91200337, 1.88742388e-02, 0.0, 0.0/)
 !            co470 = (/3.51364747, 3.85886985e-02, 0.0, 0.0/)
@@ -2544,11 +2544,11 @@ module modis_surface
 !            if (ndvi >= 0.27) then
 !              co412 = (/4.14926099, 1.42958399e-03, 4.64133459e-04, 0.0/)
 !              co470 = (/5.02372861, 4.57270649e-02, -5.17735411e-05, 4.71527134e-06/)
-!              co650 = (/0.0, 0.0, 0.0, 0.0/)        
+!              co650 = (/0.0, 0.0, 0.0, 0.0/)
 !            else
 !              co412 = (/4.13229478, 2.66646676e-02, 0.0, 0.0/)
 !              co470 = (/5.01590910, 6.48840906e-02, 0.0, 0.0/)
-!              co650 = (/0.0, 0.0, 0.0, 0.0/)        
+!              co650 = (/0.0, 0.0, 0.0, 0.0/)
 !            end if
           case (4)
             if (ndvi >= 0.36) then
@@ -2585,7 +2585,7 @@ module modis_surface
             else
               co412 = (/1.36446568, 0.0, 0.0, 0.0/)
               co470 = (/2.92020512, -1.43458296e-02, -1.39739540e-03, 3.21024412e-05/)
-              co650 = (/0.0, 0.0, 0.0, 0.0/)            
+              co650 = (/0.0, 0.0, 0.0, 0.0/)
             end if
 !            co412 = (/1.91200337, 1.88742388e-02, 0.0, 0.0/)
 !            co470 = (/3.51364747, 3.85886985e-02, 0.0, 0.0/)
@@ -2620,11 +2620,11 @@ module modis_surface
 !            if (ndvi >= 0.27) then
 !              co412 = (/4.14926099, 1.42958399e-03, 4.64133459e-04, 0.0/)
 !              co470 = (/5.02372861, 4.57270649e-02, -5.17735411e-05, 4.71527134e-06/)
-!              co650 = (/0.0, 0.0, 0.0, 0.0/)        
+!              co650 = (/0.0, 0.0, 0.0, 0.0/)
 !            else
 !              co412 = (/4.13229478, 2.66646676e-02, 0.0, 0.0/)
 !              co470 = (/5.01590910, 6.48840906e-02, 0.0, 0.0/)
-!              co650 = (/0.0, 0.0, 0.0, 0.0/)        
+!              co650 = (/0.0, 0.0, 0.0, 0.0/)
 !            end if
           case (4)
             if (ndvi >= 0.36) then
@@ -2662,7 +2662,7 @@ module modis_surface
             else
               co412 = (/1.36446568, 0.0, 0.0, 0.0/)
               co470 = (/2.92020512, -1.43458296e-02, -1.39739540e-03, 3.21024412e-05/)
-              co650 = (/0.0, 0.0, 0.0, 0.0/)            
+              co650 = (/0.0, 0.0, 0.0, 0.0/)
             end if
 !            co412 = (/1.91200337, 1.88742388e-02, 0.0, 0.0/)
 !            co470 = (/3.51364747, 3.85886985e-02, 0.0, 0.0/)
@@ -2697,11 +2697,11 @@ module modis_surface
 !            if (ndvi >= 0.27) then
 !              co412 = (/4.14926099, 1.42958399e-03, 4.64133459e-04, 0.0/)
 !              co470 = (/5.02372861, 4.57270649e-02, -5.17735411e-05, 4.71527134e-06/)
-!              co650 = (/0.0, 0.0, 0.0, 0.0/)        
+!              co650 = (/0.0, 0.0, 0.0, 0.0/)
 !            else
 !              co412 = (/4.13229478, 2.66646676e-02, 0.0, 0.0/)
 !              co470 = (/5.01590910, 6.48840906e-02, 0.0, 0.0/)
-!              co650 = (/0.0, 0.0, 0.0, 0.0/)        
+!              co650 = (/0.0, 0.0, 0.0, 0.0/)
 !            end if
           case (4)
             if (ndvi >= 0.36) then
@@ -2738,7 +2738,7 @@ module modis_surface
             else
               co412 = (/1.36446568, 0.0, 0.0, 0.0/)
               co470 = (/2.92020512, -1.43458296e-02, -1.39739540e-03, 3.21024412e-05/)
-              co650 = (/0.0, 0.0, 0.0, 0.0/)            
+              co650 = (/0.0, 0.0, 0.0, 0.0/)
             end if
 !            co412 = (/1.91200337, 1.88742388e-02, 0.0, 0.0/)
 !            co470 = (/3.51364747, 3.85886985e-02, 0.0, 0.0/)
@@ -2773,11 +2773,11 @@ module modis_surface
 !            if (ndvi >= 0.27) then
 !              co412 = (/4.14926099, 1.42958399e-03, 4.64133459e-04, 0.0/)
 !              co470 = (/5.02372861, 4.57270649e-02, -5.17735411e-05, 4.71527134e-06/)
-!              co650 = (/0.0, 0.0, 0.0, 0.0/)        
+!              co650 = (/0.0, 0.0, 0.0, 0.0/)
 !            else
 !              co412 = (/4.13229478, 2.66646676e-02, 0.0, 0.0/)
 !              co470 = (/5.01590910, 6.48840906e-02, 0.0, 0.0/)
-!              co650 = (/0.0, 0.0, 0.0, 0.0/)        
+!              co650 = (/0.0, 0.0, 0.0, 0.0/)
 !            end if
           case (4)
             if (ndvi >= 0.36) then
@@ -2811,7 +2811,7 @@ module modis_surface
               co412 = (/1.95397318, 1.73386252E-02, -3.19877587E-04, 4.02574564E-06/)
               co470 = (/2.76241404, 5.21461588E-02, -4.94776417E-04, 5.45084985E-06/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-!            else 
+!            else
 !              co412 = (/4.97022734, 1.39816544E-02, -6.20379323E-06, 4.10908585E-06/)
 !              co470 = (/7.51990477, 5.62140108E-02, -2.65648653E-04, 0.0/)
 !              co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2824,7 +2824,7 @@ module modis_surface
               co412 = (/1.95397318, 1.73386252E-02, -3.19877587E-04, 4.02574564E-06/)
               co470 = (/2.76241404, 5.21461588E-02, -4.94776417E-04, 5.45084985E-06/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-!            else 
+!            else
 !              co412 = (/4.97022734, 1.39816544E-02, -6.20379323E-06, 4.10908585E-06/)
 !              co470 = (/7.51990477, 5.62140108E-02, -2.65648653E-04, 0.0/)
 !              co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2837,7 +2837,7 @@ module modis_surface
               co412 = (/1.95397318, 1.73386252E-02, -3.19877587E-04, 4.02574564E-06/)
               co470 = (/2.76241404, 5.21461588E-02, -4.94776417E-04, 5.45084985E-06/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-!            else 
+!            else
 !              co412 = (/4.97022734, 1.39816544E-02, -6.20379323E-06, 4.10908585E-06/)
 !              co470 = (/7.51990477, 5.62140108E-02, -2.65648653E-04, 0.0/)
 !              co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2850,7 +2850,7 @@ module modis_surface
               co412 = (/1.95397318, 1.73386252E-02, -3.19877587E-04, 4.02574564E-06/)
               co470 = (/2.76241404, 5.21461588E-02, -4.94776417E-04, 5.45084985E-06/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-!            else 
+!            else
 !              co412 = (/4.97022734, 1.39816544E-02, -6.20379323E-06, 4.10908585E-06/)
 !              co470 = (/7.51990477, 5.62140108E-02, -2.65648653E-04, 0.0/)
 !              co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2867,7 +2867,7 @@ module modis_surface
               co412 = (/1.95397318, 1.73386252E-02, -3.19877587E-04, 4.02574564E-06/)
               co470 = (/2.76241404, 5.21461588E-02, -4.94776417E-04, 5.45084985E-06/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-!            else 
+!            else
 !              co412 = (/4.97022734, 1.39816544E-02, -6.20379323E-06, 4.10908585E-06/)
 !              co470 = (/7.51990477, 5.62140108E-02, -2.65648653E-04, 0.0/)
 !              co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2880,7 +2880,7 @@ module modis_surface
               co412 = (/1.95397318, 1.73386252E-02, -3.19877587E-04, 4.02574564E-06/)
               co470 = (/2.76241404, 5.21461588E-02, -4.94776417E-04, 5.45084985E-06/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-!            else 
+!            else
 !              co412 = (/4.97022734, 1.39816544E-02, -6.20379323E-06, 4.10908585E-06/)
 !              co470 = (/7.51990477, 5.62140108E-02, -2.65648653E-04, 0.0/)
 !              co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2893,7 +2893,7 @@ module modis_surface
               co412 = (/1.95397318, 1.73386252E-02, -3.19877587E-04, 4.02574564E-06/)
               co470 = (/2.76241404, 5.21461588E-02, -4.94776417E-04, 5.45084985E-06/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-!            else 
+!            else
 !              co412 = (/4.97022734, 1.39816544E-02, -6.20379323E-06, 4.10908585E-06/)
 !              co470 = (/7.51990477, 5.62140108E-02, -2.65648653E-04, 0.0/)
 !              co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2906,7 +2906,7 @@ module modis_surface
               co412 = (/1.95397318, 1.73386252E-02, -3.19877587E-04, 4.02574564E-06/)
               co470 = (/2.76241404, 5.21461588E-02, -4.94776417E-04, 5.45084985E-06/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-!            else 
+!            else
 !              co412 = (/4.97022734, 1.39816544E-02, -6.20379323E-06, 4.10908585E-06/)
 !              co470 = (/7.51990477, 5.62140108E-02, -2.65648653E-04, 0.0/)
 !              co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2924,7 +2924,7 @@ module modis_surface
               co470 = (/5.32085036, 7.76166789e-02, 0.0, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
           case (2)
-            if (ndvi < 0.22) then 
+            if (ndvi < 0.22) then
               co412 = (/2.56745262, 3.14455912e-02, 0.0, 0.0/)
               co470 = (/5.72543787, 6.57833956e-02, 0.0, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2934,7 +2934,7 @@ module modis_surface
               co650 = (/0.0, 0.0, 0.0, 0.0/)
             end if
           case (3)
-            if (ndvi < 0.32) then 
+            if (ndvi < 0.32) then
               co412 = (/3.09389618, 3.43945319e-02, -1.73503979e-04, 0.0/)
               co470 = (/5.26831030, 7.26053989e-02, -4.36121233e-04, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2948,7 +2948,7 @@ module modis_surface
               co650 = (/0.0, 0.0, 0.0, 0.0/)
             end if
           case (4)
-            if (ndvi < 0.20) then 
+            if (ndvi < 0.20) then
               co412 = (/7.26239004e-01, 1.6566520e-02, 0.0, 0.0/)
               co470 = (/5.08897915, 2.07599476e-02, -1.86393057e-03, 2.40076652e-05/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -2980,11 +2980,11 @@ module modis_surface
             co650 = (/0.0, 0.0, 0.0, 0.0/)
 
           case (3)
-            if (ndvi < 0.2) then 
+            if (ndvi < 0.2) then
               co412 = (/1.31131496, 1.90175933e-02, 0.0, 0.0/)
               co470 = (/4.28780511, 4.85799304e-02, 1.65298184e-03, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-            else 
+            else
               co412 = (/3.19067520, 2.81951590e-02, 0.0, 0.0/)
               co470 = (/3.14833814, 1.05654939e-01, 0.0, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -3008,7 +3008,7 @@ module modis_surface
               co412 = (/3.96991225, 5.96628950e-02, 2.13615454e-04, 0.0/)
               co470 = (/6.99850585, 8.36445599e-02, -1.10860486e-04, 6.74081297e-06/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-            else if (ndvi < 0.25) then 
+            else if (ndvi < 0.25) then
               co412 = (/3.833049805, 4.78326202e-02, -6.22253363e-04, 0.0/)
               co470 = (/6.31127139, 6.19777232e-02, -1.56997452e-04, 2.82474197e-05/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -3019,7 +3019,7 @@ module modis_surface
             end if
             
           case (2)
-            if (ndvi < 0.18) then 
+            if (ndvi < 0.18) then
               co412 = (/4.20196229, 5.29500002e-02, 3.20204802e-04, 0.0/)
               co470 = (/7.22026945, 9.03690963e-02, 0.0, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -3029,18 +3029,18 @@ module modis_surface
               co650 = (/0.0, 0.0, 0.0, 0.0/)
             end if
           case (3)
-            if (ndvi < 0.2) then 
+            if (ndvi < 0.2) then
               co412 = (/4.28651135, 9.9311289e-02, -5.34064043e-04, 0.0/)
               co470 = (/7.49201557, 1.37003165e-01, -1.41178674e-03, 8.95252657e-06/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-            else 
+            else
               co412 = (/7.02860038, -4.65828642e-03, 0.0, 0.0/)
               co470 = (/7.89866675, 2.63625768e-02, 0.0, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
             end if
             
           case (4)
-            if (ndvi < 0.22) then 
+            if (ndvi < 0.22) then
               co412 = (/2.82799186, 3.51207193e-02, 0.0, 0.0/)
               co470 = (/6.03474644, 6.89646847e-02, 3.96325172e-04, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -3066,7 +3066,7 @@ module modis_surface
               co412 = (/3.96991225, 5.96628950e-02, 2.13615454e-04, 0.0/)
               co470 = (/6.99850585, 8.36445599e-02, -1.10860486e-04, 6.74081297e-06/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-            else if (ndvi < 0.25) then 
+            else if (ndvi < 0.25) then
               co412 = (/3.833049805, 4.78326202e-02, -6.22253363e-04, 0.0/)
               co470 = (/6.31127139, 6.19777232e-02, -1.56997452e-04, 2.82474197e-05/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -3077,7 +3077,7 @@ module modis_surface
             end if
             
           case (2)
-            if (ndvi < 0.18) then 
+            if (ndvi < 0.18) then
               co412 = (/4.20196229, 5.29500002e-02, 3.20204802e-04, 0.0/)
               co470 = (/7.22026945, 9.03690963e-02, 0.0, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -3087,18 +3087,18 @@ module modis_surface
               co650 = (/0.0, 0.0, 0.0, 0.0/)
             end if
           case (3)
-            if (ndvi < 0.2) then 
+            if (ndvi < 0.2) then
               co412 = (/4.28651135, 9.9311289e-02, -5.34064043e-04, 0.0/)
               co470 = (/7.49201557, 1.37003165e-01, -1.41178674e-03, 8.95252657e-06/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-            else 
+            else
               co412 = (/7.02860038, -4.65828642e-03, 0.0, 0.0/)
               co470 = (/7.89866675, 2.63625768e-02, 0.0, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
             end if
             
           case (4)
-            if (ndvi < 0.22) then 
+            if (ndvi < 0.22) then
               co412 = (/2.82799186, 3.51207193e-02, 0.0, 0.0/)
               co470 = (/6.03474644, 6.89646847e-02, 3.96325172e-04, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -3135,15 +3135,15 @@ module modis_surface
             co470 = (/1.53111360e01, 1.05595037e-01, -7.31500339e-04, 0.0/)
             co650 = (/0.0, 0.0, 0.0, 0.0/)
             
-            if (raa < 50.0) then 
+            if (raa < 50.0) then
               co412 = (/8.63300701, 1.29057864e-01, -2.95916295e-03, 1.83110100e-05/)
               co470 = (/1.46695788e01, 9.60421930e-02, -2.40220378e-03, 2.99138049e-05/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-            else if (raa >= 50.0 .AND. raa < 90.0) then 
+            else if (raa >= 50.0 .AND. raa < 90.0) then
               co412 = (/1.01609630e01, 1.02434047e-01, -1.36452416e-03, 0.0/)
               co470 = (/1.51255831e01, 7.36233156e-02, 4.74327855e-04, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
-            else if (raa >= 90.0 .AND. raa < 160.0) then 
+            else if (raa >= 90.0 .AND. raa < 160.0) then
               co412 = (/1.09242704e01, 0.0, 0.0, 0.0/)
               co470 = (/1.95602923e01, -5.44866657e-02, 0.0, 0.0/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -3161,13 +3161,13 @@ module modis_surface
               co470 = (/1.47453243e01, 9.60301995e-02, 0.0, 0.0/)
             else
               co470 = (/1.54562369e01, 9.40036429e-02, 0.0, 0.0/)
-            endif            
+            endif
             
             co412 = (/8.9590389, 0.017604729, 0.00076547611, -2.1966118e-06/)
             co470 = (/14.904570, 0.053656442, 0.0010690852, -1.8405743e-05/)
             co650 = (/0.0, 0.0, 0.0, 0.0/)
             
-            if (raa < 90.0) then 
+            if (raa < 90.0) then
               co412 = (/9.1177595, 0.039785655, -0.00062878201, 2.1237891e-05/)
               co470 = (/14.843738, 0.024588279, 0.00021114164, 1.2466120e-05/)
               co650 = (/0.0, 0.0, 0.0, 0.0/)
@@ -3219,7 +3219,7 @@ module modis_surface
             status = -1
             return
         end select
-        
+
       case default
         print *, "ERROR: Invalid AERONET site specified.  No BRDF values."
         status = -1
@@ -3233,9 +3233,9 @@ module modis_surface
 
     c412 = co412(1)
     c470 = co470(1)
-    c650 = co650(1)   
+    c650 = co650(1)
  
-    if (dflag) then 
+    if (dflag) then
       print '(A,A,A,I4,I4,2(F11.6,1X))', trim(func_name), ", site, month, season, ndvi, scat: ", &
       &     aero_site, month, season, ndvi, sca
       print '(A,A,4(F11.6,1X))', trim(func_name), ", BRDF coeffs412: ", co412
@@ -3249,1589 +3249,1591 @@ module modis_surface
     
   end function get_aeronet_brdf_sr
 
-! -- Based on matching AERONET sites, return AOT value using appropriate AOT model. 
-! --  Returns 0 on success, otherwise -1.
-  real function get_aot500(lat, lon, elev, sa, season, ndvi, gzone, lc_type, stdv02, &
-        &       aot412_91, aot412_93, aot412_94, aot412_96, aot412_995, &
-        &       aot470_91, aot470_92, aot470_93, aot470_94, aot470_95, aot470_96, aot470_995, &
-        &       aot412_91_dust, aot412_93_dust, aot412_94_dust, aot412_96_dust, aot412_995_dust, &
-        &       aot470_91_dust, aot470_92_dust, aot470_93_dust, aot470_94_dust, aot470_95_dust, &
-        &       aot470_96_dust, aot470_995_dust, ae, status, debug,platform) result(aot500)
 
-    implicit none
+   ! -- Based on matching AERONET sites, return AOT value using appropriate AOT model.
+   ! --  Returns 0 on success, otherwise -1.
+   real function get_aot500(lat, lon, elev, sa, season, ndvi, gzone, lc_type, stdv02, &
+      &       aot412_91, aot412_93, aot412_94, aot412_96, aot412_995, &
+      &       aot470_91, aot470_92, aot470_93, aot470_94, aot470_95, aot470_96, aot470_995, &
+      &       aot412_91_dust, aot412_93_dust, aot412_94_dust, aot412_96_dust, aot412_995_dust, &
+      &       aot470_91_dust, aot470_92_dust, aot470_93_dust, aot470_94_dust, aot470_95_dust, &
+      &       aot470_96_dust, aot470_995_dust, ae, status, debug,platform) result(aot500)
+
+      implicit none
     
-    character(len=20), parameter  ::  func_name = "get_aot500"
-    character(len=*), intent(in)           ::  platform        
-    real, intent(in)          ::  lat
-    real, intent(in)          ::  lon
-    real, intent(in)          ::  elev            ! -- surface elevation
-    real, intent(in)          ::  sa              ! -- scattering angle
-    integer, intent(in)       ::  season
-    real, intent(in)          ::  ndvi
-    integer, intent(in)       ::  gzone
-    integer, intent(in)       ::  lc_type
-    real, intent(in)          ::  stdv02
-    real, intent(in)          ::  aot412_91, aot412_93, aot412_94, aot412_96, aot412_995
-    real, intent(in)          ::  aot470_91, aot470_92, aot470_93, aot470_94, aot470_95
-    real, intent(in)          ::  aot470_96, aot470_995
-    real, intent(in)          ::  aot412_91_dust, aot412_93_dust, aot412_94_dust, aot412_96_dust, aot412_995_dust
-    real, intent(in)          ::  aot470_91_dust, aot470_92_dust, aot470_93_dust, aot470_94_dust, aot470_95_dust
-    real, intent(in)          ::  aot470_96_dust, aot470_995_dust
-    real, intent(in)          ::  ae              ! angstrom exponent 
-    integer, intent(inout)    ::  status
-    logical, intent(in), optional ::  debug
+      character(len=20), parameter  ::  func_name = "get_aot500"
+      character(len=*), intent(in)           ::  platform
+      real, intent(in)          ::  lat
+      real, intent(in)          ::  lon
+      real, intent(in)          ::  elev            ! -- surface elevation
+      real, intent(in)          ::  sa              ! -- scattering angle
+      integer, intent(in)       ::  season
+      real, intent(in)          ::  ndvi
+      integer, intent(in)       ::  gzone
+      integer, intent(in)       ::  lc_type
+      real, intent(in)          ::  stdv02
+      real, intent(in)          ::  aot412_91, aot412_93, aot412_94, aot412_96, aot412_995
+      real, intent(in)          ::  aot470_91, aot470_92, aot470_93, aot470_94, aot470_95
+      real, intent(in)          ::  aot470_96, aot470_995
+      real, intent(in)          ::  aot412_91_dust, aot412_93_dust, aot412_94_dust, aot412_96_dust, aot412_995_dust
+      real, intent(in)          ::  aot470_91_dust, aot470_92_dust, aot470_93_dust, aot470_94_dust, aot470_95_dust
+      real, intent(in)          ::  aot470_96_dust, aot470_995_dust
+      real, intent(in)          ::  ae              ! angstrom exponent
+      integer, intent(inout)    ::  status
+      logical, intent(in), optional ::  debug
     
-    real                      ::  refsr650
-    integer                   ::  ilat, ilon
-    integer                   ::  m
+      real                      ::  refsr650
+      integer                   ::  ilat, ilon
+      integer                   ::  m
     
-    character(len=255)                  ::  asite
-    real, dimension(:), allocatable     ::  maero412, maero470, maero650
-    integer, dimension(:), allocatable  ::  msiteindx
-    integer, dimension(:), allocatable  ::  sorted
-    real                                ::  frac
-    integer                             ::  i, ii, jj, cnt
+      character(len=255)                  ::  asite
+      real, dimension(:), allocatable     ::  maero412, maero470, maero650
+      integer, dimension(:), allocatable  ::  msiteindx
+      integer, dimension(:), allocatable  ::  sorted
+      real                                ::  frac
+      integer                             ::  i, ii, jj, cnt
     
-    real                                ::  aot500_1, aot500_2
+      real                                ::  aot500_1, aot500_2
     
-    logical                             ::  dflag
+      logical                             ::  dflag
     
-    dflag = .false.
-    if (present(debug)) dflag = debug
+      dflag = .false.
+      if (present(debug)) dflag = debug
     
-    status = 0
-    aot500 = -999.0
+      status = 0
+      aot500 = -999.0
     
-    !   -- convert geolocation into array indices.
-    ilat = floor(lat*10.0) + 900 + 1
-    ilon = floor(lon*10.0) + 1800 + 1
+      !   -- convert geolocation into array indices.
+      ilat = floor(lat*10.0) + 900 + 1
+      ilon = floor(lon*10.0) + 1800 + 1
     
-    if (ilat > 1800) ilat = 1800
-    if (ilon > 3600) ilon = 3600
-    if (dflag) print *, trim(func_name)//', lat, lon, ilat, ilon: ', lat, lon, ilat, ilon
+      if (ilat > 1800) ilat = 1800
+      if (ilon > 3600) ilon = 3600
+      if (dflag) print *, trim(func_name)//', lat, lon, ilat, ilon: ', lat, lon, ilat, ilon
     
-!   -- set up our reference surface reflectance
-    refsr650 = brdf650(ilon,ilat)
+      !   -- set up our reference surface reflectance
+      refsr650 = brdf650(ilon,ilat)
         
-    !   -- do we have an AERONET site in the same zone with the same land cover type?
-    m = 0
-    m = count(aero_zones == gzone .AND. aero_types == lc_type .AND. (elev < 500 .EQV. aero_elev < 500))
+      !   -- do we have an AERONET site in the same zone with the same land cover type?
+      m = 0
+      m = count(aero_zones == gzone .AND. aero_types == lc_type .AND. (elev < 500 .EQV. aero_elev < 500))
 
-!   -- create exception for china, europe, spain, morocco -- match by zone and elevation only
-    if (gzone == 16 .OR. (gzone == 17 .OR. gzone == 2) .OR. gzone == 22) then
-      m = count(aero_zones == gzone .AND. (elev < 500 .EQV. aero_elev < 500))
-    end if
-    
-!		-- create exception for Fresno Valley, Australia - match by region only.
-		if (gzone == 18 .OR. gzone == 12 .OR. (gzone == 26 .OR. gzone == 27) .OR. gzone == 29) then
-			m = count(aero_zones == gzone)
-		end if
-
-!   -- create exception for high elevation Tibet/China zone - match by region
-!   only.
-    if (gzone == 28) then
-        m = count(aero_zones == gzone)
-    end if
-
-!   -- create exception for Jaipur zone - match by region only.
-    if (gzone == 20) then
-        m = count(aero_zones == gzone)
-    end if
-
-    !   -- create exception for NW_India_Desert zone - match by region only.
-    if (gzone == 30) then
-        m = count(aero_zones == gzone)
-    end if
-
-!   -- create exception for Pune - match by region only.
-    if (gzone == 19) then
-      m = count(aero_zones == gzone)
-    end if
-
-!   -- create exception for Kanpur - match by region only, 9 January 2018 JLee
-    if (gzone == 15) then
-      m = count(aero_zones == gzone)
-    end if
-
-!   -- create exception for Sahel, geozone =5, landcover=2 to ignore elevation.
-    if ((gzone == 5 .AND. lc_type == 2) .OR. gzone == 1 .or. gzone == 13) then
-      m = count(aero_zones == gzone .AND. aero_types == lc_type)
-    end if
-
-!   -- create exception for Barren North America, geozone =31 to ignore
-!   elevation above 750m.
-    if (gzone == 31 .AND. elev < 750) then
-      m = count(aero_zones == gzone)
-    end if
-        
-    if (m > 0) then
-!     -- allocate our arrays to store the matching AERONET data.
-!     -- no explicit deallocate() as these should automatically be 
-!     -- deallocated when the function ends.
-      if (allocated(maero412)) deallocate(maero412, stat=status)
-      if (allocated(maero470)) deallocate(maero470, stat=status)
-      if (allocated(maero650)) deallocate(maero650, stat=status)
-      if (allocated(msiteindx)) deallocate(msiteindx, stat=status)
-      if (allocated(sorted)) deallocate(sorted, stat=status)
-      allocate(maero412(m), maero470(m), maero650(m), msiteindx(m), sorted(m), stat=status)
-      if (status /= 0) then
-        print *, "ERROR: Failed to allocate AERONET 650 SR match arrays: ", status
-        return
+      !   -- create exception for china, europe, spain, morocco -- match by zone and elevation only
+      if (gzone == 16 .OR. (gzone == 17 .OR. gzone == 2) .OR. gzone == 22) then
+         m = count(aero_zones == gzone .AND. (elev < 500 .EQV. aero_elev < 500))
       end if
-      
-      cnt = 0
     
-!     -- get and store base table SR values at each matching AERONET site at 412, 470, and 650.
-      do i = 1, size(aero_sites)        ! i = AERONET site index
-        select case (gzone)
-          case (2, 16, 17, 22)   ! -- china, europe, spain, morocco, only match by zone, elevation
-            if (aero_zones(i) == gzone .AND. (elev < 500 .EQV. aero_elev(i) < 500)) then
-              cnt = cnt + 1
-              maero412(cnt) = aero_sr412(i,season)
-              maero470(cnt) = aero_sr470(i,season)
-              maero650(cnt) = aero_sr650(i,3)        ! < -- always use summer for 650nm to match refsr650
-              msiteindx(cnt) = i
-              
-              if (dflag) then
-                print '(3(A,1X),I4,I4)', trim(func_name), ', matching site: ', trim(aero_sites(i)), aero_zones(i), aero_types(i)
-                print '(A,A,3(F11.6))', trim(func_name), ', AERONET Baseline SR, 412, 470, 650: ', &
-                &  maero412(cnt), maero470(cnt), maero650(cnt)
-              end if
-            end if
-          case (18, 12, 20, 26, 27, 28, 29, 30, 31)						! Fresno Valley, Australia, only match by region
-          	if (aero_zones(i) == gzone) then
-          		cnt = cnt + 1
-          		maero412(cnt) = aero_sr412(i,season)
-              maero470(cnt) = aero_sr470(i,season)
-              maero650(cnt) = aero_sr650(i,3)        ! < -- always use summer for 650nm to match refsr650
-              msiteindx(cnt) = i
-              
-              if (dflag) then
-                print '(A,A,A,I4,I4)', trim(func_name), ', matching site: ', trim(aero_sites(i)), aero_zones(i), aero_types(i)
-                print '(A,A,3(F11.6,1X))', trim(func_name), ', AERONET Baseline SR: ', maero412(cnt), maero470(cnt), maero650(cnt)
-              end if
-            end if
-          case (15, 19)          ! Pune, only match by region, added Kanpur and India high elevation 31 January 2018 JLee
-          	if (aero_zones(i) == gzone) then
-          		cnt = cnt + 1
-          		maero412(cnt) = aero_sr412(i,season)
-              maero470(cnt) = aero_sr470(i,season)
-              maero650(cnt) = aero_sr650(i,3)        ! < -- always use summer for 650nm to match refsr650
-              msiteindx(cnt) = i
-              
-              if (dflag) then
-                print '(A,A,A,I4,I4)', trim(func_name), ', matching site: ', trim(aero_sites(i)), aero_zones(i), aero_types(i)
-                print '(A,A,3(F11.6,1X))', trim(func_name), ', AERONET Baseline SR: ', maero412(cnt), maero470(cnt), maero650(cnt)
-              end if
-            end if
-          case (1, 5, 10, 13)         ! N. Africa, Solar Villge (Saudi Arabia)
-            if (aero_zones(i) == gzone .AND. aero_types(i) == lc_type) then
-          		cnt = cnt + 1
-          		maero412(cnt) = aero_sr412(i,season)
-              maero470(cnt) = aero_sr470(i,season)
-              maero650(cnt) = aero_sr650(i,3)        ! < -- always use summer for 650nm to match refsr650
-              msiteindx(cnt) = i
-              
-              if (dflag) then
-                print '(A,A,A,I4,I4)', trim(func_name), ', matching site: ', trim(aero_sites(i)), aero_zones(i), aero_types(i)
-                print '(A,A,3(F11.6,1X))', trim(func_name), ', AERONET Baseline SR: ', maero412(cnt), maero470(cnt), maero650(cnt)
-              end if
-            end if
-          case default
-            if (aero_zones(i) == gzone .AND. aero_types(i) == lc_type .AND. (elev < 500 .EQV. aero_elev(i) < 500)) then
-              cnt = cnt + 1
-              maero412(cnt) = aero_sr412(i,season)
-              maero470(cnt) = aero_sr470(i,season)
-              maero650(cnt) = aero_sr650(i,3)        ! < -- always use summer for 650nm to match refsr650
-              msiteindx(cnt) = i
-          
-              if (dflag) then
-                print '(3(A,1X),I4,I4)', trim(func_name), ', matching site: ', trim(aero_sites(i)), aero_zones(i), aero_types(i)
-                print '(A,A,3(F11.6))', trim(func_name), ', AERONET Baseline SR, 412, 470, 650: ', &
-                &  maero412(cnt), maero470(cnt), maero650(cnt)
-              end if
-            end if
-        end select
-      end do
-      
-!     -- can we interpolate between zone's AERONET sites?
-      call sortrx(m, maero650, sorted)
-      if (refsr650 >= minval(maero650) .AND. refsr650 < maxval(maero650)) then
+      !     -- create exception for Fresno Valley, Australia - match by region only.
+      if (gzone == 18 .OR. gzone == 12 .OR. (gzone == 26 .OR. gzone == 27) .OR. gzone == 29) then
+         m = count(aero_zones == gzone)
+      end if
 
-!       -- find where refsr650 fits in maero650() and interpolate between the two sites
-        do i = 1, m-1
-          if (refsr650 >= maero650(sorted(i)) .AND. refsr650 < maero650(sorted(i+1))) then
-            ii = sorted(i)
+      !   -- create exception for high elevation Tibet/China zone - match by region
+      !   only.
+      if (gzone == 28) then
+         m = count(aero_zones == gzone)
+      end if
+
+      !   -- create exception for Jaipur zone - match by region only.
+      if (gzone == 20) then
+         m = count(aero_zones == gzone)
+      end if
+
+      !   -- create exception for NW_India_Desert zone - match by region only.
+      if (gzone == 30) then
+         m = count(aero_zones == gzone)
+      end if
+
+      !   -- create exception for Pune - match by region only.
+      if (gzone == 19) then
+         m = count(aero_zones == gzone)
+      end if
+
+      !   -- create exception for Kanpur - match by region only, 9 January 2018 JLee
+      if (gzone == 15) then
+         m = count(aero_zones == gzone)
+      end if
+
+      !   -- create exception for Sahel, geozone =5, landcover=2 to ignore elevation.
+      if ((gzone == 5 .AND. lc_type == 2) .OR. gzone == 1 .or. gzone == 13) then
+         m = count(aero_zones == gzone .AND. aero_types == lc_type)
+      end if
+
+      !   -- create exception for Barren North America, geozone =31 to ignore
+      !   elevation above 750m.
+      if (gzone == 31 .AND. elev < 750) then
+         m = count(aero_zones == gzone)
+      end if
+        
+      if (m > 0) then
+         !     -- allocate our arrays to store the matching AERONET data.
+         !     -- no explicit deallocate() as these should automatically be
+         !     -- deallocated when the function ends.
+         if (allocated(maero412)) deallocate(maero412, stat=status)
+         if (allocated(maero470)) deallocate(maero470, stat=status)
+         if (allocated(maero650)) deallocate(maero650, stat=status)
+         if (allocated(msiteindx)) deallocate(msiteindx, stat=status)
+         if (allocated(sorted)) deallocate(sorted, stat=status)
+         allocate(maero412(m), maero470(m), maero650(m), msiteindx(m), sorted(m), stat=status)
+         if (status /= 0) then
+            print *, "ERROR: Failed to allocate AERONET 650 SR match arrays: ", status
+            return
+         end if
+      
+         cnt = 0
+    
+         !     -- get and store base table SR values at each matching AERONET site at 412, 470, and 650.
+         do i = 1, size(aero_sites)        ! i = AERONET site index
+            select case (gzone)
+               case (2, 16, 17, 22)   ! -- china, europe, spain, morocco, only match by zone, elevation
+                  if (aero_zones(i) == gzone .AND. (elev < 500 .EQV. aero_elev(i) < 500)) then
+                     cnt = cnt + 1
+                     maero412(cnt) = aero_sr412(i,season)
+                     maero470(cnt) = aero_sr470(i,season)
+                     maero650(cnt) = aero_sr650(i,3)        ! < -- always use summer for 650nm to match refsr650
+                     msiteindx(cnt) = i
+              
+                     if (dflag) then
+                        print '(3(A,1X),I4,I4)', trim(func_name), ', matching site: ', trim(aero_sites(i)), aero_zones(i), aero_types(i)
+                        print '(A,A,3(F11.6))', trim(func_name), ', AERONET Baseline SR, 412, 470, 650: ', &
+                           &  maero412(cnt), maero470(cnt), maero650(cnt)
+                     end if
+                  end if
+               case (18, 12, 20, 26, 27, 28, 29, 30, 31)                  ! Fresno Valley, Australia, only match by region
+                  if (aero_zones(i) == gzone) then
+                     cnt = cnt + 1
+                     maero412(cnt) = aero_sr412(i,season)
+                     maero470(cnt) = aero_sr470(i,season)
+                     maero650(cnt) = aero_sr650(i,3)        ! < -- always use summer for 650nm to match refsr650
+                     msiteindx(cnt) = i
+              
+                     if (dflag) then
+                        print '(A,A,A,I4,I4)', trim(func_name), ', matching site: ', trim(aero_sites(i)), aero_zones(i), aero_types(i)
+                        print '(A,A,3(F11.6,1X))', trim(func_name), ', AERONET Baseline SR: ', maero412(cnt), maero470(cnt), maero650(cnt)
+                     end if
+                  end if
+               case (15, 19)          ! Pune, only match by region, added Kanpur and India high elevation 31 January 2018 JLee
+                  if (aero_zones(i) == gzone) then
+                     cnt = cnt + 1
+                     maero412(cnt) = aero_sr412(i,season)
+                     maero470(cnt) = aero_sr470(i,season)
+                     maero650(cnt) = aero_sr650(i,3)        ! < -- always use summer for 650nm to match refsr650
+                     msiteindx(cnt) = i
+              
+                     if (dflag) then
+                        print '(A,A,A,I4,I4)', trim(func_name), ', matching site: ', trim(aero_sites(i)), aero_zones(i), aero_types(i)
+                        print '(A,A,3(F11.6,1X))', trim(func_name), ', AERONET Baseline SR: ', maero412(cnt), maero470(cnt), maero650(cnt)
+                     end if
+                  end if
+               case (1, 5, 10, 13)         ! N. Africa, Solar Villge (Saudi Arabia)
+                  if (aero_zones(i) == gzone .AND. aero_types(i) == lc_type) then
+                     cnt = cnt + 1
+                     maero412(cnt) = aero_sr412(i,season)
+                     maero470(cnt) = aero_sr470(i,season)
+                     maero650(cnt) = aero_sr650(i,3)        ! < -- always use summer for 650nm to match refsr650
+                     msiteindx(cnt) = i
+              
+                     if (dflag) then
+                        print '(A,A,A,I4,I4)', trim(func_name), ', matching site: ', trim(aero_sites(i)), aero_zones(i), aero_types(i)
+                        print '(A,A,3(F11.6,1X))', trim(func_name), ', AERONET Baseline SR: ', maero412(cnt), maero470(cnt), maero650(cnt)
+                     end if
+                  end if
+               case default
+                  if (aero_zones(i) == gzone .AND. aero_types(i) == lc_type .AND. (elev < 500 .EQV. aero_elev(i) < 500)) then
+                     cnt = cnt + 1
+                     maero412(cnt) = aero_sr412(i,season)
+                     maero470(cnt) = aero_sr470(i,season)
+                     maero650(cnt) = aero_sr650(i,3)        ! < -- always use summer for 650nm to match refsr650
+                     msiteindx(cnt) = i
+          
+                     if (dflag) then
+                        print '(3(A,1X),I4,I4)', trim(func_name), ', matching site: ', trim(aero_sites(i)), aero_zones(i), aero_types(i)
+                        print '(A,A,3(F11.6))', trim(func_name), ', AERONET Baseline SR, 412, 470, 650: ', &
+                           &  maero412(cnt), maero470(cnt), maero650(cnt)
+                     end if
+                  end if
+            end select
+         end do
+      
+         !     -- can we interpolate between zone's AERONET sites?
+         call sortrx(m, maero650, sorted)
+         if (refsr650 >= minval(maero650) .AND. refsr650 < maxval(maero650)) then
+
+            !       -- find where refsr650 fits in maero650() and interpolate between the two sites
+            do i = 1, m-1
+               if (refsr650 >= maero650(sorted(i)) .AND. refsr650 < maero650(sorted(i+1))) then
+                  ii = sorted(i)
+                  asite = aero_sites(msiteindx(ii))
+                  aot500_1 = get_aeronet_aot500(trim(asite), lat, lon, sa, season, ndvi, stdv02, &
+                     &          aot412_91, aot412_93, aot412_94, aot412_96, aot412_995, &
+                     &          aot470_91, aot470_92, aot470_93, aot470_94, aot470_95, aot470_96, aot470_995, &
+                     &          aot412_91_dust, aot412_93_dust, aot412_94_dust, aot412_96_dust, aot412_995_dust, &
+                     &          aot470_91_dust, aot470_92_dust, aot470_93_dust, aot470_94_dust, aot470_95_dust, &
+                     &          aot470_96_dust, aot470_995_dust, ae, status,platform, debug=dflag)
+                  if (status /= 0) then
+                     print *, "ERROR: Failed to get AOT@500nm from AERONET site: ", trim(asite), status
+                     return
+                  end if
+            
+                  jj = sorted(i+1)
+                  asite = aero_sites(msiteindx(jj))
+                  aot500_2 = get_aeronet_aot500(trim(asite), lat, lon, sa, season, ndvi, stdv02, &
+                     &          aot412_91, aot412_93, aot412_94, aot412_96, aot412_995, &
+                     &          aot470_91, aot470_92, aot470_93, aot470_94, aot470_95, aot470_96, aot470_995, &
+                     &          aot412_91_dust, aot412_93_dust, aot412_94_dust, aot412_96_dust, aot412_995_dust, &
+                     &          aot470_91_dust, aot470_92_dust, aot470_93_dust, aot470_94_dust, aot470_95_dust, &
+                     &          aot470_96_dust, aot470_995_dust, ae, status,platform, debug=dflag)
+                  if (status /= 0) then
+                     print *, "ERROR: Failed to get AOT@500nm from AERONET site: ", trim(asite), status
+                     return
+                  end if
+
+                  !           -- calculate AERONET site weights according to 650 values and adjust AOT.
+                  frac = (refsr650-maero650(ii)) / (maero650(jj)-maero650(ii))
+            
+                  aot500 = (1.0-frac)*aot500_1 + frac*aot500_2
+            
+                  if (dflag) then
+                     print *, trim(func_name), ", Pixel Ref. SR, 650: ", refsr650
+                     !              print *, trim(func_name), ", Pixel Baseline SR, 412, 470: ", xsfc412(ilon,ilat), xsfc470(ilon,ilat)
+                     print *, trim(func_name), ', interp sites: ', trim(aero_sites(msiteindx(ii))), ' ', trim(aero_sites(msiteindx(jj)))
+                     print *, trim(func_name), ', aot values, 412: ', aot412_91, aot412_93, aot412_94, aot412_96, aot412_995
+                     print *, trim(func_name), ", aot values, 470: ", aot470_91, aot470_92, aot470_93, &
+                        &                                                aot470_94, aot470_95, aot470_96, aot470_995
+                     print *, trim(func_name), ', aot500: ', aot500
+                  end if
+            
+                  exit     !  jump out of loop, we're done!
+          
+               end if
+            end do
+        
+         !     -- no interpolation, use single AERONET site.
+         else
+            if (refsr650 <= minval(maero650)) then
+               ii = sorted(1)  ! AERONET site w/ min. sr650 value
+            else
+               ii = sorted(m)  ! AERONET site w/ max. sr650 value
+            end if
+  
             asite = aero_sites(msiteindx(ii))
-            aot500_1 = get_aeronet_aot500(trim(asite), lat, lon, sa, season, ndvi, stdv02, &
-            &          aot412_91, aot412_93, aot412_94, aot412_96, aot412_995, &
-            &          aot470_91, aot470_92, aot470_93, aot470_94, aot470_95, aot470_96, aot470_995, &
-            &          aot412_91_dust, aot412_93_dust, aot412_94_dust, aot412_96_dust, aot412_995_dust, &
-            &          aot470_91_dust, aot470_92_dust, aot470_93_dust, aot470_94_dust, aot470_95_dust, &
-            &          aot470_96_dust, aot470_995_dust, ae, status,platform, debug=dflag)
+            aot500 = get_aeronet_aot500(trim(asite), lat, lon, sa, season, ndvi, stdv02, &
+               &          aot412_91, aot412_93, aot412_94, aot412_96, aot412_995, &
+               &          aot470_91, aot470_92, aot470_93, aot470_94, aot470_95, aot470_96, aot470_995, &
+               &          aot412_91_dust, aot412_93_dust, aot412_94_dust, aot412_96_dust, aot412_995_dust, &
+               &          aot470_91_dust, aot470_92_dust, aot470_93_dust, aot470_94_dust, aot470_95_dust, &
+               &          aot470_96_dust, aot470_995_dust, ae, status, platform,debug=dflag)
             if (status /= 0) then
-              print *, "ERROR: Failed to get AOT@500nm from AERONET site: ", trim(asite), status
-              return
+               print *, "ERROR: Failed to get AOT at 500nm over AERONET site, single: ", trim(asite), status
+               return
             end if
-            
-            jj = sorted(i+1)
-            asite = aero_sites(msiteindx(jj))
-            aot500_2 = get_aeronet_aot500(trim(asite), lat, lon, sa, season, ndvi, stdv02, &
-            &          aot412_91, aot412_93, aot412_94, aot412_96, aot412_995, &
-            &          aot470_91, aot470_92, aot470_93, aot470_94, aot470_95, aot470_96, aot470_995, &
-            &          aot412_91_dust, aot412_93_dust, aot412_94_dust, aot412_96_dust, aot412_995_dust, &
-            &          aot470_91_dust, aot470_92_dust, aot470_93_dust, aot470_94_dust, aot470_95_dust, &
-            &          aot470_96_dust, aot470_995_dust, ae, status,platform, debug=dflag)     
-            if (status /= 0) then
-              print *, "ERROR: Failed to get AOT@500nm from AERONET site: ", trim(asite), status
-              return
-            end if
-
-!           -- calculate AERONET site weights according to 650 values and adjust AOT.
-            frac = (refsr650-maero650(ii)) / (maero650(jj)-maero650(ii))
-            
-            aot500 = (1.0-frac)*aot500_1 + frac*aot500_2
-            
+        
             if (dflag) then
-              print *, trim(func_name), ", Pixel Ref. SR, 650: ", refsr650
-!              print *, trim(func_name), ", Pixel Baseline SR, 412, 470: ", xsfc412(ilon,ilat), xsfc470(ilon,ilat)
-              print *, trim(func_name), ', interp sites: ', trim(aero_sites(msiteindx(ii))), ' ', trim(aero_sites(msiteindx(jj)))
-              print *, trim(func_name), ', aot values, 412: ', aot412_91, aot412_93, aot412_94, aot412_96, aot412_995
-              print *, trim(func_name), ", aot values, 470: ", aot470_91, aot470_92, aot470_93, &
-              &                                                aot470_94, aot470_95, aot470_96, aot470_995
-              print *, trim(func_name), ', aot500: ', aot500
+               print *, trim(func_name), ", Pixel Ref. SR, 650: ", refsr650
+               !          print *, trim(func_name), ", Pixel Baseline SR, 412, 470: ", xsfc412(ilon,ilat), xsfc470(ilon,ilat)
+               print *, trim(func_name), ', interp site: ', trim(aero_sites(msiteindx(ii)))
+               print *, trim(func_name), ', aot values, 412: ', aot412_91, aot412_93, aot412_94, aot412_96, aot412_995
+               print *, trim(func_name), ", aot values, 470: ", aot470_91, aot470_92, aot470_93, &
+                  &                                                aot470_94, aot470_95, aot470_96, aot470_995
+               print *, trim(func_name), ', aot500: ', aot500
             end if
             
-            exit     !  jump out of loop, we're done!
-          
-          end if
-        end do
-        
-!     -- no interpolation, use single AERONET site.
+         end if
+      !   -- no matching site, no rules to select model.  Return error.
       else
-        if (refsr650 <= minval(maero650)) then
-          ii = sorted(1)  ! AERONET site w/ min. sr650 value
-        else
-          ii = sorted(m)  ! AERONET site w/ max. sr650 value
-        end if
-  
-        asite = aero_sites(msiteindx(ii))
-        aot500 = get_aeronet_aot500(trim(asite), lat, lon, sa, season, ndvi, stdv02, &
-        &          aot412_91, aot412_93, aot412_94, aot412_96, aot412_995, &
-        &          aot470_91, aot470_92, aot470_93, aot470_94, aot470_95, aot470_96, aot470_995, &
-        &          aot412_91_dust, aot412_93_dust, aot412_94_dust, aot412_96_dust, aot412_995_dust, &
-        &          aot470_91_dust, aot470_92_dust, aot470_93_dust, aot470_94_dust, aot470_95_dust, &
-        &          aot470_96_dust, aot470_995_dust, ae, status, platform,debug=dflag)
-        if (status /= 0) then
-          print *, "ERROR: Failed to get AOT at 500nm over AERONET site, single: ", trim(asite), status
-          return
-        end if
-        
-        if (dflag) then
-          print *, trim(func_name), ", Pixel Ref. SR, 650: ", refsr650
-!          print *, trim(func_name), ", Pixel Baseline SR, 412, 470: ", xsfc412(ilon,ilat), xsfc470(ilon,ilat)
-          print *, trim(func_name), ', interp site: ', trim(aero_sites(msiteindx(ii)))
-          print *, trim(func_name), ', aot values, 412: ', aot412_91, aot412_93, aot412_94, aot412_96, aot412_995
-          print *, trim(func_name), ", aot values, 470: ", aot470_91, aot470_92, aot470_93, &
-          &                                                aot470_94, aot470_95, aot470_96, aot470_995
-          print *, trim(func_name), ', aot500: ', aot500
-        end if
-            
+         status = -1
+         return
       end if
-!   -- no matching site, no rules to select model.  Return error.      
-    else
-      status = -1
+
       return
-    end if
-    
-    return
             
-  end function get_aot500
+   end function get_aot500
   
-! -- returns AOT @ 500 nm over the AERONET site, aero_site for the given season. 
-! -- NOTE: thresholds below based on case studies over the each site and is specific to 
-! --        that site.
-  real function get_aeronet_aot500(aero_site, lat, lon, sca, season, ndvi, stdv02, &
-        &       aot412_91, aot412_93, aot412_94, aot412_96, aot412_995, &
-        &       aot470_91, aot470_92, aot470_93, aot470_94, aot470_95, aot470_96, aot470_995, &
-        &       aot412_91_dust, aot412_93_dust, aot412_94_dust, aot412_96_dust, aot412_995_dust, &
-        &       aot470_91_dust, aot470_92_dust, aot470_93_dust, aot470_94_dust, aot470_95_dust, &
-        &       aot470_96_dust, aot470_995_dust, ae, status,platform, debug) result(aot500)
+   ! -- returns AOT @ 500 nm over the AERONET site, aero_site for the given season.
+   ! -- NOTE: thresholds below based on case studies over the each site and is specific to
+   ! --        that site.
+   real function get_aeronet_aot500(aero_site, lat, lon, sca, season, ndvi, stdv02, &
+      &       aot412_91, aot412_93, aot412_94, aot412_96, aot412_995, &
+      &       aot470_91, aot470_92, aot470_93, aot470_94, aot470_95, aot470_96, aot470_995, &
+      &       aot412_91_dust, aot412_93_dust, aot412_94_dust, aot412_96_dust, aot412_995_dust, &
+      &       aot470_91_dust, aot470_92_dust, aot470_93_dust, aot470_94_dust, aot470_95_dust, &
+      &       aot470_96_dust, aot470_995_dust, ae, status,platform, debug) result(aot500)
 
-    implicit none
+      implicit none
     
-    character(len=20), parameter            ::  func_name = "get_aeronet_aot500"
-    character(len=*), intent(in)            ::  platform
-    character(len=*), intent(in)            ::  aero_site
-    real, intent(in)                        ::  sca           ! scattering angle
-    real, intent(in)                        ::  lat, lon
-    integer, intent(in)                     ::  season
-    real, intent(in)                        ::  ndvi
-    real, intent(in)                        ::  stdv02
-    real, intent(in)                        ::  aot412_91, aot412_93, aot412_94, aot412_96, aot412_995
-    real, intent(in)                        ::  aot470_91, aot470_92, aot470_93, aot470_94
-    real, intent(in)                        ::  aot470_95, aot470_96, aot470_995
-    real, intent(in)          ::  aot412_91_dust, aot412_93_dust, aot412_94_dust, aot412_96_dust, aot412_995_dust
-    real, intent(in)          ::  aot470_91_dust, aot470_92_dust,aot470_93_dust, aot470_94_dust, aot470_95_dust
-    real, intent(in)          ::  aot470_96_dust, aot470_995_dust
-    real, intent(in)                        ::  ae            ! angstrom exponent 
-    integer, intent(inout)                  ::  status
-    logical, intent(in), optional           ::  debug
+      character(len=20), parameter            ::  func_name = "get_aeronet_aot500"
+      character(len=*), intent(in)            ::  platform
+      character(len=*), intent(in)            ::  aero_site
+      real, intent(in)                        ::  sca           ! scattering angle
+      real, intent(in)                        ::  lat, lon
+      integer, intent(in)                     ::  season
+      real, intent(in)                        ::  ndvi
+      real, intent(in)                        ::  stdv02
+      real, intent(in)                        ::  aot412_91, aot412_93, aot412_94, aot412_96, aot412_995
+      real, intent(in)                        ::  aot470_91, aot470_92, aot470_93, aot470_94
+      real, intent(in)                        ::  aot470_95, aot470_96, aot470_995
+      real, intent(in)          ::  aot412_91_dust, aot412_93_dust, aot412_94_dust, aot412_96_dust, aot412_995_dust
+      real, intent(in)          ::  aot470_91_dust, aot470_92_dust,aot470_93_dust, aot470_94_dust, aot470_95_dust
+      real, intent(in)          ::  aot470_96_dust, aot470_995_dust
+      real, intent(in)                        ::  ae            ! angstrom exponent
+      integer, intent(inout)                  ::  status
+      logical, intent(in), optional           ::  debug
     
-    real          ::  aot412_92
-    real          ::  dd
-    real          ::  model_frac, model_frac2
-    logical       ::  dflag
+      real          ::  aot412_92
+      real          ::  dd
+      real          ::  model_frac, model_frac2
+      logical       ::  dflag
     
-    aot500 = -999.0
-    model_frac = 0.0
-    model_frac2 = 0.0
-    status = 0
+      aot500 = -999.0
+      model_frac = 0.0
+      model_frac2 = 0.0
+      status = 0
     
-    dflag = .false.
-    if (present(debug)) dflag = debug
+      dflag = .false.
+      if (present(debug)) dflag = debug
 
-    select case (aero_site)
+      select case (aero_site)
       
-      case ("Agoufou")  !----------------------------------------------
-        select case (season)
+         case ("Agoufou")  !----------------------------------------------
+            select case (season)
         
-!         -- winter
-          case (1)                  
-            aot500 = aot412_94
-            if (aot412_94 >= 0.6) then
-              aot500 = (aot412_93 + aot412_91)/2.0
-            end if
+               !         -- winter
+               case (1)
+                  aot500 = aot412_94
+                  if (aot412_94 >= 0.6) then
+                     aot500 = (aot412_93 + aot412_91)/2.0
+                  end if
             
-!         -- spring
-          case (2)                  
-            aot500 = aot470_96
-            if (aot412_94 >= 0.6) then
-              aot500 =aot470_92
-            end if
-            if (aot500 >= 1.3) then
-              aot500 = (aot470_91 + aot470_92)/2.0
-            end if
+               !         -- spring
+               case (2)
+                  aot500 = aot470_96
+                  if (aot412_94 >= 0.6) then
+                     aot500 =aot470_92
+                  end if
+                  if (aot500 >= 1.3) then
+                     aot500 = (aot470_91 + aot470_92)/2.0
+                  end if
             
-!         -- summer
-          case (3)                 
-            aot500 = aot470_96
-            if (aot470_96 >= 0.5) then
-              aot500 = aot470_93
-            end if
-            if (aot470_96 >= 0.7) then
-              aot500 = aot470_91 * 1.1
-            end if
+               !         -- summer
+               case (3)
+                  aot500 = aot470_96
+                  if (aot470_96 >= 0.5) then
+                     aot500 = aot470_93
+                  end if
+                  if (aot470_96 >= 0.7) then
+                     aot500 = aot470_91 * 1.1
+                  end if
             
-!         -- fall
-          case (4)               
-            aot500 = aot412_94
-            if (aot412_94 >= 0.5) then
-              aot500 = (aot412_91 + aot412_93) / 2.0
-            end if
+               !         -- fall
+               case (4)
+                  aot500 = aot412_94
+                  if (aot412_94 >= 0.5) then
+                     aot500 = (aot412_91 + aot412_93) / 2.0
+                  end if
             
-!         -- default
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return
+               !         -- default
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
         
-        end select
+            end select
         
-      case ("IER_Cinzana")  !------------------------------------------
-        select case (season)
+         case ("IER_Cinzana")  !------------------------------------------
+            select case (season)
 
-!         -- winter
-          case (1)
-            aot500 = aot470_94
-            if (aot470_94 >= 0.8) then
-              aot500 = aot470_93
-            end if
-            !if (aot470_94 >= 0.7) then
-            !  aot500 = aot470_91
-            !end if
+               !         -- winter
+               case (1)
+                  aot500 = aot470_94
+                  if (aot470_94 >= 0.8) then
+                     aot500 = aot470_93
+                  end if
+                 !if (aot470_94 >= 0.7) then
+                 !  aot500 = aot470_91
+                 !end if
 
-!         -- spring
-          case (2)
-            aot500 = aot470_96
-            if (aot500 > 0.6) then
-              aot500 = aot470_95
-            end if
-            !if (aot470_94 > 1.0) then
-            !  aot500 = aot470_93
-            !endif
+               !         -- spring
+               case (2)
+                  aot500 = aot470_96
+                  if (aot500 > 0.6) then
+                     aot500 = aot470_95
+                  end if
+                 !if (aot470_94 > 1.0) then
+                 !  aot500 = aot470_93
+                 !endif
 
-!         -- summer
-          case (3)
-            aot500 = aot470_96
-            if (ndvi >= 0.3) then
-              aot500 = aot412_94
-            else
-              aot500 = aot470_995
-            end if
+               !         -- summer
+               case (3)
+                  aot500 = aot470_96
+                  if (ndvi >= 0.3) then
+                     aot500 = aot412_94
+                  else
+                     aot500 = aot470_995
+                  end if
 
-!         -- fall
-          case (4)
-          if (ndvi < 0.36) then
-            aot500 = aot412_94
-          else
-            aot500 = aot470_96
-          endif
+               !         -- fall
+               case (4)
+                  if (ndvi < 0.36) then
+                     aot500 = aot412_94
+                  else
+                     aot500 = aot470_96
+                  endif
           
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
           
-        end select
+            end select
         
-      case ("Zinder_Airport")  !--------------------------------------
-        select case (season)
+         case ("Zinder_Airport")  !--------------------------------------
+            select case (season)
 
-!         -- winter
-          case (1)
-            aot500 = aot470_96
+               !         -- winter
+               case (1)
+                  aot500 = aot470_96
             
-!         -- spring
-          case (2)
-            aot500 = aot412_94
+               !         -- spring
+               case (2)
+                  aot500 = aot412_94
             
-!         -- summer
-          case (3)
-            aot500 = aot470_96
-            if (aot470_96 > 0.6 .AND. ndvi < 0.18) then
-              aot500 = aot470_93
-            end if
-            if (aot470_96 > 1.0 .AND. ndvi < 0.18) then
-              aot500 = aot470_92
-            end if
+               !         -- summer
+               case (3)
+                  aot500 = aot470_96
+                  if (aot470_96 > 0.6 .AND. ndvi < 0.18) then
+                     aot500 = aot470_93
+                  end if
+                  if (aot470_96 > 1.0 .AND. ndvi < 0.18) then
+                     aot500 = aot470_92
+                  end if
             
-!         -- fall
-          case (4)
-            aot500 = aot412_94
+               !         -- fall
+               case (4)
+                  aot500 = aot412_94
             
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-        end select
+            end select
         
-      case ("Banizoumbou")  !------------------------------------------
-        select case (season)
+         case ("Banizoumbou")  !------------------------------------------
+            select case (season)
 
-!         -- winter
-          case (1)
-            aot500 = aot412_94
-            if (aot500 < 0.4) then
-              aot500 = (aot412_96 + aot412_995) / 2.0
-            else
-              aot500 = aot412_93
-            end if
+               !         -- winter
+               case (1)
+                  aot500 = aot412_94
+                  if (aot500 < 0.4) then
+                     aot500 = (aot412_96 + aot412_995) / 2.0
+                  else
+                     aot500 = aot412_93
+                  end if
             
-!            if (aot470_94 > 0.6) then
-!              aot500 = (aot470_96 + aot470_94)/2.0
-!            end if
+               !            if (aot470_94 > 0.6) then
+               !              aot500 = (aot470_96 + aot470_94)/2.0
+               !            end if
             
-!         -- spring
-          case (2)
-            aot500 = aot412_93
-	          !if (ndvi >= 0.12) then
-            !  aot500 = aot470_94
-            !end if 
-!         -- summer
-          case (3)
-            aot500 = (aot470_96 + aot470_995) / 2.0
-            if (aot470_96 > 0.7) then
-              aot500 = aot470_96
-            end if
+               !         -- spring
+               case (2)
+                  aot500 = aot412_93
+                  !if (ndvi >= 0.12) then
+                 !  aot500 = aot470_94
+                 !end if
+               !         -- summer
+               case (3)
+                  aot500 = (aot470_96 + aot470_995) / 2.0
+                  if (aot470_96 > 0.7) then
+                     aot500 = aot470_96
+                  end if
             
-!         -- fall
-          case (4)
-            aot500 = aot470_96
-!            if (ndvi > 0.24) then
-!              aot500 = aot412_94
-!            else
-!              aot500 = aot470_96
-!            end if
+               !         -- fall
+               case (4)
+                  aot500 = aot470_96
+               !            if (ndvi > 0.24) then
+               !              aot500 = aot412_94
+               !            else
+               !              aot500 = aot470_96
+               !            end if
             
-!            if (aot470_94 > 0.4) then
-!              aot500 = aot412_93
-!            end if
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return
+               !            if (aot470_94 > 0.4) then
+               !              aot500 = aot412_93
+               !            end if
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-        end select
+            end select
           
 
-      case ("Kanpur")  !------------------------------------------
-        select case (season)
-!         -- winter
-          case (1)
-            aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
-            if (lon > 85) then !Dhaka University needs more absorbing aerosol model, longitudinal dependence for smooth transition
-              if (lon < 90) then
-                model_frac2 = 1.0-(lon-85.0)/5.0
-              else
-                model_frac2 = 0.0
-              end if
+         case ("Kanpur")  !------------------------------------------
+            select case (season)
+               !         -- winter
+               case (1)
+                  aot500 = aot412_96
+                  if (platform .eq. 'AHI') aot500 = aot470_96
+                  if (lon > 85) then !Dhaka University needs more absorbing aerosol model, longitudinal dependence for smooth transition
+                     if (lon < 90) then
+                        model_frac2 = 1.0-(lon-85.0)/5.0
+                     else
+                        model_frac2 = 0.0
+                     end if
 
-              if (aot500 < 0.5) then
-                model_frac = 1.0
-              elseif (aot500 < 1.0) then
-                model_frac = 1.0-(aot500-0.5)/0.5*(1.0-model_frac2)
-              else
-                model_frac = model_frac2
-              end if
-              aot500 = aot412_96*model_frac+aot412_94*(1.0-model_frac)
-              if (platform .eq. 'AHI') aot500 = aot470_96*model_frac+aot470_94*(1.0-model_frac)
-            endif
+                     if (aot500 < 0.5) then
+                        model_frac = 1.0
+                     elseif (aot500 < 1.0) then
+                        model_frac = 1.0-(aot500-0.5)/0.5*(1.0-model_frac2)
+                     else
+                        model_frac = model_frac2
+                     end if
+                     aot500 = aot412_96*model_frac+aot412_94*(1.0-model_frac)
+                     if (platform .eq. 'AHI') aot500 = aot470_96*model_frac+aot470_94*(1.0-model_frac)
+                  endif
 
-!         -- spring
-          case (2)
-            aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
-            if (aot500 < 0.6) then
-              model_frac = 1.0
-            elseif (aot500 < 1.2) then
-              model_frac = 1.0-(aot500-0.6)/0.6
-            else
-              model_frac = 0.0
-            end if
-            aot500 = aot412_96*model_frac+aot412_94*(1.0-model_frac)
-            if (platform .eq. 'AHI') aot500 = aot470_96*model_frac+aot470_94*(1.0-model_frac)
+               !         -- spring
+               case (2)
+                  aot500 = aot412_96
+                  if (platform .eq. 'AHI') aot500 = aot470_96
+                  if (aot500 < 0.6) then
+                     model_frac = 1.0
+                  elseif (aot500 < 1.2) then
+                     model_frac = 1.0-(aot500-0.6)/0.6
+                  else
+                     model_frac = 0.0
+                  end if
+                  aot500 = aot412_96*model_frac+aot412_94*(1.0-model_frac)
+                  if (platform .eq. 'AHI') aot500 = aot470_96*model_frac+aot470_94*(1.0-model_frac)
+
+               !         -- summer
+               case (3)
+                  aot500 = aot412_96
+                  if (platform .eq. 'AHI') aot500 = aot470_96
             
-!         -- summer
-          case (3)
-            aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
+               !         -- fall
+               case (4)
+                  aot500 = aot412_96
+                  if (platform .eq. 'AHI') aot500 = aot470_96
+                  if (lon > 85) then
+                     if (lon < 90) then
+                        model_frac2 = 1.0-(lon-85.0)/5.0
+                     else
+                        model_frac2 = 0.0
+                     end if
+
+                     if (aot500 < 0.5) then
+                        model_frac = 1.0
+                     elseif (aot500 < 1.0) then
+                        model_frac = 1.0-(aot500-0.5)/0.5*(1.0-model_frac2)
+                     else
+                        model_frac = model_frac2
+                     end if
+                     aot500 = aot412_96*model_frac+aot412_94*(1.0-model_frac)
+                     if (platform .eq. 'AHI') aot500 = aot470_96*model_frac+aot470_94*(1.0-model_frac)
+                  endif
+
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-!         -- fall
-          case (4)
-            aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
-            if (lon > 85) then
-              if (lon < 90) then
-                model_frac2 = 1.0-(lon-85.0)/5.0
-              else
-                model_frac2 = 0.0
-              end if
+            end select
 
-              if (aot500 < 0.5) then
-                model_frac = 1.0
-              elseif (aot500 < 1.0) then
-                model_frac = 1.0-(aot500-0.5)/0.5*(1.0-model_frac2)
-              else
-                model_frac = model_frac2
-              end if
-              aot500 = aot412_96*model_frac+aot412_94*(1.0-model_frac)
-              if (platform .eq. 'AHI') aot500 = aot470_96*model_frac+aot470_94*(1.0-model_frac)
-            endif
+         case ("Tinga_Tingana")  !----------------------------------------
+            select case (season)
 
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return
+               !         -- all seasons
+               case (1,2,3,4)
+                  if (aot412_94 < 1.2) then
+                     aot500 = aot412_995
+                     if (platform .eq. 'AHI') aot500 = aot470_995
+                  else
+                     aot500 = aot412_94
+                     if (platform .eq. 'AHI') aot500 = aot470_94
+                  end if
+               !            aot500 = aot412_995
+               !            aot500 = aot412_94
+               !            if (aot412_995 > 0.2 .AND. stdv02 < 0.002 .AND. ndvi < 0.1) then
+               !              if (aot412_995 >= 0.3) then
+               !                aot500 = aot412_94
+               !              end if
+               !              if (aot412_995 >= 0.2 .AND. aot412_995 < 0.3) then
+               !                dd = (aot412_995 - 0.2) / 0.1
+               !                aot500 = aot412_995 * (1.0-dd) + aot412_94*dd
+               !              end if
+               !            end if
+
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-        end select            
-
-      case ("Tinga_Tingana")  !----------------------------------------
-        select case (season)
-
-!         -- all seasons
-          case (1,2,3,4)
-            if (aot412_94 < 1.2) then
-              aot500 = aot412_995
-              if (platform .eq. 'AHI') aot500 = aot470_995
-            else
-              aot500 = aot412_94
-              if (platform .eq. 'AHI') aot500 = aot470_94
-            end if
-!            aot500 = aot412_995
-!            aot500 = aot412_94
-!            if (aot412_995 > 0.2 .AND. stdv02 < 0.002 .AND. ndvi < 0.1) then
-!              if (aot412_995 >= 0.3) then
-!                aot500 = aot412_94
-!              end if
-!              if (aot412_995 >= 0.2 .AND. aot412_995 < 0.3) then
-!                dd = (aot412_995 - 0.2) / 0.1
-!                aot500 = aot412_995 * (1.0-dd) + aot412_94*dd
-!              end if
-!            end if
-
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return
-            
-        end select
+            end select
       
-      case ("GZ24_Only")  !----------------------------------------
-        select case (season)
-!         -- winter, summer, fall
-          case (1,3,4)
-            if (aot412_94 < 1.2) then
-              aot500 = aot412_995
-            else
-              aot500 = aot412_94
-            end if
+         case ("GZ24_Only")  !----------------------------------------
+            select case (season)
+               !         -- winter, summer, fall
+               case (1,3,4)
+                  if (aot412_94 < 1.2) then
+                     aot500 = aot412_995
+                  else
+                     aot500 = aot412_94
+                  end if
 
-!         -- spring
-          case (2)
-            if (aot412_94 < 0.5) then
-              aot500 = aot412_995
-            else
-              aot500 = aot412_94
-            endif
+               !         -- spring
+               case (2)
+                  if (aot412_94 < 0.5) then
+                     aot500 = aot412_995
+                  else
+                     aot500 = aot412_94
+                  endif
           
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return
-        end select 
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
+            end select
         
-      case ("Fresno_2") !------------------------------------------------
-        select case (season)
+         case ("Fresno_2") !------------------------------------------------
+            select case (season)
 
-!         -- winter
-          case (1)
-            aot500 = aot470_96
-            if (aot500 < 0.5) then
-              model_frac = 1.0-(aot500-0.0)/0.5
-              aot500 = aot470_96*model_frac + aot470_94*(1.0-model_frac)
-            else
-              aot500 = aot470_94
-            endif 
+               !         -- winter
+               case (1)
+                  aot500 = aot470_96
+                  if (aot500 < 0.5) then
+                     model_frac = 1.0-(aot500-0.0)/0.5
+                     aot500 = aot470_96*model_frac + aot470_94*(1.0-model_frac)
+                  else
+                     aot500 = aot470_94
+                  endif
 
-!         -- spring
-          case (2)
-            aot500 = aot470_995
-            if (aot500 < 0.5) then
-              model_frac = 1.0-(aot500-0.0)/0.5
-              aot500 = aot470_995*model_frac + aot470_94*(1.0-model_frac)
-            else
-              aot500 = aot470_94
-            endif
+               !         -- spring
+               case (2)
+                  aot500 = aot470_995
+                  if (aot500 < 0.5) then
+                     model_frac = 1.0-(aot500-0.0)/0.5
+                     aot500 = aot470_995*model_frac + aot470_94*(1.0-model_frac)
+                  else
+                     aot500 = aot470_94
+                  endif
 
-!         -- summer
-          case (3)
-            aot500 = aot470_96
+               !         -- summer
+               case (3)
+                  aot500 = aot470_96
 
-!         -- fall
-          case (4)
-            aot500 = aot470_995
-            if (aot500 < 0.5) then
-              model_frac = 1.0-(aot500-0.0)/0.5
-              aot500 = aot470_995*model_frac + aot470_94*(1.0-model_frac)
-            else
-              aot500 = aot470_94
-            endif
+               !         -- fall
+               case (4)
+                  aot500 = aot470_995
+                  if (aot500 < 0.5) then
+                     model_frac = 1.0-(aot500-0.0)/0.5
+                     aot500 = aot470_995*model_frac + aot470_94*(1.0-model_frac)
+                  else
+                     aot500 = aot470_94
+                  endif
 
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-        end select
+            end select
         
-			case ("Fresno_GZ18") !------------------------------------------------
-        select case (season)
+         case ("Fresno_GZ18") !------------------------------------------------
+            select case (season)
 
-!         -- winter
-          case (1)
-            aot500 = aot470_96
+               !         -- winter
+               case (1)
+                  aot500 = aot470_96
             
-!         -- spring
-          case (2)
-            aot500 = aot470_96
+               !         -- spring
+               case (2)
+                  aot500 = aot470_96
             
-!         -- summer
-          case (3)
-            aot500 = aot470_995
-            if (aot470_995 > 0.3) then
-              aot500 = aot470_96 + aot470_995 / 2.0
-            end if
+               !         -- summer
+               case (3)
+                  aot500 = aot470_995
+                  if (aot470_995 > 0.3) then
+                     aot500 = aot470_96 + aot470_995 / 2.0
+                  end if
             
-!         -- fall
-          case (4)
-            aot500 = aot470_96
+               !         -- fall
+               case (4)
+                  aot500 = aot470_96
             
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-        end select
+            end select
 
-      case ("CCNY") !------------------------------------------------
-        select case (season)
+         case ("CCNY") !------------------------------------------------
+            select case (season)
 
-!         -- winter
-           case (1)
-             aot500 = aot470_995
+               !         -- winter
+               case (1)
+                  aot500 = aot470_995
             
-!         -- spring
-          case (2)
-            aot500 = aot412_995
+               !         -- spring
+               case (2)
+                  aot500 = aot412_995
             
-!         -- summer
-          case (3)
-            aot500 = aot470_995
+               !         -- summer
+               case (3)
+                  aot500 = aot470_995
             
-!         -- fall
-          case (4)
-            aot500 = aot470_96
+               !         -- fall
+               case (4)
+                  aot500 = aot470_96
             
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-        end select
+            end select
         
-      case ("Beijing")  !----------------------------------------------
-        select case (season)
+         case ("Beijing")  !----------------------------------------------
+            select case (season)
       
-!         -- winter
-          case (1)
-            aot500 = aot470_96
-            if (aot470_96 > 0.5) then
-              aot500 = (aot470_94+aot470_92)/2.
-            end if
+               !         -- winter
+               case (1)
+                  aot500 = aot470_96
+                  if (aot470_96 > 0.5) then
+                     aot500 = (aot470_94+aot470_92)/2.
+                  end if
 
-!         -- spring
-          case (2)
-            aot500 = aot470_96
-            if (ndvi < 0.18 .and. aot470_96 > 0.4) then
-              aot500 = (aot470_94+aot470_96)/2.
-            end if
+               !         -- spring
+               case (2)
+                  aot500 = aot470_96
+                  if (ndvi < 0.18 .and. aot470_96 > 0.4) then
+                     aot500 = (aot470_94+aot470_96)/2.
+                  end if
  
-            if (aot470_96 > 0.6) then
-              aot500 = aot470_94
-            end if     
+                  if (aot470_96 > 0.6) then
+                     aot500 = aot470_94
+                  end if
 
-!           -- summer
-          case (3)
-            aot500 = aot470_96
+               !           -- summer
+               case (3)
+                  aot500 = aot470_96
 
-            if (aot470_96 > 1.0) then
-              aot500 = (aot470_94+aot470_96)/2.
-            end if                   
+                  if (aot470_96 > 1.0) then
+                     aot500 = (aot470_94+aot470_96)/2.
+                  end if
             
-!           -- fall
-          case (4)
-            aot500 = aot470_96
+               !           -- fall
+               case (4)
+                  aot500 = aot470_96
             
-            if (aot470_96 > 0.7) then
-              aot500 = aot470_94
-            end if                
+                  if (aot470_96 > 0.7) then
+                     aot500 = aot470_94
+                  end if
 
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-        end select
+            end select
         
-      case ("Hamim")  !----------------------------------------
-        select case (season)
+         case ("Hamim")  !----------------------------------------
+            select case (season)
 
-!         -- all seasons
-          case (1,2,3,4)
-            aot500 = aot412_94
+               !         -- all seasons
+               case (1,2,3,4)
+                  aot500 = aot412_94
 
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-        end select
+            end select
       
-      case ("Moldova")  !----------------------------------------
-        select case (season)
-!         -- all seasons
-          case (1)
-            aot500 = aot470_96
-          case (2)
-            aot500 = aot412_995
-            if (platform .eq. 'AHI') aot500 = aot470_995
-          case (3)
-            aot500 = aot470_96
-          case (4)
-            aot500 = aot412_995
-            if (platform .eq. 'AHI') aot500 = aot470_995
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return
+         case ("Moldova")  !----------------------------------------
+            select case (season)
+               !         -- all seasons
+               case (1)
+                  aot500 = aot470_96
+               case (2)
+                  aot500 = aot412_995
+                  if (platform .eq. 'AHI') aot500 = aot470_995
+               case (3)
+                  aot500 = aot470_96
+               case (4)
+                  aot500 = aot412_995
+                  if (platform .eq. 'AHI') aot500 = aot470_995
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-        end select
+            end select
         
-      case ("Modena")   !----------------------------------------
-        select case (season)
-          case (1)
-            aot500 = aot470_96
-          case (2)
-            aot500 = aot470_96
-            if (aot470_96 < 0.4) then
-              aot500 = aot470_995
-            end if               
-          case (3)
-            aot500 = aot470_96
-            if (aot470_96 < 0.4) then
-              aot500 = aot470_995
-            end if             
-          case (4)
-            aot500 = aot470_96
-            if (aot470_96 < 0.3) then
-              aot500 = aot470_995
-            end if   
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return  
-        end select
+         case ("Modena")   !----------------------------------------
+            select case (season)
+               case (1)
+                  aot500 = aot470_96
+               case (2)
+                  aot500 = aot470_96
+                  if (aot470_96 < 0.4) then
+                     aot500 = aot470_995
+                  end if
+               case (3)
+                  aot500 = aot470_96
+                  if (aot470_96 < 0.4) then
+                     aot500 = aot470_995
+                  end if
+               case (4)
+                  aot500 = aot470_96
+                  if (aot470_96 < 0.3) then
+                     aot500 = aot470_995
+                  end if
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
+            end select
       
-      case ("Ispra")    !----------------------------------------
-        select case (season)
-          case (1,2,3,4)
-            aot500 = aot470_96
+         case ("Ispra")    !----------------------------------------
+            select case (season)
+               case (1,2,3,4)
+                  aot500 = aot470_96
           
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return  
-        end select
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
+            end select
       
-      case ("Palencia") !----------------------------------------
-        select case (season)
-          case (1)
-            if (ndvi < 0.28) then
-              aot500 = aot412_995
-              if (platform .eq. 'AHI') aot500 = aot470_995
-            else
-              aot500 = aot470_995
-            endif
+         case ("Palencia") !----------------------------------------
+            select case (season)
+               case (1)
+                  if (ndvi < 0.28) then
+                     aot500 = aot412_995
+                     if (platform .eq. 'AHI') aot500 = aot470_995
+                  else
+                     aot500 = aot470_995
+                  endif
           
-          case(2)
-            aot500 = aot470_995
+               case(2)
+                  aot500 = aot470_995
           
-          case(3)
-            aot500 = aot412_995
-            if (platform .eq. 'AHI') aot500 = aot470_995
-            if (aot412_995 > 0.2) then
-              aot500 = aot412_96
-              if (platform .eq. 'AHI') aot500 = aot470_96
-            end if
-            if (aot412_995 > 0.3) then
-              aot500 = aot412_94
-              if (platform .eq. 'AHI') aot500 = aot470_94
-            end if
+               case(3)
+                  aot500 = aot412_995
+                  if (platform .eq. 'AHI') aot500 = aot470_995
+                  if (aot412_995 > 0.2) then
+                     aot500 = aot412_96
+                     if (platform .eq. 'AHI') aot500 = aot470_96
+                  end if
+                  if (aot412_995 > 0.3) then
+                     aot500 = aot412_94
+                     if (platform .eq. 'AHI') aot500 = aot470_94
+                  end if
             
-          case (4)
-            aot500 = aot470_995
+               case (4)
+                  aot500 = aot470_995
         
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return  
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-        end select
+            end select
       
-      case ("Saada")    !----------------------------------------
-        select case (season)
-          case (1,4)
-            aot500 = aot470_96
-            if (aot412_94 >= 0.4) then
-              aot500 = aot470_94
-            end if
-            if (aot412_94 >= 0.8) then
-              aot500 = aot470_92
-            end if
-          case (2,3)
-          	aot500 = aot470_96
-            if (aot412_94 >= 0.4) then
-              aot500 = aot470_94
-            end if
-            if (aot412_94 >= 0.8) then
-              aot500 = aot470_92
-            end if
-            if (stdv02 > 0.007) then
-            	aot500 = aot470_995
-            end if
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return  
-        end select
+         case ("Saada")    !----------------------------------------
+            select case (season)
+               case (1,4)
+                  aot500 = aot470_96
+                  if (aot412_94 >= 0.4) then
+                     aot500 = aot470_94
+                  end if
+                  if (aot412_94 >= 0.8) then
+                     aot500 = aot470_92
+                  end if
+               case (2,3)
+                  aot500 = aot470_96
+                  if (aot412_94 >= 0.4) then
+                     aot500 = aot470_94
+                  end if
+                  if (aot412_94 >= 0.8) then
+                     aot500 = aot470_92
+                  end if
+                  if (stdv02 > 0.007) then
+                     aot500 = aot470_995
+                  end if
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
+            end select
       
-      case ("Solar_Village")    !----------------------------------------
-        select case (season)
-          case (1)
-            aot500 = aot412_93
-            if (aot412_93 > 0.5) then
-              aot500 = (aot412_93 + aot412_91) / 2.0
-            end if
+         case ("Solar_Village")    !----------------------------------------
+            select case (season)
+               case (1)
+                  aot500 = aot412_93
+                  if (aot412_93 > 0.5) then
+                     aot500 = (aot412_93 + aot412_91) / 2.0
+                  end if
             
-          case (2)
-            aot500 = aot412_93
-            ! if (aot412_94 > 0.4) then
-!               aot500 = aot412_93
-!             end if
-!             if (aot412_94 > 0.8) then
-!               aot500 = (aot412_91 + aot412_93) / 2.0
-!             end if
-          case (3)
-            aot500 = aot412_94
+               case (2)
+                  aot500 = aot412_93
+                 ! if (aot412_94 > 0.4) then
+               !               aot500 = aot412_93
+               !             end if
+               !             if (aot412_94 > 0.8) then
+               !               aot500 = (aot412_91 + aot412_93) / 2.0
+               !             end if
+               case (3)
+                  aot500 = aot412_94
             
-          case (4)
-            aot500 = aot412_96
+               case (4)
+                  aot500 = aot412_96
             
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return  
-        end select
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
+            end select
       
-      case ("Lecce_University")    !----------------------------------------
-        select case (season)
-          case (1)
-            aot500 = aot470_96
-          case (2)
-            if (ndvi > 0.4) then
-              aot500 = aot412_94
-              if (platform .eq. 'AHI') aot500 = aot470_94
-            else
-              aot500 = (aot470_96 + aot470_995) / 2.0
-            end if
+         case ("Lecce_University")    !----------------------------------------
+            select case (season)
+               case (1)
+                  aot500 = aot470_96
+               case (2)
+                  if (ndvi > 0.4) then
+                     aot500 = aot412_94
+                     if (platform .eq. 'AHI') aot500 = aot470_94
+                  else
+                     aot500 = (aot470_96 + aot470_995) / 2.0
+                  end if
           
-          case (3)
-            aot500 = aot412_995
-            if (platform .eq. 'AHI') aot500 = aot470_995
-            if (aot412_995 < 0.2) then
-              aot500 = aot412_96
-              if (platform .eq. 'AHI') aot500 = aot470_96
-            end if
+               case (3)
+                  aot500 = aot412_995
+                  if (platform .eq. 'AHI') aot500 = aot470_995
+                  if (aot412_995 < 0.2) then
+                     aot500 = aot412_96
+                     if (platform .eq. 'AHI') aot500 = aot470_96
+                  end if
             
-          case (4)  
-            aot500 = aot470_96
+               case (4)
+                  aot500 = aot470_96
           
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return  
-        end select
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
+            end select
       
-      case ("Carpentras")    !----------------------------------------
-        select case (season)
-          case (1)
-            !aot500 = aot470_96
-            aot500 = aot412_93
-            if (platform .eq. 'AHI') aot500 = aot470_93
-          case (3,4)
-            !aot500 = aot470_96
-            aot500 = aot412_995
-            if (platform .eq. 'AHI') aot500 = aot470_995
-          case (2)
-            if(ndvi < 0.3) then
-              !aot500 = aot412_94
-              aot500 = aot412_96
-              if (platform .eq. 'AHI') aot500 = aot470_96
-            else
-              aot500 = aot470_96
-            end if
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return  
-        end select
+         case ("Carpentras")    !----------------------------------------
+            select case (season)
+               case (1)
+                  !aot500 = aot470_96
+                  aot500 = aot412_93
+                  if (platform .eq. 'AHI') aot500 = aot470_93
+               case (3,4)
+                  !aot500 = aot470_96
+                  aot500 = aot412_995
+                  if (platform .eq. 'AHI') aot500 = aot470_995
+               case (2)
+                  if(ndvi < 0.3) then
+                     !aot500 = aot412_94
+                     aot500 = aot412_96
+                     if (platform .eq. 'AHI') aot500 = aot470_96
+                  else
+                     aot500 = aot470_96
+                  end if
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
+            end select
         
-      case ("Trelew")  !----------------------------------------
-        select case (season)
+         case ("Trelew")  !----------------------------------------
+            select case (season)
 
-!         -- all seasons
-          case(1)
-            aot500 = aot470_96
-          case (2,3)
-            aot500 = aot470_96
-          case (4)
-            if (ndvi < 0.2) then
-              aot500 = aot412_94
-            else
-              aot500 = aot470_96
-            end if
+               !         -- all seasons
+               case(1)
+                  aot500 = aot470_96
+               case (2,3)
+                  aot500 = aot470_96
+               case (4)
+                  if (ndvi < 0.2) then
+                     aot500 = aot412_94
+                  else
+                     aot500 = aot470_96
+                  end if
             
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-        end select
+            end select
         
-      case ("Pune")  !----------------------------------------
-        select case (season)
+         case ("Pune")  !----------------------------------------
+            select case (season)
 
-!         -- winter
-          case (1)
-            aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
-            if (aot500 < 0.5) then 
-              model_frac = 1.0
-            elseif (aot500 < 1.0) then 
-              model_frac = 1.0-(aot500-0.5)/0.5
-            else
-              model_frac = 0.0
-            end if
-            aot500 = aot412_96*model_frac+aot412_94*(1.0-model_frac)
-            if (platform .eq. 'AHI') aot500 = aot470_96*model_frac+aot470_94*(1.0-model_frac)
-!         -- spring
-          case (2)
-            aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
-            if (aot500 < 0.6) then
-              model_frac = 1.0
-            elseif (aot500 < 1.2) then
-              model_frac = 1.0-(aot500-0.6)/0.6
-            else
-              model_frac = 0.0
-            end if
-            aot500 = aot412_96*model_frac+aot412_94*(1.0-model_frac)
-            if (platform .eq. 'AHI') aot500 = aot470_96*model_frac+aot470_94*(1.0-model_frac)
-!         -- summer
-          case (3)
-            aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
-!         -- fall
-          case (4)
-            aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
-            if (lon > 85) then
-              if (lon < 90) then
-                model_frac2 = 1.0-(lon-85.0)/5.0
-              else
-                model_frac2 = 0.0
-              end if
+               !         -- winter
+               case (1)
+                  aot500 = aot412_96
+                  if (platform .eq. 'AHI') aot500 = aot470_96
+                  if (aot500 < 0.5) then
+                     model_frac = 1.0
+                  elseif (aot500 < 1.0) then
+                     model_frac = 1.0-(aot500-0.5)/0.5
+                  else
+                     model_frac = 0.0
+                  end if
+                  aot500 = aot412_96*model_frac+aot412_94*(1.0-model_frac)
+                  if (platform .eq. 'AHI') aot500 = aot470_96*model_frac+aot470_94*(1.0-model_frac)
+               !         -- spring
+               case (2)
+                  aot500 = aot412_96
+                  if (platform .eq. 'AHI') aot500 = aot470_96
+                  if (aot500 < 0.6) then
+                     model_frac = 1.0
+                  elseif (aot500 < 1.2) then
+                     model_frac = 1.0-(aot500-0.6)/0.6
+                  else
+                     model_frac = 0.0
+                  end if
+                  aot500 = aot412_96*model_frac+aot412_94*(1.0-model_frac)
+                  if (platform .eq. 'AHI') aot500 = aot470_96*model_frac+aot470_94*(1.0-model_frac)
+               !         -- summer
+               case (3)
+                  aot500 = aot412_96
+                  if (platform .eq. 'AHI') aot500 = aot470_96
+               !         -- fall
+               case (4)
+                  aot500 = aot412_96
+                  if (platform .eq. 'AHI') aot500 = aot470_96
+                  if (lon > 85) then
+                     if (lon < 90) then
+                        model_frac2 = 1.0-(lon-85.0)/5.0
+                     else
+                        model_frac2 = 0.0
+                     end if
 
-              if (aot500 < 0.5) then
-                model_frac = 1.0
-              elseif (aot500 < 1.0) then
-                model_frac = 1.0-(aot500-0.5)/0.5*(1.0-model_frac2)
-              else
-                model_frac = model_frac2
-              end if
-              aot500 = aot412_96*model_frac+aot412_94*(1.0-model_frac)
-              if (platform .eq. 'AHI') aot500 = aot470_96*model_frac+aot470_94*(1.0-model_frac)
-            endif
+                     if (aot500 < 0.5) then
+                        model_frac = 1.0
+                     elseif (aot500 < 1.0) then
+                        model_frac = 1.0-(aot500-0.5)/0.5*(1.0-model_frac2)
+                     else
+                        model_frac = model_frac2
+                     end if
+                     aot500 = aot412_96*model_frac+aot412_94*(1.0-model_frac)
+                     if (platform .eq. 'AHI') aot500 = aot470_96*model_frac+aot470_94*(1.0-model_frac)
+                  endif
            
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-        end select
+            end select
 
-      case ("Evora")  !----------------------------------------
-        select case (season)
-!         -- winter
-          case (1)
-            aot500 = aot470_96
+         case ("Evora")  !----------------------------------------
+            select case (season)
+               !         -- winter
+               case (1)
+                  aot500 = aot470_96
 
-!         -- spring
-          case (2)
-            aot500 = aot412_94
-            if (platform .eq. 'AHI') aot500 = aot470_94
-!         -- summer
-          case (3)
-            aot500 = aot470_995
+               !         -- spring
+               case (2)
+                  aot500 = aot412_94
+                  if (platform .eq. 'AHI') aot500 = aot470_94
+               !         -- summer
+               case (3)
+                  aot500 = aot470_995
             
-!         -- fall
-          case (4)
-            aot500 = aot412_995
-            if (platform .eq. 'AHI') aot500 = aot470_995
-						
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return
+               !         -- fall
+               case (4)
+                  aot500 = aot412_995
+                  if (platform .eq. 'AHI') aot500 = aot470_995
+
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-        end select
-      case ("Blida")  !----------------------------------------
-        select case (season)
-!         -- winter
-          case (1)
-            aot500 = aot470_96
+            end select
+         case ("Blida")  !----------------------------------------
+            select case (season)
+               !         -- winter
+               case (1)
+                  aot500 = aot470_96
 
-!         -- spring
-          case (2)
-            aot500 = aot470_96
+               !         -- spring
+               case (2)
+                  aot500 = aot470_96
             
-!         -- summer
-          case (3)
-            aot500 = aot470_96
+               !         -- summer
+               case (3)
+                  aot500 = aot470_96
             
-!         -- fall
-          case (4)
-            aot500 = aot470_96
-						
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return
+               !         -- fall
+               case (4)
+                  aot500 = aot470_96
+
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-        end select  
-      case ("Blida_High")  !----------------------------------------
-        select case (season)
-!         -- winter
-          case (1)
-            aot500 = aot470_96
+            end select
+         case ("Blida_High")  !----------------------------------------
+            select case (season)
+               !         -- winter
+               case (1)
+                  aot500 = aot470_96
 
-!         -- spring
-          case (2)
-            aot500 = aot470_96
+               !         -- spring
+               case (2)
+                  aot500 = aot470_96
             
-!         -- summer
-          case (3)
-            aot500 = aot470_96
+               !         -- summer
+               case (3)
+                  aot500 = aot470_96
             
-!         -- fall
-          case (4)
-            aot500 = aot470_96
-						
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return
+               !         -- fall
+               case (4)
+                  aot500 = aot470_96
+
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-        end select  
-      case ("Ilorin")  !------------------------------------------
-        select case (season)
+            end select
+         case ("Ilorin")  !------------------------------------------
+            select case (season)
 
-!         -- winter
-          case (1)
-            aot412_92 = (aot412_91+aot412_93)/2.0
-            aot500 = aot412_92
+               !         -- winter
+               case (1)
+                  aot412_92 = (aot412_91+aot412_93)/2.0
+                  aot500 = aot412_92
 
-!            aot500 = aot412_94
-!            if (aot500 < 0.5) then
-!              model_frac = 1.0
-!            elseif (aot500 < 1.2) then
-!              model_frac = 1.0-(aot500-0.5)/0.7
-!            else
-!              model_frac = 0.0
-!            end if
-!            aot500 = aot412_94*model_frac+aot412_91*(1.0-model_frac)
+               !            aot500 = aot412_94
+               !            if (aot500 < 0.5) then
+               !              model_frac = 1.0
+               !            elseif (aot500 < 1.2) then
+               !              model_frac = 1.0-(aot500-0.5)/0.7
+               !            else
+               !              model_frac = 0.0
+               !            end if
+               !            aot500 = aot412_94*model_frac+aot412_91*(1.0-model_frac)
 
-!            if (aot412_94 > 0.6) then
-!              aot500 = aot412_91 
-!            else if (aot412_94 > 0.4) then
-!              aot500 = aot412_94
-!            else
-!              aot500 = aot412_96
-!            endif
+               !            if (aot412_94 > 0.6) then
+               !              aot500 = aot412_91
+               !            else if (aot412_94 > 0.4) then
+               !              aot500 = aot412_94
+               !            else
+               !              aot500 = aot412_96
+               !            endif
             
-!         -- spring
-          case (2)
-            aot500 = aot412_94
-            if (aot500 < 0.5) then
-              model_frac = 1.0
-            elseif (aot500 < 1.0) then
-              model_frac = 1.0-(aot500-0.5)/0.5
-            else
-              model_frac = 0.0
-            end if
-            aot500 = aot412_94*model_frac+aot412_93*(1.0-model_frac)
+               !         -- spring
+               case (2)
+                  aot500 = aot412_94
+                  if (aot500 < 0.5) then
+                     model_frac = 1.0
+                  elseif (aot500 < 1.0) then
+                     model_frac = 1.0-(aot500-0.5)/0.5
+                  else
+                     model_frac = 0.0
+                  end if
+                  aot500 = aot412_94*model_frac+aot412_93*(1.0-model_frac)
 
-!            aot500 = aot412_94
-!            if (aot412_94 > 1.0) then
-!              aot500 = aot412_93
-!            end if
-!            if (aot412_94 > 1.5) then
-!              aot500 = aot412_91
-!            end if
+               !            aot500 = aot412_94
+               !            if (aot412_94 > 1.0) then
+               !              aot500 = aot412_93
+               !            end if
+               !            if (aot412_94 > 1.5) then
+               !              aot500 = aot412_91
+               !            end if
             
-!         -- summer
-          case (3)
-            aot500 = aot412_96
+               !         -- summer
+               case (3)
+                  aot500 = aot412_96
 
-!         -- fall
-          case (4)
-            aot500 = aot412_94
-!            aot500 = aot412_94
-!            if (aot412_94 > 0.5) then
-!              aot500 = aot412_93
-!            end if
-!            if (aot412_94 > 0.8) then
-!              aot500 = aot412_91
-!            end if
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return
+               !         -- fall
+               case (4)
+                  aot500 = aot412_94
+               !            aot500 = aot412_94
+               !            if (aot412_94 > 0.5) then
+               !              aot500 = aot412_93
+               !            end if
+               !            if (aot412_94 > 0.8) then
+               !              aot500 = aot412_91
+               !            end if
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-        end select
-      case ("Ilorin_Transition")  !------------------------------------------
-        select case (season)
+            end select
+         case ("Ilorin_Transition")  !------------------------------------------
+            select case (season)
 
-!         -- winter
-          case (1)
-            aot500 = aot412_96
-            if (aot500 < 0.5) then
-              model_frac = 1.0
-            elseif (aot500 < 1.0) then
-              model_frac = 1.0-(aot500-0.5)/0.5
-            else
-              model_frac = 0.0
-            end if
-            aot500 = aot412_96*model_frac+aot412_94*(1.0-model_frac)
+               !         -- winter
+               case (1)
+                  aot500 = aot412_96
+                  if (aot500 < 0.5) then
+                     model_frac = 1.0
+                  elseif (aot500 < 1.0) then
+                     model_frac = 1.0-(aot500-0.5)/0.5
+                  else
+                     model_frac = 0.0
+                  end if
+                  aot500 = aot412_96*model_frac+aot412_94*(1.0-model_frac)
 
-!	          if (aot412_94 > 0.5) then
-!	            aot500 = aot412_94
-!	          else
-!              aot500 = aot412_96
-!            end if 
+               !            if (aot412_94 > 0.5) then
+               !              aot500 = aot412_94
+               !            else
+               !              aot500 = aot412_96
+               !            end if
 
-!         -- spring
-          case (2)
-            aot500 = aot412_995
-            if (aot412_94 < 0.5) then
-              model_frac = 1.0
-            elseif (aot412_94 < 1.0) then
-              model_frac = 1.0-(aot500-0.5)/0.5
-            else
-              model_frac = 0.0
-            end if
-            aot500 = aot412_995*model_frac+aot412_96*(1.0-model_frac)
+               !         -- spring
+               case (2)
+                  aot500 = aot412_995
+                  if (aot412_94 < 0.5) then
+                     model_frac = 1.0
+                  elseif (aot412_94 < 1.0) then
+                     model_frac = 1.0-(aot500-0.5)/0.5
+                  else
+                     model_frac = 0.0
+                  end if
+                  aot500 = aot412_995*model_frac+aot412_96*(1.0-model_frac)
 
-!            aot500 = aot412_995
-!            if (aot412_94 > 1.0) then
-!              aot500 = aot412_96
-!            end if
-!            if (aot412_94 > 1.5) then
-!              aot500 = aot412_96
-!            end if
+               !            aot500 = aot412_995
+               !            if (aot412_94 > 1.0) then
+               !              aot500 = aot412_96
+               !            end if
+               !            if (aot412_94 > 1.5) then
+               !              aot500 = aot412_96
+               !            end if
             
-!         -- summer
-          case (3)
-            aot500 = aot412_995
+               !         -- summer
+               case (3)
+                  aot500 = aot412_995
 
-!         -- fall
-          case (4)
-            aot500 = aot412_995
-            if (aot412_94 < 0.5) then
-              model_frac = 1.0
-            elseif (aot412_94 < 1.0) then
-              model_frac = 1.0-(aot500-0.5)/0.5
-            else
-              model_frac = 0.0
-            end if
-            aot500 = aot412_995*model_frac+aot412_96*(1.0-model_frac)
+               !         -- fall
+               case (4)
+                  aot500 = aot412_995
+                  if (aot412_94 < 0.5) then
+                     model_frac = 1.0
+                  elseif (aot412_94 < 1.0) then
+                     model_frac = 1.0-(aot500-0.5)/0.5
+                  else
+                     model_frac = 0.0
+                  end if
+                  aot500 = aot412_995*model_frac+aot412_96*(1.0-model_frac)
 
-!            aot500 = aot412_995
-!            if (aot412_94 > 0.5) then
-!              aot500 = aot412_96
-!            end if
-!            if (aot412_94 > 0.8) then
-!              aot500 = aot412_94
-!            end if
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return
+               !            aot500 = aot412_995
+               !            if (aot412_94 > 0.5) then
+               !              aot500 = aot412_96
+               !            end if
+               !            if (aot412_94 > 0.8) then
+               !              aot500 = aot412_94
+               !            end if
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-        end select
+            end select
         
-      case ("SACOL") !----------------------------------------
-        select case (season)
-          case (1,2,3,4)
-            aot500 = aot470_995
+         case ("SACOL") !----------------------------------------
+            select case (season)
+               case (1,2,3,4)
+                  aot500 = aot470_995
 
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return  
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-        end select
+            end select
       
-      case ("Mexico_City") !----------------------------------------
-        select case (season)
-          case (1)            
-            aot500 = aot412_96
+         case ("Mexico_City") !----------------------------------------
+            select case (season)
+               case (1)
+                  aot500 = aot412_96
           
-          case (2)
-            aot500 = aot412_995
+               case (2)
+                  aot500 = aot412_995
                         
-          case (3)
-            aot500 = aot470_96
+               case (3)
+                  aot500 = aot470_96
 
-          case (4)
-            aot500 = aot412_96  
+               case (4)
+                  aot500 = aot412_96
 
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return  
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-        end select
+            end select
         
-      case ("Jaipur") !----------------------------------------
-        select case (season)
-          case (1)            
-            aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
+         case ("Jaipur") !----------------------------------------
+            select case (season)
+               case (1)
+                  aot500 = aot412_96
+                  if (platform .eq. 'AHI') aot500 = aot470_96
           
-          case (2)
-            aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
+               case (2)
+                  aot500 = aot412_96
+                  if (platform .eq. 'AHI') aot500 = aot470_96
             
-          case(3)
-            aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
+               case(3)
+                  aot500 = aot412_96
+                  if (platform .eq. 'AHI') aot500 = aot470_96
 
-          case (4)
-            aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
+               case (4)
+                  aot500 = aot412_96
+                  if (platform .eq. 'AHI') aot500 = aot470_96
             
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return  
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-        end select
+            end select
         
-      case ("NW_India_Desert") !----------------------------------------
-        select case (season)
-          case (1)            
-            aot500 = aot412_94
-            if (platform .eq. 'AHI') aot500 = aot470_94
+         case ("NW_India_Desert") !----------------------------------------
+            select case (season)
+               case (1)
+                  aot500 = aot412_94
+                  if (platform .eq. 'AHI') aot500 = aot470_94
           
-          case (2)
-            aot500 = aot412_94
-            if (platform .eq. 'AHI') aot500 = aot470_94
+               case (2)
+                  aot500 = aot412_94
+                  if (platform .eq. 'AHI') aot500 = aot470_94
                         
-          case(3)
-            aot500 = aot412_94
-            if (platform .eq. 'AHI') aot500 = aot470_94
+               case(3)
+                  aot500 = aot412_94
+                  if (platform .eq. 'AHI') aot500 = aot470_94
 
-          case (4)
-            aot500 = aot412_96
-            if (platform .eq. 'AHI') aot500 = aot470_96
+               case (4)
+                  aot500 = aot412_96
+                  if (platform .eq. 'AHI') aot500 = aot470_96
             
-          case default
-            print *, "ERROR: Invalid season specified: ", season
-            status = -1
-            return  
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
             
-        end select
+            end select
 
-      case ("Yuma") !----------------------------------------
-        select case (season)
-          case (1)            
-            aot500 = aot412_995
+         case ("Yuma") !----------------------------------------
+            select case (season)
+               case (1)
+                  aot500 = aot412_995
           
-          case (2)
-            aot500 = aot470_995
+               case (2)
+                  aot500 = aot470_995
                         
-          case (3)
-            aot500 = aot412_995
+               case (3)
+                  aot500 = aot412_995
 
-          case (4)
-            aot500 = aot412_995
+               case (4)
+                  aot500 = aot412_995
             
-          case default
-            print *, "ERROR: Invalid season specified: ", season
+               case default
+                  print *, "ERROR: Invalid season specified: ", season
+                  status = -1
+                  return
+            end select
+
+         case default  !--------------------------------------------------
+            print *, "ERROR: No data for AERONET site specified: ", aero_site
             status = -1
+            aot500 = -999.0
             return
-        end select
-        
-      case default  !--------------------------------------------------
-        print *, "ERROR: No data for AERONET site specified: ", aero_site
-        status = -1
-        aot500 = -999.0
-        return
 
-    end select      ! -- AERONET site
+      end select      ! -- AERONET site
     
-    if (dflag) then
-      print *, trim(func_name), ', AERONET site: ', aero_site
-      print *, trim(func_name), ', season, ndvi, stdv02: ', season, ndvi, stdv02
-      print '(A,A,12(F10.4,1x))', trim(func_name), ', aot values: ', aot412_91, aot412_93, aot412_94,  &
-  &                                   aot412_96, aot412_995, aot470_91, aot470_92, aot470_93, &
-  &                                   aot470_94, aot470_95, aot470_96, aot470_995
-      print *, trim(func_name), ', ae: ', ae
-      print *, trim(func_name), ', aot500: ', aot500
-    end if
-    return
+      if (dflag) then
+         print *, trim(func_name), ', AERONET site: ', aero_site
+         print *, trim(func_name), ', season, ndvi, stdv02: ', season, ndvi, stdv02
+         print '(A,A,12(F10.4,1x))', trim(func_name), ', aot values: ', aot412_91, aot412_93, aot412_94,  &
+            &                                   aot412_96, aot412_995, aot470_91, aot470_92, aot470_93, &
+            &                                   aot470_94, aot470_95, aot470_96, aot470_995
+         print *, trim(func_name), ', ae: ', ae
+         print *, trim(func_name), ', aot500: ', aot500
+      end if
+      return
     
-  end function get_aeronet_aot500
+   end function get_aeronet_aot500
+
   
-! --  Find granule limits and set LER offsets, and allocate space for the tables
-  integer function set_limits(locedge, lat, long) RESULT(status)
+   ! --  Find granule limits and set LER offsets, and allocate space for the tables
+   integer function set_limits(locedge, lat, long) RESULT(status)
 
-    integer, intent(in)  :: locedge(2)
-    real, intent(in)     :: lat(locedge(1),locedge(2)), long(locedge(1),locedge(2))
+      integer, intent(in)  :: locedge(2)
+      real, intent(in)     :: lat(locedge(1),locedge(2)), long(locedge(1),locedge(2))
 
-    integer              :: checkvariable
-    integer              :: i, j
-    character (len=256)  :: msg
-    real                 :: eastedge, westedge
-    status = 0
+      integer              :: checkvariable
+      integer              :: i, j
+      character (len=256)  :: msg
+      real                 :: eastedge, westedge
+      status = 0
     
-!   -- if processing extracts, if region of interest is within bounds of the granule, 
-!   -- but not actually contained in the granule quadralateral, lat and lon values may be
-!   -- set to fill values (-999). Check this condition and fail.
-!   -- @TODO - utilize the status variable and check where called.
-!    if (minval(lat) < -900.0 .OR. minval(long) < -900.0) then
-!      msg = "Min lat or min lon is fill value. Failing."
-!      call MODIS_SMF_SETDYNAMICMSG(MODIS_F_GENERIC, msg, 'set_limits')
-!    end if
+      !   -- if processing extracts, if region of interest is within bounds of the granule,
+      !   -- but not actually contained in the granule quadralateral, lat and lon values may be
+      !   -- set to fill values (-999). Check this condition and fail.
+      !   -- @TODO - utilize the status variable and check where called.
+      !    if (minval(lat) < -900.0 .OR. minval(long) < -900.0) then
+      !      msg = "Min lat or min lon is fill value. Failing."
+      !      call MODIS_SMF_SETDYNAMICMSG(MODIS_F_GENERIC, msg, 'set_limits')
+      !    end if
     
-    eastedge = -999.0
-    westedge =  999.0
-    dateline = 0
-    if (minval(long, long > -900.0) < -175.0 .and. maxval(long, long > -900.0) > 175.0) then
-       eastedge = 180.0
-       westedge = -180.0
-       do i=1, locedge(1)
-          do j=1, locedge(2)
-             if (long(i,j) < -900.0) cycle    ! skip undefined 
-             if (long(i,j) > 0.0 .and. long(i,j) < eastedge) eastedge = long(i,j)
-             if (long(i,j) < 0.0 .and. long(i,j) > westedge) westedge = long(i,j)
-          enddo
-       enddo
-       LERstart(1) = 10*(180+floor(eastedge)-1)
-       if (LERstart(1) < 0) LERstart(1) = 0
-       dateline = 3600 - LERstart(1)
-       LERedge(1) = 10*(180+(floor(westedge)+2)) + dateline
-    else
-       LERstart(1) = 10*(180+(floor(minval(long, long > -900.0))-1))
-       if (LERstart(1) < 0) LERstart(1) = 0
-       LERedge(1) = 10*(180+(floor(maxval(long, long > -900.0))+2)) - LERstart(1)
-       if (LERedge(1)+LERstart(1) > 3600) LERedge(1) = 3600 - LERstart(1)
-    endif
+      eastedge = -999.0
+      westedge =  999.0
+      dateline = 0
+      if (minval(long, long > -900.0) < -175.0 .and. maxval(long, long > -900.0) > 175.0) then
+         eastedge = 180.0
+         westedge = -180.0
+         do i=1, locedge(1)
+            do j=1, locedge(2)
+               if (long(i,j) < -900.0) cycle    ! skip undefined
+               if (long(i,j) > 0.0 .and. long(i,j) < eastedge) eastedge = long(i,j)
+               if (long(i,j) < 0.0 .and. long(i,j) > westedge) westedge = long(i,j)
+            enddo
+         enddo
+         LERstart(1) = 10*(180+floor(eastedge)-1)
+         if (LERstart(1) .le. 0) LERstart(1) = 1
+         dateline = 3600 - LERstart(1)
+         LERedge(1) = 10*(180+(floor(westedge)+2)) + dateline
+      else
+         LERstart(1) = 10*(180+(floor(minval(long, long > -900.0))-1))
+         if (LERstart(1) .le. 0) LERstart(1) = 1
+         LERedge(1) = 10*(180+(floor(maxval(long, long > -900.0))+2)) - LERstart(1)
+         if (LERedge(1)+LERstart(1) > 3600) LERedge(1) = 3600 - LERstart(1)
+      endif
     
-    LERstart(2) = 10*(90+(floor(minval(lat, lat > -900.0))-1))
-    if (LERstart(2) < 0) LERstart(2) = 0
-    LERedge(2) = 10*(90+(floor(maxval(lat, lat > -900.0))+2)) - LERstart(2)
-    if (LERedge(2)+LERstart(2) > 1800) LERedge(2) = 1800 - LERstart(2)
+      LERstart(2) = 10*(90+(floor(minval(lat, lat > -900.0))-1))
+      if (LERstart(2) .le. 0) LERstart(2) = 1
+      LERedge(2) = 10*(90+(floor(maxval(lat, lat > -900.0))+2)) - LERstart(2)
+      if (LERedge(2)+LERstart(2) > 1800) LERedge(2) = 1800 - LERstart(2)
         
-    if (allocated(gref412_all)) deallocate(gref412_all)
-    allocate (gref412_all(LERedge(1),LERedge(2)), stat = checkvariable)
-    if ( checkvariable /= 0 ) goto 90
+      if (allocated(gref412_all)) deallocate(gref412_all)
+      allocate (gref412_all(LERedge(1),LERedge(2)), stat = checkvariable)
+      if ( checkvariable /= 0 ) goto 90
 
-    if (allocated(gref470_all)) deallocate(gref470_all)
-    allocate (gref470_all(LERedge(1),LERedge(2)), stat = checkvariable)
-    if ( checkvariable /= 0 ) goto 90
+      if (allocated(gref470_all)) deallocate(gref470_all)
+      allocate (gref470_all(LERedge(1),LERedge(2)), stat = checkvariable)
+      if ( checkvariable /= 0 ) goto 90
 
-    if (allocated(gref650_all)) deallocate(gref650_all)
-    allocate (gref650_all(LERedge(1),LERedge(2)), stat = checkvariable)
-    if ( checkvariable /= 0 ) goto 90
+      if (allocated(gref650_all)) deallocate(gref650_all)
+      allocate (gref650_all(LERedge(1),LERedge(2)), stat = checkvariable)
+      if ( checkvariable /= 0 ) goto 90
 
-    if (allocated(gref412_fwd)) deallocate(gref412_fwd)
-    allocate (gref412_fwd(LERedge(1),LERedge(2)), stat = checkvariable)
-    if ( checkvariable /= 0 ) goto 90
+      if (allocated(gref412_fwd)) deallocate(gref412_fwd)
+      allocate (gref412_fwd(LERedge(1),LERedge(2)), stat = checkvariable)
+      if ( checkvariable /= 0 ) goto 90
 
-    if (allocated(gref470_fwd)) deallocate(gref470_fwd)
-    allocate (gref470_fwd(LERedge(1),LERedge(2)), stat = checkvariable)
-    if ( checkvariable /= 0 ) goto 90
+      if (allocated(gref470_fwd)) deallocate(gref470_fwd)
+      allocate (gref470_fwd(LERedge(1),LERedge(2)), stat = checkvariable)
+      if ( checkvariable /= 0 ) goto 90
 
-    if (allocated(gref650_fwd)) deallocate(gref650_fwd)
-    allocate (gref650_fwd(LERedge(1),LERedge(2)), stat = checkvariable)
-    if ( checkvariable /= 0 ) goto 90
+      if (allocated(gref650_fwd)) deallocate(gref650_fwd)
+      allocate (gref650_fwd(LERedge(1),LERedge(2)), stat = checkvariable)
+      if ( checkvariable /= 0 ) goto 90
 
-    !if (allocated(gref412_bkd)) deallocate(gref412_bkd)
-    !allocate (gref412_bkd(LERedge(1),LERedge(2)), stat = checkvariable)
-    !if ( checkvariable /= 0 ) goto 90
+      !if (allocated(gref412_bkd)) deallocate(gref412_bkd)
+      !allocate (gref412_bkd(LERedge(1),LERedge(2)), stat = checkvariable)
+      !if ( checkvariable /= 0 ) goto 90
 
-    !if (allocated(gref470_bkd)) deallocate(gref470_bkd)
-    !allocate (gref470_bkd(LERedge(1),LERedge(2)), stat = checkvariable)
-    !if ( checkvariable /= 0 ) goto 90
+      !if (allocated(gref470_bkd)) deallocate(gref470_bkd)
+      !allocate (gref470_bkd(LERedge(1),LERedge(2)), stat = checkvariable)
+      !if ( checkvariable /= 0 ) goto 90
 
-    !if (allocated(gref650_bkd)) deallocate(gref650_bkd)
-    !allocate (gref650_bkd(LERedge(1),LERedge(2)), stat = checkvariable)
-    !if ( checkvariable /= 0 ) goto 90
+      !if (allocated(gref650_bkd)) deallocate(gref650_bkd)
+      !allocate (gref650_bkd(LERedge(1),LERedge(2)), stat = checkvariable)
+      !if ( checkvariable /= 0 ) goto 90
 
-    if (allocated(gref865_all)) deallocate(gref865_all)
-    allocate (gref865_all(LERedge(1),LERedge(2)), stat = checkvariable)
-    if ( checkvariable /= 0 ) goto 90
+      if (allocated(gref865_all)) deallocate(gref865_all)
+      allocate (gref865_all(LERedge(1),LERedge(2)), stat = checkvariable)
+      if ( checkvariable /= 0 ) goto 90
 
-    !if (allocated(coefs412_all_tp)) deallocate(coefs412_all_tp)
-    !allocate (coefs412_all_tp(LERedge(1),LERedge(2),4,3,2), stat = checkvariable)
-    !if ( checkvariable /= 0 ) goto 90
+      !if (allocated(coefs412_all_tp)) deallocate(coefs412_all_tp)
+      !allocate (coefs412_all_tp(LERedge(1),LERedge(2),4,3,2), stat = checkvariable)
+      !if ( checkvariable /= 0 ) goto 90
 
-    !if (allocated(coefs412_fwd_tp)) deallocate(coefs412_fwd_tp)
-    !allocate (coefs412_fwd_tp(LERedge(1),LERedge(2),4,3,2), stat = checkvariable)
-    !if ( checkvariable /= 0 ) goto 90
+      !if (allocated(coefs412_fwd_tp)) deallocate(coefs412_fwd_tp)
+      !allocate (coefs412_fwd_tp(LERedge(1),LERedge(2),4,3,2), stat = checkvariable)
+      !if ( checkvariable /= 0 ) goto 90
 
-    if (allocated(coefs412_all)) deallocate(coefs412_all)
-    allocate (coefs412_all(LERedge(1),LERedge(2),4,3), stat = checkvariable)
-    if ( checkvariable /= 0 ) goto 90
+      if (allocated(coefs412_all)) deallocate(coefs412_all)
+      allocate (coefs412_all(LERedge(1),LERedge(2),4,3), stat = checkvariable)
+      if ( checkvariable /= 0 ) goto 90
 
-    if (allocated(coefs412_fwd)) deallocate(coefs412_fwd)
-    allocate (coefs412_fwd(LERedge(1),LERedge(2),4,3), stat = checkvariable)
-    if ( checkvariable /= 0 ) goto 90
+      if (allocated(coefs412_fwd)) deallocate(coefs412_fwd)
+      allocate (coefs412_fwd(LERedge(1),LERedge(2),4,3), stat = checkvariable)
+      if ( checkvariable /= 0 ) goto 90
 
-    !if (allocated(coefs470_all_tp)) deallocate(coefs470_all_tp)
-    !allocate (coefs470_all_tp(LERedge(1),LERedge(2),4,3,2), stat = checkvariable)
-    !if ( checkvariable /= 0 ) goto 90
+      !if (allocated(coefs470_all_tp)) deallocate(coefs470_all_tp)
+      !allocate (coefs470_all_tp(LERedge(1),LERedge(2),4,3,2), stat = checkvariable)
+      !if ( checkvariable /= 0 ) goto 90
 
-    !if (allocated(coefs470_fwd_tp)) deallocate(coefs470_fwd_tp)
-    !allocate (coefs470_fwd_tp(LERedge(1),LERedge(2),4,3,2), stat = checkvariable)
-    !if ( checkvariable /= 0 ) goto 90
+      !if (allocated(coefs470_fwd_tp)) deallocate(coefs470_fwd_tp)
+      !allocate (coefs470_fwd_tp(LERedge(1),LERedge(2),4,3,2), stat = checkvariable)
+      !if ( checkvariable /= 0 ) goto 90
 
-    if (allocated(coefs470_all)) deallocate(coefs470_all)
-    allocate (coefs470_all(LERedge(1),LERedge(2),4,3), stat = checkvariable)
-    if ( checkvariable /= 0 ) goto 90
+      if (allocated(coefs470_all)) deallocate(coefs470_all)
+      allocate (coefs470_all(LERedge(1),LERedge(2),4,3), stat = checkvariable)
+      if ( checkvariable /= 0 ) goto 90
 
-    if (allocated(coefs470_fwd)) deallocate(coefs470_fwd)
-    allocate (coefs470_fwd(LERedge(1),LERedge(2),4,3), stat = checkvariable)
-    if ( checkvariable /= 0 ) goto 90
+      if (allocated(coefs470_fwd)) deallocate(coefs470_fwd)
+      allocate (coefs470_fwd(LERedge(1),LERedge(2),4,3), stat = checkvariable)
+      if ( checkvariable /= 0 ) goto 90
 
-    !if (allocated(coefs650_all_tp)) deallocate(coefs650_all_tp)
-    !allocate (coefs650_all_tp(LERedge(1),LERedge(2),4,3,2), stat = checkvariable)
-    !if ( checkvariable /= 0 ) goto 90
+      !if (allocated(coefs650_all_tp)) deallocate(coefs650_all_tp)
+      !allocate (coefs650_all_tp(LERedge(1),LERedge(2),4,3,2), stat = checkvariable)
+      !if ( checkvariable /= 0 ) goto 90
 
-    !if (allocated(coefs650_fwd_tp)) deallocate(coefs650_fwd_tp)
-    !allocate (coefs650_fwd_tp(LERedge(1),LERedge(2),4,3,2), stat = checkvariable)
-    !if ( checkvariable /= 0 ) goto 90
+      !if (allocated(coefs650_fwd_tp)) deallocate(coefs650_fwd_tp)
+      !allocate (coefs650_fwd_tp(LERedge(1),LERedge(2),4,3,2), stat = checkvariable)
+      !if ( checkvariable /= 0 ) goto 90
 
-    if (allocated(coefs650_all)) deallocate(coefs650_all)
-    allocate (coefs650_all(LERedge(1),LERedge(2),4,3), stat = checkvariable)
-    if ( checkvariable /= 0 ) goto 90
+      if (allocated(coefs650_all)) deallocate(coefs650_all)
+      allocate (coefs650_all(LERedge(1),LERedge(2),4,3), stat = checkvariable)
+      if ( checkvariable /= 0 ) goto 90
 
-    if (allocated(coefs650_fwd)) deallocate(coefs650_fwd)
-    allocate (coefs650_fwd(LERedge(1),LERedge(2),4,3), stat = checkvariable)
-    if ( checkvariable /= 0 ) goto 90
+      if (allocated(coefs650_fwd)) deallocate(coefs650_fwd)
+      allocate (coefs650_fwd(LERedge(1),LERedge(2),4,3), stat = checkvariable)
+      if ( checkvariable /= 0 ) goto 90
     
-!   -- allocate arrays for VIIRS, all-angle surface database
-    if (allocated(vgref412_all)) deallocate(vgref412_all)
-    allocate (vgref412_all(LERedge(1),LERedge(2)), stat = checkvariable)
-    if ( checkvariable /= 0 ) goto 90
+      !   -- allocate arrays for VIIRS, all-angle surface database
+      if (allocated(vgref412_all)) deallocate(vgref412_all)
+      allocate (vgref412_all(LERedge(1),LERedge(2)), stat = checkvariable)
+      if ( checkvariable /= 0 ) goto 90
 
-    if (allocated(vgref488_all)) deallocate(vgref488_all)
-    allocate (vgref488_all(LERedge(1),LERedge(2)), stat = checkvariable)
-    if ( checkvariable /= 0 ) goto 90
+      if (allocated(vgref488_all)) deallocate(vgref488_all)
+      allocate (vgref488_all(LERedge(1),LERedge(2)), stat = checkvariable)
+      if ( checkvariable /= 0 ) goto 90
 
-    if (allocated(vgref670_all)) deallocate(vgref670_all)
-    allocate (vgref670_all(LERedge(1),LERedge(2)), stat = checkvariable)
-    if ( checkvariable /= 0 ) goto 90
+      if (allocated(vgref670_all)) deallocate(vgref670_all)
+      allocate (vgref670_all(LERedge(1),LERedge(2)), stat = checkvariable)
+      if ( checkvariable /= 0 ) goto 90
 
-    goto 100
+      goto 100
     
-90  continue
-    print *, "ERROR: Unable to allocate coefficient array: ", status
-    return
+90 continue
+   print *, "ERROR: Unable to allocate coefficient array: ", status
+   return
     
 100 continue
     return
 
-  end function set_limits
+ end function set_limits
 
-! --  Find granule limits and set offsets for 2.2 um surface database, and allocate space for the
-! tables, 0.06 degree resolution
-  integer function set_limits6(locedge, lat, long) RESULT(status)
+ ! --  Find granule limits and set offsets for 2.2 um surface database, and allocate space for the
+ ! tables, 0.06 degree resolution
+ integer function set_limits6(locedge, lat, long) RESULT(status)
 
     integer, intent(in)  :: locedge(2)
     real, intent(in)     :: lat(locedge(1),locedge(2)), long(locedge(1),locedge(2))
@@ -4842,16 +4844,16 @@ module modis_surface
     real                 :: eastedge, westedge
     status = 0
 
-!   -- if processing extracts, if region of interest is within bounds of the
-!   granule,
-!   -- but not actually contained in the granule quadralateral, lat and lon
-!   values may be
-!   -- set to fill values (-999). Check this condition and fail.
-!   -- @TODO - utilize the status variable and check where called.
-!    if (minval(lat) < -900.0 .OR. minval(long) < -900.0) then
-!      msg = "Min lat or min lon is fill value. Failing."
-!      call MODIS_SMF_SETDYNAMICMSG(MODIS_F_GENERIC, msg, 'set_limits')
-!    end if
+    !   -- if processing extracts, if region of interest is within bounds of the
+    !   granule,
+    !   -- but not actually contained in the granule quadralateral, lat and lon
+    !   values may be
+    !   -- set to fill values (-999). Check this condition and fail.
+    !   -- @TODO - utilize the status variable and check where called.
+    !    if (minval(lat) < -900.0 .OR. minval(long) < -900.0) then
+    !      msg = "Min lat or min lon is fill value. Failing."
+    !      call MODIS_SMF_SETDYNAMICMSG(MODIS_F_GENERIC, msg, 'set_limits')
+    !    end if
 
     eastedge = -999.0
     westedge =  999.0
@@ -4867,18 +4869,18 @@ module modis_surface
           enddo
        enddo
        LERstart6(1) = (180+(floor(eastedge)-1))/0.06
-       if (LERstart6(1) < 0) LERstart6(1) = 0
+       if (LERstart6(1) .le. 0) LERstart6(1) = 1
        dateline6 = 6000 - LERstart6(1)
        LERedge6(1) = (180+(floor(westedge)+2))/0.06 + dateline6
     else
        LERstart6(1) = (180+(floor(minval(long, long > -900.0))-1))/0.06
-       if (LERstart6(1) < 0) LERstart6(1) = 0
+       if (LERstart6(1) .le. 0) LERstart6(1) = 1
        LERedge6(1) = (180+(floor(maxval(long, long > -900.0))+2))/0.06 - LERstart6(1)
        if (LERedge6(1)+LERstart6(1) > 6000) LERedge6(1) = 6000 - LERstart6(1)
     endif
 
     LERstart6(2) = (90+(floor(minval(lat, lat > -900.0))-1))/0.06
-    if (LERstart6(2) < 0) LERstart6(2) = 0
+    if (LERstart6(2) .le. 0) LERstart6(2) = 1
     LERedge6(2) = (90+(floor(maxval(lat, lat > -900.0))+2))/0.06 - LERstart6(2)
     if (LERedge6(2)+LERstart6(2) > 3000) LERedge6(2) = 3000 - LERstart6(2)
 
@@ -4908,14 +4910,14 @@ module modis_surface
 
     goto 100
 
-90  continue
-    print *, "ERROR: Unable to allocate 2.2 um surface database array: ", status
-    return
+90 continue
+   print *, "ERROR: Unable to allocate 2.2 um surface database array: ", status
+   return
 
 100 continue
     return
 
-  end function set_limits6
+ end function set_limits6
 
  ! -- Load surface LER coefficient tables.
  integer function load_hdfLER(lut_file, season) RESULT(status)
@@ -5172,109 +5174,109 @@ module modis_surface
  end function load_swir_coeffs
    
 
-! Retrieve swir vs. vis coefficients
-  function get_swir_coeffs412(latidx, lonidx) 
+ ! Retrieve swir vs. vis coefficients
+ function get_swir_coeffs412(latidx, lonidx)
     integer, intent(in) :: latidx, lonidx
     integer :: i,j
     real    :: get_swir_coeffs412(3)
 
     if (dateline6 .eq. 0 .OR. lonidx .gt. LERstart6(1)) then
-      i = lonidx - LERstart6(1)
+       i = lonidx - LERstart6(1)
     else
-      i = lonidx + dateline6
+       i = lonidx + dateline6
     end if
     j = latidx - LERstart6(2)
 
     get_swir_coeffs412 = swir_coeffs412(i,j,:)
 
-  end function 
+ end function
 
-! Retrieve swir vs. vis coefficients
-  function get_swir_coeffs470(latidx, lonidx)
+ ! Retrieve swir vs. vis coefficients
+ function get_swir_coeffs470(latidx, lonidx)
     integer, intent(in) :: latidx, lonidx
     integer :: i,j
     real    :: get_swir_coeffs470(3)
 
     if (dateline6 .eq. 0 .OR. lonidx .gt. LERstart6(1)) then
-      i = lonidx - LERstart6(1)
+       i = lonidx - LERstart6(1)
     else
-      i = lonidx + dateline6
+       i = lonidx + dateline6
     end if
     j = latidx - LERstart6(2)
 
     get_swir_coeffs470 = swir_coeffs470(i,j,:)
 
-  end function
+ end function
 
-! Retrieve swir vs. vis stderr
-  real function get_swir_stderr412(latidx, lonidx) result(stderr)
+ ! Retrieve swir vs. vis stderr
+ real function get_swir_stderr412(latidx, lonidx) result(stderr)
     integer, intent(in) :: latidx, lonidx
     integer :: i,j
 
     if (dateline6 .eq. 0 .OR. lonidx .gt. LERstart6(1)) then
-      i = lonidx - LERstart6(1)
+       i = lonidx - LERstart6(1)
     else
-      i = lonidx + dateline6
+       i = lonidx + dateline6
     end if
     j = latidx - LERstart6(2)
 
     stderr = swir_stderr412(i,j)
 
-  end function get_swir_stderr412
+ end function get_swir_stderr412
 
-! Retrieve swir vs. vis stderr
-  real function get_swir_stderr470(latidx, lonidx) result(stderr)
+ ! Retrieve swir vs. vis stderr
+ real function get_swir_stderr470(latidx, lonidx) result(stderr)
     integer, intent(in) :: latidx, lonidx
     integer :: i,j
 
     if (dateline6 .eq. 0 .OR. lonidx .gt. LERstart6(1)) then
-      i = lonidx - LERstart6(1)
+       i = lonidx - LERstart6(1)
     else
-      i = lonidx + dateline6
+       i = lonidx + dateline6
     end if
     j = latidx - LERstart6(2)
 
     stderr = swir_stderr470(i,j)
 
-  end function get_swir_stderr470
+ end function get_swir_stderr470
 
-! Retrieve swir vs. vis min-max range
-  function get_swir_range(latidx, lonidx)
+ ! Retrieve swir vs. vis min-max range
+ function get_swir_range(latidx, lonidx)
     integer, intent(in) :: latidx, lonidx
     integer :: i,j
     real    :: get_swir_range(2)
 
     if (dateline6 .eq. 0 .OR. lonidx .gt. LERstart6(1)) then
-      i = lonidx - LERstart6(1)
+       i = lonidx - LERstart6(1)
     else
-      i = lonidx + dateline6
+       i = lonidx + dateline6
     end if
     j = latidx - LERstart6(2)
 
     get_swir_range = (/swir_min(i,j),swir_max(i,j)/)
 
-  end function 
+ end function
 
-! Retrieve LER865 value
-  real function get_LER865(latidx, lonidx) RESULT(LER)
+ ! Retrieve LER865 value
+ real function get_LER865(latidx, lonidx) RESULT(LER)
     integer, intent(in) :: latidx, lonidx
 
     integer :: i,j
 
     if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
+       i = lonidx - LERstart(1)
     else
-      i = lonidx + dateline
+       i = lonidx + dateline
     end if
     j = latidx - LERstart(2)
 
     LER = gref865_all(i,j)
 
-  end function get_LER865
+ end function get_LER865
 
-! -- Retrieve LER412 value from surface reflectivity coefficient table for pixel at
-! --  latidx, lonidx in table.
-  real function get_LER412(latidx, lonidx, NDVI, scatAngle, relaz,min_flag) RESULT(LER)
+ ! -- Retrieve LER412 value from surface reflectivity coefficient table for pixel at
+ ! --  latidx, lonidx in table.
+ real function get_LER412(latidx, lonidx, NDVI, scatAngle, relaz,min_flag) RESULT(LER)
     integer, intent(in) :: latidx, lonidx
     real, intent(in)    :: NDVI, scatAngle, relaz
     integer, intent(inout) :: min_flag
@@ -5284,24 +5286,24 @@ module modis_surface
 
     LER = -999.0
     if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
+       i = lonidx - LERstart(1)
     else
-      i = lonidx + dateline
+       i = lonidx + dateline
     end if
     j = latidx - LERstart(2)
 
-!    print *,"in get_LER412"
-!    print *,"latidx, lonidx = ",latidx, lonidx
-!    print *,"i,j = ",i,j
-!    print *,"LERstart = ",LERstart
-!    print *,"LERedge = ",LERedge
+    !    print *,"in get_LER412"
+    !    print *,"latidx, lonidx = ",latidx, lonidx
+    !    print *,"i,j = ",i,j
+    !    print *,"LERstart = ",LERstart
+    !    print *,"LERedge = ",LERedge
     
     if (NDVI < NDVI1_CUTOFF) then
-      nidx = 1
+       nidx = 1
     elseif (NDVI < NDVI2_CUTOFF) then
-      nidx = 2
+       nidx = 2
     else
-      nidx = 3
+       nidx = 3
     endif
 
     if (relaz < 90.0) then
@@ -5336,28 +5338,28 @@ module modis_surface
 
     if (maxval(ncoefs) > 0.0) then
        coefs(:) = ncoefs(:)
-!    elseif (maxval(acoefs) > 0.0) then
-!       coefs(:) = acoefs(:)
-!    elseif (maxval(mcoefs) > 0.0) then
-!       coefs(:) = mcoefs(:)
+    !    elseif (maxval(acoefs) > 0.0) then
+    !       coefs(:) = acoefs(:)
+    !    elseif (maxval(mcoefs) > 0.0) then
+    !       coefs(:) = mcoefs(:)
     else
        coefs(:) = -999.0
     endif
 
     if (maxval(coefs) > 0.0) then
-      LER = coefs(1) + scatAngle*(coefs(2) + scatAngle*(coefs(3) + scatAngle*coefs(4)))
+       LER = coefs(1) + scatAngle*(coefs(2) + scatAngle*(coefs(3) + scatAngle*coefs(4)))
     endif
 
     if (LER < 0.0) then
-      LER = tLER
-      min_flag = 1
+       LER = tLER
+       min_flag = 1
     endif
 
-  end function get_LER412
+ end function get_LER412
 
-! -- Retrieve LER470 value from surface reflectivity coefficient table for pixel at
-! --  latidx, lonidx in table.
-  real function get_LER470(latidx, lonidx, NDVI, scatAngle, relaz, min_flag) RESULT(LER)
+ ! -- Retrieve LER470 value from surface reflectivity coefficient table for pixel at
+ ! --  latidx, lonidx in table.
+ real function get_LER470(latidx, lonidx, NDVI, scatAngle, relaz, min_flag) RESULT(LER)
     integer, intent(in) :: latidx, lonidx
     real, intent(in)    :: NDVI, scatAngle, relaz
     integer, intent(inout) :: min_flag
@@ -5367,9 +5369,9 @@ module modis_surface
 
     LER = -999.0
     if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
+       i = lonidx - LERstart(1)
     else
-      i = lonidx + dateline
+       i = lonidx + dateline
     end if
     j = latidx - LERstart(2)
 
@@ -5380,11 +5382,11 @@ module modis_surface
     !print *,"LERedge = ",LERedge
 
     if (NDVI < NDVI1_CUTOFF) then
-      nidx = 1
+       nidx = 1
     elseif (NDVI < NDVI2_CUTOFF) then
-      nidx = 2
+       nidx = 2
     else
-      nidx = 3
+       nidx = 3
     endif
 
     acoefs(:) = -999.0
@@ -5431,19 +5433,19 @@ module modis_surface
     endif
 
     if (maxval(coefs) > 0.0) then
-      LER = coefs(1) + scatAngle*(coefs(2) + scatAngle*(coefs(3) + scatAngle*coefs(4)))
+       LER = coefs(1) + scatAngle*(coefs(2) + scatAngle*(coefs(3) + scatAngle*coefs(4)))
     endif
 
     if (LER < 0.0) then
-      LER = tLER
-      min_flag = 1
+       LER = tLER
+       min_flag = 1
     endif
 
-  end function get_LER470
+ end function get_LER470
 
-! -- Retrieve LER650 value from surface reflectivity coefficient table for pixel at
-! --  latidx, lonidx in table.
-  real function get_LER650(latidx, lonidx, NDVI, scatAngle, relaz,min_flag) RESULT(LER)
+ ! -- Retrieve LER650 value from surface reflectivity coefficient table for pixel at
+ ! --  latidx, lonidx in table.
+ real function get_LER650(latidx, lonidx, NDVI, scatAngle, relaz,min_flag) RESULT(LER)
     integer, intent(in) :: latidx, lonidx
     real, intent(in)    :: NDVI, scatAngle, relaz
     integer, intent(inout) :: min_flag
@@ -5453,25 +5455,25 @@ module modis_surface
 
     LER = -999.0
     if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
+       i = lonidx - LERstart(1)
     else
-      i = lonidx + dateline
+       i = lonidx + dateline
     end if
     j = latidx - LERstart(2)
 
-!    print *,"in get_LER650"
-!    print *,"latidx, lonidx = ",latidx, lonidx
-!    print *,"i,j = ",i,j
-!    print *,"LERstart = ",LERstart
-!    print *,"LERedge = ",LERedge
-!    print *,"dateline = ", dateline
+    !    print *,"in get_LER650"
+    !    print *,"latidx, lonidx = ",latidx, lonidx
+    !    print *,"i,j = ",i,j
+    !    print *,"LERstart = ",LERstart
+    !    print *,"LERedge = ",LERedge
+    !    print *,"dateline = ", dateline
     
     if (NDVI < NDVI1_CUTOFF) then
-      nidx = 1
+       nidx = 1
     elseif (NDVI < NDVI2_CUTOFF) then
-      nidx = 2
+       nidx = 2
     else
-      nidx = 3
+       nidx = 3
     endif
 
     if (relaz < 90.0) then
@@ -5487,9 +5489,9 @@ module modis_surface
        !acoefs(:) = coefs650_all_tp(i,j,:,1,1)
        !mcoefs(:) = coefs650_all_tp(i,j,:,1,2)
        ncoefs(:) = coefs650_all(i,j,:,nidx)
-       !acoefs(:) = coefs650_all(i,j,:,1,1)
-       !mcoefs(:) = coefs650_all(i,j,:,1,2)
-	   tLER = vgref670_all(i,j)!if there is no BRDF value, use VIIRS min ref (Jul 2017 W.KIM)
+        !acoefs(:) = coefs650_all(i,j,:,1,1)
+        !mcoefs(:) = coefs650_all(i,j,:,1,2)
+       tLER = vgref670_all(i,j)!if there is no BRDF value, use VIIRS min ref (Jul 2017 W.KIM)
     endif
 
     !print *,"relaz = ",relaz,NDVI
@@ -5506,24 +5508,24 @@ module modis_surface
 
     if (maxval(ncoefs) > 0.0) then
        coefs(:) = ncoefs(:)
-!    elseif (maxval(acoefs) > 0.0) then
-!       coefs(:) = acoefs(:)
-!    elseif (maxval(mcoefs) > 0.0) then
-!       coefs(:) = mcoefs(:)
+    !    elseif (maxval(acoefs) > 0.0) then
+    !       coefs(:) = acoefs(:)
+    !    elseif (maxval(mcoefs) > 0.0) then
+    !       coefs(:) = mcoefs(:)
     else
        coefs(:) = -999.0
     endif
 
     if (maxval(coefs) > 0.0) then
-      LER = coefs(1) + scatAngle*(coefs(2) + scatAngle*(coefs(3) + scatAngle*coefs(4)))
+       LER = coefs(1) + scatAngle*(coefs(2) + scatAngle*(coefs(3) + scatAngle*coefs(4)))
     endif
 
     if (LER < 0.0) then
-      LER = tLER
-      min_flag = 1
+       LER = tLER
+       min_flag = 1
     endif
 
-  end function get_LER650
+ end function get_LER650
 
  ! Read in LER tables
  integer function readLER2(start, edge, stride, sds_name, grp_id, outref) RESULT(status)
@@ -5951,7 +5953,7 @@ module modis_surface
     return
  end function readSWIR3
   
-  integer function latlon_to_index_LER(lat, lon, ilat, ilon) result(status)
+ integer function latlon_to_index_LER(lat, lon, ilat, ilon) result(status)
     implicit none
     
     real, intent(in)        ::  lat
@@ -5961,14 +5963,14 @@ module modis_surface
     
     status = 0
     if (lat > 90.0 .OR. lat < -90.0) then
-      print *, "ERROR: Invalid latitude specified: ", lat
-      status = -1
-      return
+       print *, "ERROR: Invalid latitude specified: ", lat
+       status = -1
+       return
     end if
     if (lon > 180.0 .OR. lon < -180.0) then
-      print *, "ERROR: Invalid longitude specified: ", lon
-      status = -1
-      return
+       print *, "ERROR: Invalid longitude specified: ", lon
+       status = -1
+       return
     end if
     
     ilat = (lat + 90.0) * 10.0 + 1
@@ -5981,9 +5983,9 @@ module modis_surface
     
     return
   
-  end function latlon_to_index_LER
+ end function latlon_to_index_LER
   
-  real function get_viirs_LER412(latidx, lonidx) result(ref)
+ real function get_viirs_LER412(latidx, lonidx) result(ref)
     implicit none
     
     integer, intent(in)   ::  latidx
@@ -5992,18 +5994,18 @@ module modis_surface
     integer               ::  i, j
     
     if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
+       i = lonidx - LERstart(1)
     else
-      i = lonidx + dateline
+       i = lonidx + dateline
     end if
     j = latidx - LERstart(2)
     
     ref = vgref412_all(i,j)
     return
     
-  end function get_viirs_LER412
+ end function get_viirs_LER412
   
-  real function get_viirs_LER488(latidx, lonidx) result(ref)
+ real function get_viirs_LER488(latidx, lonidx) result(ref)
     implicit none
     
     integer, intent(in)   ::  latidx
@@ -6012,18 +6014,18 @@ module modis_surface
     integer               ::  i, j
     
     if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
+       i = lonidx - LERstart(1)
     else
-      i = lonidx + dateline
+       i = lonidx + dateline
     end if
     j = latidx - LERstart(2)
     
     ref = vgref488_all(i,j)
     return
     
-  end function get_viirs_LER488
+ end function get_viirs_LER488
   
-  real function get_viirs_LER670(latidx, lonidx) result(ref)
+ real function get_viirs_LER670(latidx, lonidx) result(ref)
     implicit none
     
     integer, intent(in)   ::  latidx
@@ -6032,18 +6034,18 @@ module modis_surface
     integer               ::  i, j
     
     if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
+       i = lonidx - LERstart(1)
     else
-      i = lonidx + dateline
+       i = lonidx + dateline
     end if
     j = latidx - LERstart(2)
     
     ref = vgref670_all(i,j)
     return
     
-  end function get_viirs_LER670
+ end function get_viirs_LER670
   
-  real function get_modis_LER412(latidx, lonidx) result(ref)
+ real function get_modis_LER412(latidx, lonidx) result(ref)
     implicit none
     
     integer, intent(in)   ::  latidx
@@ -6052,18 +6054,18 @@ module modis_surface
     integer               ::  i, j
 
     if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
+       i = lonidx - LERstart(1)
     else
-      i = lonidx + dateline
+       i = lonidx + dateline
     end if
     j = latidx - LERstart(2)
     
     ref = gref412_all(i,j)
     return
     
-  end function get_modis_LER412
+ end function get_modis_LER412
   
-  real function get_modis_LER470(latidx, lonidx) result(ref)
+ real function get_modis_LER470(latidx, lonidx) result(ref)
     implicit none
     
     integer, intent(in)   ::  latidx
@@ -6072,18 +6074,18 @@ module modis_surface
     integer               ::  i, j
     
     if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
+       i = lonidx - LERstart(1)
     else
-      i = lonidx + dateline
+       i = lonidx + dateline
     end if
     j = latidx - LERstart(2)
     
     ref = gref470_all(i,j)
     return
     
-  end function get_modis_LER470
+ end function get_modis_LER470
   
-  real function get_modis_LER650(latidx, lonidx) result(ref)
+ real function get_modis_LER650(latidx, lonidx) result(ref)
     implicit none
     
     integer, intent(in)   ::  latidx
@@ -6092,18 +6094,18 @@ module modis_surface
     integer               ::  i, j
 
     if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
+       i = lonidx - LERstart(1)
     else
-      i = lonidx + dateline
+       i = lonidx + dateline
     end if
     j = latidx - LERstart(2)
     
     ref = gref650_all(i,j)
     return
     
-  end function get_modis_LER650
+ end function get_modis_LER650
   
-  real function get_modis_LER865(latidx, lonidx) result(ref)
+ real function get_modis_LER865(latidx, lonidx) result(ref)
     implicit none
     
     integer, intent(in)   ::  latidx
@@ -6112,138 +6114,138 @@ module modis_surface
     integer               ::  i, j
 
     if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
+       i = lonidx - LERstart(1)
     else
-      i = lonidx + dateline
+       i = lonidx + dateline
     end if
     j = latidx - LERstart(2)
     
     ref = gref865_all(i,j)
     return
     
-  end function get_modis_LER865
+ end function get_modis_LER865
   
-  real function get_viirs_modisbrdf_LER412(ilat, ilon, ndvi, sa, ra) result(ref)
+ real function get_viirs_modisbrdf_LER412(ilat, ilon, ndvi, sa, ra) result(ref)
     implicit none
     
-      integer, intent(in)   ::  ilat
-      integer, intent(out)  ::  ilon
-      real, intent(in)      ::  ndvi
-      real, intent(in)      ::  sa
-      real, intent(in)      ::  ra
+    integer, intent(in)   ::  ilat
+    integer, intent(out)  ::  ilon
+    real, intent(in)      ::  ndvi
+    real, intent(in)      ::  sa
+    real, intent(in)      ::  ra
       
-      real                  ::  mb_sr412
-      real                  ::  m_sr412
-      real                  ::  v_sr412
-      integer               ::  min_flag
+    real                  ::  mb_sr412
+    real                  ::  m_sr412
+    real                  ::  v_sr412
+    integer               ::  min_flag
       
-      ref = -999.0
+    ref = -999.0
       
-      mb_sr412 =  get_LER412(ilat, ilon, ndvi, sa, ra,min_flag)
-      if (mb_sr412 < -900.0) then
-!        print *, "ERROR: Undefined MODIS BRDF-corrected surface reflectance found: ", mb_sr412
-        return
-      end if
+    mb_sr412 =  get_LER412(ilat, ilon, ndvi, sa, ra,min_flag)
+    if (mb_sr412 < -900.0) then
+       !        print *, "ERROR: Undefined MODIS BRDF-corrected surface reflectance found: ", mb_sr412
+       return
+    end if
             
-      m_sr412 = get_modis_LER412(ilat,ilon)
-      if (m_sr412 < -900.0) then
-!        print *, "ERROR: Undefined MODIS all-angle surface reflectance found: ", m_sr412
-        return
-      end if
+    m_sr412 = get_modis_LER412(ilat,ilon)
+    if (m_sr412 < -900.0) then
+       !        print *, "ERROR: Undefined MODIS all-angle surface reflectance found: ", m_sr412
+       return
+    end if
       
-      v_sr412 = get_viirs_LER412(ilat,ilon)
-      if (v_sr412 < -900.0) then
-!        print *, "ERROR: Undefined VIIRS all-angle surface reflectance found: ", v_sr412
-        return
-      end if
+    v_sr412 = get_viirs_LER412(ilat,ilon)
+    if (v_sr412 < -900.0) then
+       !        print *, "ERROR: Undefined VIIRS all-angle surface reflectance found: ", v_sr412
+       return
+    end if
       
-      ref = v_sr412 * (mb_sr412 / m_sr412)
-      return
+    ref = v_sr412 * (mb_sr412 / m_sr412)
+    return
             
-  end function get_viirs_modisbrdf_LER412
+ end function get_viirs_modisbrdf_LER412
   
-  real function get_viirs_modisbrdf_LER488(ilat, ilon, ndvi, sa, ra) result(ref)
+ real function get_viirs_modisbrdf_LER488(ilat, ilon, ndvi, sa, ra) result(ref)
     implicit none
     
-      integer, intent(in)   ::  ilat
-      integer, intent(out)  ::  ilon
-      real, intent(in)      ::  ndvi
-      real, intent(in)      ::  sa
-      real, intent(in)      ::  ra
+    integer, intent(in)   ::  ilat
+    integer, intent(out)  ::  ilon
+    real, intent(in)      ::  ndvi
+    real, intent(in)      ::  sa
+    real, intent(in)      ::  ra
       
-      real                  ::  mb_sr470
-      real                  ::  m_sr470
-      real                  ::  v_sr488
-      integer               ::  min_flag      
+    real                  ::  mb_sr470
+    real                  ::  m_sr470
+    real                  ::  v_sr488
+    integer               ::  min_flag
       
-      ref = -999.0
+    ref = -999.0
       
-      mb_sr470 =  get_LER470(ilat, ilon, ndvi, sa, ra, min_flag)
-      if (mb_sr470 < -900.0) then
-!        print *, "ERROR: Undefined MODIS BRDF-corrected surface reflectance found: ", mb_sr470
-        return
-      end if
+    mb_sr470 =  get_LER470(ilat, ilon, ndvi, sa, ra, min_flag)
+    if (mb_sr470 < -900.0) then
+       !        print *, "ERROR: Undefined MODIS BRDF-corrected surface reflectance found: ", mb_sr470
+       return
+    end if
             
-      m_sr470 = get_modis_LER470(ilat,ilon)
-      if (m_sr470 < -900.0) then
-!        print *, "ERROR: Undefined MODIS all-angle surface reflectance found: ", m_sr470
-        return
-      end if
+    m_sr470 = get_modis_LER470(ilat,ilon)
+    if (m_sr470 < -900.0) then
+       !        print *, "ERROR: Undefined MODIS all-angle surface reflectance found: ", m_sr470
+       return
+    end if
       
-      v_sr488 = get_viirs_LER488(ilat,ilon)
-      if (v_sr488 < -900.0) then
-!        print *, "ERROR: Undefined VIIRS all-angle surface reflectance found: ", v_sr488
-         return
-      end if
+    v_sr488 = get_viirs_LER488(ilat,ilon)
+    if (v_sr488 < -900.0) then
+       !        print *, "ERROR: Undefined VIIRS all-angle surface reflectance found: ", v_sr488
+       return
+    end if
       
-      ref = v_sr488 * (mb_sr470 / m_sr470)
+    ref = v_sr488 * (mb_sr470 / m_sr470)
       
-      return
+    return
             
-  end function get_viirs_modisbrdf_LER488
+ end function get_viirs_modisbrdf_LER488
   
-  real function get_viirs_modisbrdf_LER670(ilat, ilon, ndvi, sa, ra) result(ref)
+ real function get_viirs_modisbrdf_LER670(ilat, ilon, ndvi, sa, ra) result(ref)
     implicit none
     
-      integer, intent(in)   ::  ilat
-      integer, intent(out)  ::  ilon
-      real, intent(in)      ::  ndvi
-      real, intent(in)      ::  sa
-      real, intent(in)      ::  ra
+    integer, intent(in)   ::  ilat
+    integer, intent(out)  ::  ilon
+    real, intent(in)      ::  ndvi
+    real, intent(in)      ::  sa
+    real, intent(in)      ::  ra
       
-      real                  ::  mb_sr650
-      real                  ::  m_sr650
-      real                  ::  v_sr670
-      integer               ::  min_flag  
-          
-      ref = -999.0
+    real                  ::  mb_sr650
+    real                  ::  m_sr650
+    real                  ::  v_sr670
+    integer               ::  min_flag
       
-      mb_sr650 =  get_LER650(ilat, ilon, ndvi, sa, ra, min_flag)
-      if (mb_sr650 < -900.0) then
-!        print *, "ERROR: Undefined MODIS BRDF-corrected surface reflectance found: ", mb_sr650
-        return
-      end if
+    ref = -999.0
+      
+    mb_sr650 =  get_LER650(ilat, ilon, ndvi, sa, ra, min_flag)
+    if (mb_sr650 < -900.0) then
+       !        print *, "ERROR: Undefined MODIS BRDF-corrected surface reflectance found: ", mb_sr650
+       return
+    end if
             
-      m_sr650 = get_modis_LER650(ilat,ilon)
-      if (m_sr650 < -900.0) then
-!        print *, "ERROR: Undefined MODIS all-angle surface reflectance found: ", m_sr650
-        return
-      end if
+    m_sr650 = get_modis_LER650(ilat,ilon)
+    if (m_sr650 < -900.0) then
+       !        print *, "ERROR: Undefined MODIS all-angle surface reflectance found: ", m_sr650
+       return
+    end if
       
-      v_sr670 = get_viirs_LER670(ilat,ilon)
-      if (v_sr670 < -900.0) then
-!        print *, "ERROR: Undefined VIIRS all-angle surface reflectance found: ", v_sr670
-        return
-      end if
+    v_sr670 = get_viirs_LER670(ilat,ilon)
+    if (v_sr670 < -900.0) then
+       !        print *, "ERROR: Undefined VIIRS all-angle surface reflectance found: ", v_sr670
+       return
+    end if
       
-      ref = v_sr670 * (mb_sr650 / m_sr650)
+    ref = v_sr670 * (mb_sr650 / m_sr650)
       
-      return
+    return
             
-  end function get_viirs_modisbrdf_LER670
+ end function get_viirs_modisbrdf_LER670
   
   
-  integer function get_geographic_zone(lat, lon, status) result(zone)
+ integer function get_geographic_zone(lat, lon, status) result(zone)
     implicit none
     
     real, intent(in)    ::  lat
@@ -6255,14 +6257,14 @@ module modis_surface
     status = -1
     
     if (lat > 90.0 .OR. lat < -90.0) then
-      print *, "ERROR: Invalid latitude specified: ", lat
-      status = -1
-      return
+       print *, "ERROR: Invalid latitude specified: ", lat
+       status = -1
+       return
     end if
     if (lon > 180.0 .OR. lon < -180.0) then
-      print *, "ERROR: Invalid longitude specified: ", lon
-      status = -1
-      return
+       print *, "ERROR: Invalid longitude specified: ", lon
+       status = -1
+       return
     end if
       
     ilat = (lat + 90.0) * 10 + 1
@@ -6278,10 +6280,10 @@ module modis_surface
     
     return
     
-  end function get_geographic_zone
+ end function get_geographic_zone
 
 
-  integer function get_sfc_elev_std(lat, lon, status) result(elev_std)
+ integer function get_sfc_elev_std(lat, lon, status) result(elev_std)
     implicit none
 
     real, intent(in)    ::  lat
@@ -6293,14 +6295,14 @@ module modis_surface
     status = -1
 
     if (lat > 90.0 .OR. lat < -90.0) then
-      print *, "ERROR: Invalid latitude specified: ", lat
-      status = -1
-      return
+       print *, "ERROR: Invalid latitude specified: ", lat
+       status = -1
+       return
     end if
     if (lon > 180.0 .OR. lon < -180.0) then
-      print *, "ERROR: Invalid longitude specified: ", lon
-      status = -1
-      return
+       print *, "ERROR: Invalid longitude specified: ", lon
+       status = -1
+       return
     end if
 
     ilat = (lat + 90.0) * 10 + 1
@@ -6316,9 +6318,9 @@ module modis_surface
 
     return
 
-  end function get_sfc_elev_std
+ end function get_sfc_elev_std
 
-  real function get_background_aod(lat, lon, season, status) result(aod)
+ real function get_background_aod(lat, lon, season, status) result(aod)
     implicit none
 
     real, intent(in)    ::  lat
@@ -6331,14 +6333,14 @@ module modis_surface
     status = -1
 
     if (lat > 90.0 .OR. lat < -90.0) then
-      print *, "ERROR: Invalid latitude specified: ", lat
-      status = -1
-      return
+       print *, "ERROR: Invalid latitude specified: ", lat
+       status = -1
+       return
     end if
     if (lon > 180.0 .OR. lon < -180.0) then
-      print *, "ERROR: Invalid longitude specified: ", lon
-      status = -1
-      return
+       print *, "ERROR: Invalid longitude specified: ", lon
+       status = -1
+       return
     end if
 
     ilat = floor(lat + 90.0) + 1
@@ -6354,14 +6356,15 @@ module modis_surface
 
     return
 
-  end function get_background_aod
+ end function get_background_aod
 
-  subroutine check_status(status, str)
+ subroutine check_status(status, str)
     integer, intent (in) :: status
     character(len=*), intent (in)    :: str
-    
-    if(status /= 0) then 
-      print *, str, status
+
+    if(status /= 0) then
+       print *, str, status
     end if
-  end subroutine check_status    
-end module modis_surface
+ end subroutine check_status
+
+ end module modis_surface

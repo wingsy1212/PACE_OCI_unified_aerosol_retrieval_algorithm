@@ -115,8 +115,7 @@ subroutine load_viirs_ler_luts(lut_ler_file, status)
     character(len=255)    ::  group_name
     character(len=255)    ::  err_msg
 
-    lut_ler_file = cfg%db_nc4
-    status = nf90_open(trim(lut_ler_file), nf90_nowrite, nc_id)
+    status = nf90_open(trim(cfg%db_nc4), nf90_nowrite, nc_id)
     if (status /= NF90_NOERR) then
         print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
         return

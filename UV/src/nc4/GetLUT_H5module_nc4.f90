@@ -1,160 +1,163 @@
- MODULE GetLUT_H5module 
-!==============================================================================
-!
-! FILENAME:
-!     GetLUT_module.f90
-!
-! DESCRIPTION:
-!     This module read the look-up table in he4
-!
-! AUTHORS:
-!     Changwoo Ahn / Science Systems and Applications, Inc.
-!
-! HISTORY: April 20, 2012
-!==============================================================================
+MODULE GetLUT_H5module
+   !==============================================================================
+   !
+   ! FILENAME:
+   !     GetLUT_module.f90
+   !
+   ! DESCRIPTION:
+   !     This module read the look-up table in he4
+   !
+   ! AUTHORS:
+   !     Changwoo Ahn / Science Systems and Applications, Inc.
+   !
+   ! HISTORY: April 20, 2012
+   !==============================================================================
 
- IMPLICIT NONE
+   IMPLICIT NONE
 
- INTEGER(KIND = 4), PARAMETER :: nwaves = 2 ! 354, 380 nm
- INTEGER(KIND = 4), PARAMETER :: nzhgt = 5 
- INTEGER(KIND = 4), PARAMETER :: nw0 = 21
- INTEGER(KIND = 4), PARAMETER :: naod = 7
- INTEGER(KIND = 4), PARAMETER :: nsza1 = 7
- INTEGER(KIND = 4), PARAMETER :: nraa = 11
- INTEGER(KIND = 4), PARAMETER :: nvza = 14
+   INTEGER(KIND = 4), PARAMETER :: nwaves = 2 ! 354, 380 nm
+   INTEGER(KIND = 4), PARAMETER :: nzhgt = 5
+   INTEGER(KIND = 4), PARAMETER :: nw0 = 21
+   INTEGER(KIND = 4), PARAMETER :: naod = 7
+   INTEGER(KIND = 4), PARAMETER :: nsza1 = 7
+   INTEGER(KIND = 4), PARAMETER :: nraa = 11
+   INTEGER(KIND = 4), PARAMETER :: nvza = 14
  
- REAL(KIND=4), DIMENSION(nwaves,nzhgt,nw0,naod,nsza1,nraa,nvza):: radp10, radp6
- REAL(KIND=4), DIMENSION(nwaves,nzhgt,nw0,naod,nsza1,nvza) :: trp10, trp6
- REAL(KIND=4), DIMENSION(nwaves,nzhgt,nw0,naod) :: sbp10, sbp6
+   REAL(KIND=4), DIMENSION(nwaves,nzhgt,nw0,naod,nsza1,nraa,nvza):: radp10, radp6
+   REAL(KIND=4), DIMENSION(nwaves,nzhgt,nw0,naod,nsza1,nvza) :: trp10, trp6
+   REAL(KIND=4), DIMENSION(nwaves,nzhgt,nw0,naod) :: sbp10, sbp6
 
- CONTAINS
+CONTAINS
 
- SUBROUTINE ReadLUTparams(lut_fn)
+   SUBROUTINE ReadLUTparams(lut_fn)
 
- USE HDF5
- USE OCIUAAER_Config_Module
+      use netcdf
+      USE OCIUAAER_Config_Module
    
- IMPLICIT NONE
-!
-  CHARACTER(LEN=*), INTENT(IN) :: lut_fn
-  INTEGER(KIND=4) :: STATUS, hdf_err
-       
-! File, group, dataset and attribute names.
-  CHARACTER(LEN=256) :: group_name, dataset_name, attribute_name
- 
-! HID_T type integers.
-  INTEGER(HID_T) :: file_id, group_id, dataset_id, datatype_id, attribute_id
- 
-! HSIZE_T type integer.
-  INTEGER(HSIZE_T), DIMENSION(4) :: dims4
-  INTEGER(HSIZE_T), DIMENSION(6) :: dims6
-  INTEGER(HSIZE_T), DIMENSION(7) :: dims7
-   
-! Open AerosolLUT climatology file.
-  lut_fn = cfg%uv_nc4
-  CALL H5Fopen_f(lut_fn, H5F_ACC_RDONLY_F, file_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-!  PRINT *, 'Now reading... ', lut_fn
- 
-! Open geolocation group.
-  group_name = "/aer"
-  CALL H5Gopen_f(file_id, group_name, group_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+      IMPLICIT NONE
+      !
+      CHARACTER(LEN=*), INTENT(IN) :: lut_fn
 
-  dataset_name = "RadianceP10"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(radp10)
-  CALL H5Dread_f(dataset_id, datatype_id, radp10, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  
-! Read RadianceP1000 dataset.
-  dataset_name = "RadianceP10"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(radp10)
-  CALL H5Dread_f(dataset_id, datatype_id, radp10, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+      integer, dimension (4) :: start4, edge4, stride4
+      integer, dimension (6) :: start6, edge6, stride6
+      integer, dimension (7) :: start7, edge7, stride7
 
-! Read RadianceP0600 dataset.
-  dataset_name = "RadianceP6"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims7 = SHAPE(radp10)
-  CALL H5Dread_f(dataset_id, datatype_id, radp6, dims7, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+      integer               ::  status
+      character(len=255)    ::  sds_name
+      character(len=255)    ::  dset_name
+      character(len=255)    ::  attr_name
+      character(len=255)    ::  group_name
 
-! Read RadianceP1000 dataset.
-  dataset_name = "TransmittanceP10"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims6 = SHAPE(trp10)
-  CALL H5Dread_f(dataset_id, datatype_id, trp10, dims6, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+      integer               ::  nc_id
+      integer               ::  dim_id
+      integer               ::  dset_id
+      integer               ::  grp_id
 
-! Read TransmittanceP0600 dataset.
-  dataset_name = "TransmittanceP6"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims6 = SHAPE(trp6)
-  CALL H5Dread_f(dataset_id, datatype_id, trp6, dims6, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+      status = nf90_open(cfg%uv_nc4, nf90_nowrite, nc_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to open UV lut_nc4 file: ", status
+         return
+      end if
 
-! Read SBARP1000 dataset.
-  dataset_name = "SphericalAlbedoP10"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims4 = SHAPE(sbp10)
-  CALL H5Dread_f(dataset_id, datatype_id, sbp10, dims4, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
+      group_name = 'aer'
+      status = nf90_inq_ncid(nc_id, group_name, grp_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
+         return
+      end if
+      dset_name = 'RadianceP10'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      start7  = (/ 1,1,1,1,1,1,1 /)
+      edge7   = SHAPE(radp10)
+      stride7 = (/ 1,1,1,1,1,1,1 /)
+      status = nf90_get_var(grp_id, dset_id, radp10, start=start7, &
+         stride=stride7, count=edge7)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      dset_name = 'RadianceP6'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      edge7   = SHAPE(radp6)
+      status = nf90_get_var(grp_id, dset_id, radp6, start=start7, &
+         stride=stride7, count=edge7)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
 
-! Read SBARP0600 dataset.
-  dataset_name = "SphericalAlbedoP6"
-  CALL H5Dopen_f(group_id, dataset_name, dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dget_type_f(dataset_id, datatype_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  dims4 = SHAPE(sbp6)
-  CALL H5Dread_f(dataset_id, datatype_id, sbp6, dims4, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
-  CALL H5Dclose_f(dataset_id, hdf_err)
-  IF (hdf_err .NE. 0) GO TO 90
- 
-!
-  CALL H5fclose_f(file_id, hdf_err)
-! 
-  RETURN
- 
-! Very simple error handling (way too simple).
-90 WRITE(6,99)
-99 FORMAT("Error in subroutine Aerosol LUT Reader!")
-  STOP
-  
+      dset_name = 'TransmittanceP10'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      start6  = (/ 1,1,1,1,1,1 /)
+      edge6   = SHAPE(trp10)
+      stride6 = (/ 1,1,1,1,1,1 /)
+      status = nf90_get_var(grp_id, dset_id, trp10, start=start6, &
+         stride=stride6, count=edge6)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      dset_name = 'TransmittanceP6'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      edge6   = SHAPE(trp6)
+      status = nf90_get_var(grp_id, dset_id, trp6, start=start6, &
+         stride=stride6, count=edge6)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
 
- END SUBROUTINE ReadLUTparams
+      dset_name = 'SphericalAlbedoP10'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      start4  = (/ 1,1,1,1 /)
+      edge4   = SHAPE(sbp10)
+      stride4 = (/ 1,1,1,1 /)
+      status = nf90_get_var(grp_id, dset_id, sbp10, start=start4, &
+         stride=stride4, count=edge4)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      dset_name = 'SphericalAlbedoP6'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      edge4   = SHAPE(sbp6)
+      status = nf90_get_var(grp_id, dset_id, sbp6, start=start4, &
+         stride=stride4, count=edge4)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+
+      status = nf90_close(nc_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to close lut_nc4 file: ", status
+         return
+      end if
+
+   END SUBROUTINE ReadLUTparams
 
 END MODULE GetLUT_H5module 

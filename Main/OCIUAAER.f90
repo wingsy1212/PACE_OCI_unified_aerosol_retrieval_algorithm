@@ -15,7 +15,6 @@ USE compute_Ocean_main
 USE compute_DT_Land_main
 USE compute_DB_Land_main
 use calendars, only: gdatetime, gregorian_from_doy
-use read_l1b,  only: load_pace_test_data, write_pace_test_data
 use write_Pace_merged
 use write_intrim_forUVtau
 use read_intrim_forUVtau
@@ -219,56 +218,10 @@ CALL h5open_f(hdferr)
 !           CldMsk_Native_Land,Ret_land_Quality_Flag,Ret_Small_weighting_land,Ret_Xtrack,Ret_Lines)  
              
  endif !if (.not. do_testfile) then      
-           
- if (do_testfile) then ! use test file for fast process
-   print *, 'processing test file'
 
-   IF (cfg%input_l1file /= 'NULL') THEN
-     l1b_filename = cfg%input_l1file 
-     STATUS = OCI_l1b_read_date(l1b_filename, time_str,l1b_nXTrack, l1b_nLines)
-     IF (STATUS < 0) THEN 
-       PRINT *,'Error : Unable to Read L1B Radiance Data'
-       CALL EXIT(1)
-     ENDIF 
-     time_str  =L1B%l1b_date_time_str
-     Read(time_str(1:4), '(I4)' )Year
-     Read(time_str(5:6), '(I2)' )Month
-     Read(time_str(7:8), '(I2)' )Day
-     doy=0
-   ENDIF 
-
-   IF (cfg%proxy_l1file /= 'NULL') THEN 
-     l1b_filename = cfg%proxy_l1file
-     STATUS = read_proxydate(l1b_filename, time_str,l1b_nXTrack, l1b_nLines)
-     IF (STATUS < 0) THEN 
-       PRINT *,'Error : Unable to Read L1B Radiance Data'
-       CALL EXIT(1)
-     ENDIF 
-     Read(time_str(1:4), '(I4)' )Year
-     Read(time_str(5:7), '(I3)' )doy
-     gdt1  = gregorian_from_doy(year, doy)
-     Month = gdt1%month
-     Day = gdt1%mday
-   ENDIF 
-
-   call load_pace_test_data('../L2_data/PACE.test_file.hdf',&
-          Latitude,Longitude,SolarZenithAngle,&
-          SolarAzimuthAngle,&
-          ViewingZenithAngle,ViewingAzimuthAngle,TerrainHeight,&
-          UVtoSWIR_Reflectances,Year,Month,Day,doy,&
-          grn_lwmask,UVAI,l1b_nXTrack, l1b_nLines,dtspec_test,dtaod_test,Ret_Lat,Ret_Lon,&
-          CldMsk_Native_land,Ret_land_Quality_Flag,Ret_Small_weighting_land,Ret_Xtrack,Ret_Lines,&
-          cfg%proxy_l1file,cfg%input_l1file) 
-         
-   Ret_ref_allwav_land= dtspec_test    
-   Ret_tau_land  = dtaod_test   
-
- endif    
-        
  nXTrack=size(UVtoSWIR_Reflectances,2)
  nLines=size(UVtoSWIR_Reflectances,3)
-   
-  
+
 ! cell_dims =(/size(Ret_tau_land, 1), size(Ret_tau_land, 2)/)
 
  call cpu_time(start)
@@ -280,7 +233,8 @@ CALL h5open_f(hdferr)
     ViewingZenithAngle,ViewingAzimuthAngle,TerrainHeight,UVtoSWIR_Reflectances,Year,Month,Day,&
     doy,cfg%proxy_l1file,grn_lwmask,nXTrack, nLines,UVtoSWIR_nWavel,cfg%db_config,Ret_ref_allwav_land,&
     Ret_tau_land,Ret_Lat,Ret_Lon,CldMsk_Native_land,Ret_land_Quality_Flag,uvdbdtaod,dbdt_refl,&
-    cfg%input_l1file,Ret_Small_weighting_land,Ret_Xtrack,Ret_Lines,dbdtfmf,dbdt_cld,met1_file,met2_file)
+    cfg%input_l1file,Ret_Small_weighting_land,Ret_Xtrack,Ret_Lines,dbdtfmf,dbdt_cld,met1_file,met2_file,&
+    cfg%db_nc4)
       
  call cpu_time(finish)
  print *, 'end DB', finish
@@ -341,23 +295,6 @@ CALL h5open_f(hdferr)
                    Ret_ocean_Quality,Ret_Quality_LandOcean,Ret_Quality_LandOcean_W0,&
                    Ret_CLDFRC_land_DT,Ret_CLDFRC_ocean)
                   
-                  
-
-7007	IF (do_testfile) THEN ! LOAD pre-processed merged file for NUV testing
-     	  PRINT *, 'Loading pre-developed L2 DB/DT file.. '
-          CALL load_pace_test_data_forNUV('../L2_data/copyPace_L2_Merged_2020174.1230.new.he5',&
-             Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
-             Ret_View_phi,Ret_solar_phi,Ret_Xtrack,Ret_Lines,& 
-             Ret_Small_weighting,Land_sea_flag,Ret_ref_LandOcean,Ret_Tau_LandOcean,&
-	     Ret_average_Omega_Ocean_UV,Ret_Index_Height,Cloud_Frac_LandOcean)
- 	   
-	  CALL read_nativeL1b_for_NUVtest(cfg, Year, Month, Day, &
-		  		      UVtoSWIR_wavelengths, & 
-			 	      UVtoSWIR_Reflectances)
-
-!	  !PRINT *, Year, Month, Day, Shape(UVtoSWIR_Reflectances)
-   	ENDIF  ! LOAD pre-processed merged file for NUV testing
-    
 
    CALL NUV_package_main(cfg,Year, Month, Day, UVtoSWIR_wavelengths,UVtoSWIR_Reflectances, &
           Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&

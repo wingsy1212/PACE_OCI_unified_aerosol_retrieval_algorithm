@@ -556,7 +556,7 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       return
    end if
 
-   dset_name = 'MOMEMTS'
+   dset_name = 'MOMENTS'
    status = nf90_inq_varid(grp_id, dset_name, dset_id)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
@@ -721,7 +721,7 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start3  = (/ 1,NUMCASES,1 /)
+   start3  = (/ NUMCASES,1,1 /)
    edge3   = (/ NUMCASEB,NWAV,NTAU /)
    stride3 = (/ 1,1,1 /)
    status = nf90_get_var(grp_id, dset_id, TAUAB, start=start3, &
@@ -946,7 +946,7 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
       return
    end if
    start1  = (/ 1 /)
-   edge1   = (/ NWAV /)
+   edge1   = (/ NWAV_UV /)
    stride1 = (/ 1 /)
    status = nf90_get_var(grp_id, dset_id, WAVE, start=start1, &
       stride=stride1, count=edge1)

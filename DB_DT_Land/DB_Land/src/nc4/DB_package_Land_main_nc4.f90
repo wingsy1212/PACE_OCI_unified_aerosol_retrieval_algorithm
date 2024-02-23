@@ -14,7 +14,7 @@ contains
                      UVtoSWIR_Reflectances,Year,month_int,Day,doy,proxyfile, &
                      Land_Sea_Flag,IX1KM,IY1KM,nwave, config_file,dtspec_ori,dtaod_ori,dtlat, &
                      dtlon,dt_cldmsk,dt_qa,uvdbdtaod,dbdt_refl,input_l1file,dtfmf,&
-                     Ret_Xtrack,Ret_Lines,dbdtfmf,dbdt_cld,met1_file,met2_file,lut_nc4)
+                     Ret_Xtrack,Ret_Lines,dbdtfmf,dbdt_cld,met1_file,met2_file)
 
    use landcover
    use calendars, only: season_from_doy

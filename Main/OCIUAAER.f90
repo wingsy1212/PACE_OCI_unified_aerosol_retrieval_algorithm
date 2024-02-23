@@ -233,8 +233,7 @@ CALL h5open_f(hdferr)
     ViewingZenithAngle,ViewingAzimuthAngle,TerrainHeight,UVtoSWIR_Reflectances,Year,Month,Day,&
     doy,cfg%proxy_l1file,grn_lwmask,nXTrack, nLines,UVtoSWIR_nWavel,cfg%db_config,Ret_ref_allwav_land,&
     Ret_tau_land,Ret_Lat,Ret_Lon,CldMsk_Native_land,Ret_land_Quality_Flag,uvdbdtaod,dbdt_refl,&
-    cfg%input_l1file,Ret_Small_weighting_land,Ret_Xtrack,Ret_Lines,dbdtfmf,dbdt_cld,met1_file,met2_file,&
-    cfg%db_nc4)
+    cfg%input_l1file,Ret_Small_weighting_land,Ret_Xtrack,Ret_Lines,dbdtfmf,dbdt_cld,met1_file,met2_file)
       
  call cpu_time(finish)
  print *, 'end DB', finish

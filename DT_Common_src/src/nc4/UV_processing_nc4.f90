@@ -35,7 +35,7 @@
 !           Lat_OMI,Lon_OMI
 ! reading Look up table once only                   
            If( set_flag_read .EQ.1) then  
-           call READ_LOOK_UV(PHC,THET,THET0,&
+           call READ_LOOK_UV_NC4(PHC,THET,THET0,&
            H1_AINTS_uv1,H1_AINTS_uv2,H2_AINTS_uv1,H2_AINTS_uv2,&
            H3_AINTS_uv1,H3_AINTS_uv2,H4_AINTS_uv1,H4_AINTS_uv2,TAUAS,WAVE,&  
            H1_AINTB_uv1,H1_AINTB_uv2,H2_AINTB_uv1,H2_AINTB_uv2,&

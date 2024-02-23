@@ -207,12 +207,8 @@ module modis_surface
    end function load_terrainflg_tables
   
    integer function load_seasonal_desert(file) result(status)
-    
-      !   include 'hdf.f90'
-      !   include 'dffunc.f90'
       use netcdf
       USE OCIUAAER_Config_Module
-
       implicit none
 
       character(len=255), intent(in)  ::  file
@@ -278,12 +274,8 @@ module modis_surface
    ! --    reflectivity file into brdf650 array.
    !-----------------------------------------------------------------------------------------
    integer function load_brdf(brdffile) result(status)
-    
-      !   include 'hdf.f90'
-      !   include 'dffunc.f90'
       use netcdf
       USE OCIUAAER_Config_Module
-
       implicit none
 
       character(len=255), intent(in)    ::  brdffile
@@ -4919,11 +4911,9 @@ module modis_surface
 
  ! -- Load surface LER coefficient tables.
  integer function load_hdfLER(lut_file, season) RESULT(status)
-
-    !   include 'hdf.f90'
-    !   include 'dffunc.f90'
-    use netcdf
-    USE OCIUAAER_Config_Module
+      use netcdf
+      USE OCIUAAER_Config_Module
+      implicit none
 
     character(len=255), intent(in)    ::  lut_file
     integer, intent(in)               ::  season
@@ -4950,8 +4940,7 @@ module modis_surface
     edge4 = (/LERedge(1),LERedge(2),4,3,1/)
     stride4 = (/1,1,1,1,1/)
 
-    test_name = trim(lut_file)
-    status = nf90_open(test_name, nf90_nowrite, nc_id)
+    status = nf90_open(cfg%db_nc4, nf90_nowrite, nc_id)
     if (status /= NF90_NOERR) then
        print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
        return
@@ -4995,7 +4984,7 @@ module modis_surface
     end if
 
     !   -- MODIS, all-angle surface database
-    status = nf90_open(trim(lut_file), nf90_nowrite, nc_id)
+    status = nf90_open(cfg%db_nc4, nf90_nowrite, nc_id)
     if (status /= NF90_NOERR) then
        print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
        return
@@ -5043,7 +5032,7 @@ module modis_surface
     end if
 
     !   -- VIIRS, all-angle surface database
-    status = nf90_open(trim(lut_file), nf90_nowrite, nc_id)
+    status = nf90_open(cfg%db_nc4, nf90_nowrite, nc_id)
     if (status /= NF90_NOERR) then
        print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
        return

@@ -211,14 +211,14 @@
               NUMDATA=NUMSQ
 ! Subroutine RNLOOKUP reads the new look-up tables for land
 
-      CALL RNLOOKUP(&
+      CALL RNLOOKUP_NC4(&
           HANDLE_LUT466,HANDLE_LUT553,HANDLE_LUT644,HANDLE_LUT213,&
           INT_NL0,Fd_NL0,T_NL0,OPTH_NL0,&
           SBAR_NL0,MASSCOEF_NL0,EXTNORM_NL0)
 !
 !  Determine fine mode aeorsol location map
 ! 
-       CALL AEROSOL_MAP(HANDLE_LUTMAP,IMONTH, AEROSOL)
+       CALL AEROSOL_MAP_NC4(HANDLE_LUTMAP,IMONTH, AEROSOL)
         
       ENDIF
        

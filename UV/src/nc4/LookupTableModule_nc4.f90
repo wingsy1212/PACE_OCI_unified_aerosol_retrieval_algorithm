@@ -109,7 +109,7 @@ MODULE LookupTableModule
    REAL (KIND=4), DIMENSION(:,:,:), ALLOCATABLE :: zaer_cm2
 
    ! AIRS CO at given Latitude, Longitude and Day of Year
-   REAL (KIND=4), DIMENSION(:,:,:), ALLOCATABLE :: airsco_cm
+   REAL (KIND=4), DIMENSION(:,:,:), ALLOCATABLE :: airsco_cm, airsco_cm2
 
 
    ! Functions
@@ -122,12 +122,12 @@ CONTAINS
    !==============================================================================
    !==============================================================================
 
-   SUBROUTINE Read_ancillaryLUTs(file1, file2)
+   SUBROUTINE Read_ancillaryLUTs(sfc_file, AIRSCO_clm_file)
       use netcdf
       USE OCIUAAER_Config_Module
       implicit none
 
-      character(*),           intent (in)      :: file1, file2
+      character(*),           intent (in)      :: sfc_file, AIRSCO_clm_file
       integer                                  :: status
       integer, dimension (2)                   :: start2, edge2, stride2
       integer, dimension (3)                   :: start3, edge3, stride3
@@ -142,6 +142,7 @@ CONTAINS
       integer               ::  dim_id
       integer               ::  dset_id
       integer               ::  grp_id
+      integer               ::  unitnum, unitnum1
 
       status = nf90_open(cfg%uv_nc4, nf90_nowrite, nc_id)
       if (status /= NF90_NOERR) then
@@ -194,6 +195,7 @@ CONTAINS
          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
          return
       end if
+      airsco_cm = airsco_cm/1e18
     
       group_name = 'zaer'
       status = nf90_inq_ncid(nc_id, group_name, grp_id)

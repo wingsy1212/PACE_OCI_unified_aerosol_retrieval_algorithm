@@ -192,7 +192,7 @@ module viirs_config
 
 				case ('l2')
 				  vcfg%l2_file = trim(val)
-				case ('output_file')
+				case ('output_l2')
 				  vcfg%output_l2 = trim(val)		
 				case ('sensor')
 				  vcfg%platform = trim(val)	
@@ -376,7 +376,7 @@ module viirs_config
 				  read(val, fmt='(I2)') vcfg%minute
 				case ('second')
 				  read(val, fmt='(I2)') vcfg%second
-				case ('output_file')
+				case ('output_l2')
 				  vcfg%output_l2 = trim(val)
 				case ('aero_lut_land')
 				  vcfg%aerosol_land_file = trim(val)  

@@ -915,8 +915,9 @@
 ! READ LARGE CASES OF SIZEDISTRIBUTION
 
         Do Num_lut = 1,lut_indx
+             WRITE(cWS, '(i1)' )Num_lut
              Extension = '/big_v'//cWS//'c1.dat.npp4'   
-              IFILE = HANDLE_L(Num_lut) 
+             IFILE = HANDLE_L(Num_lut)
          OPEN (IFILE, FILE = trim(file_name)//trim(Extension),status='old')  
            
          DO 60 ICASE =1,NUMCASEB

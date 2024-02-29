@@ -364,7 +364,7 @@ contains
     stop
   end if
 
-  status = load_hdfLER(config%modis_surfdb_file, config%viirs_surfdb_file, config%surfcoeffs_file)
+  status = load_hdfLER(config%modis_surfdb_file, config%viirs_surfdb_file, config%surfcoeffs_file, season)
   if (status /= 0) then
      print *, "ERROR: Unable to load surface BRDF coefficients: ", status
      stop
@@ -378,7 +378,7 @@ contains
     stop
   end if
 
-  status = load_swir_coeffs(config%swir_vis_surfcoeffs_file)
+  status = load_swir_coeffs(config%swir_vis_surfcoeffs_file, season)
   if (status /= 0) then
     print *, "ERROR: Unable to load swir vs. vis surface coeffs file: ", status
   end if

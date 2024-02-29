@@ -39,23 +39,23 @@ contains
                          load_dbdt_region_table
                       
 
-   use modis_surface, only:                              &
+   use modis_surface, only:                      &
                          load_terrainflg_tables,     &
                          load_seasonal_desert,       &
                          load_brdf,                  &
+                         load_hdfLER,                &
+                         load_swir_coeffs,           &
                          unload_brdf,                &
                          set_limits,                 &
                          set_limits6,                &
-                         load_hdfLER,                &
                          get_LER412,                 &
                          get_LER470,                 &
                          get_LER650,                 &
                          latlon_to_index_ler,        &
                          get_geographic_zone,        &
-                         get_sfc_elev_std,           &
-                         load_swir_coeffs
+                         get_sfc_elev_std
 
-   use viirs_aerosol_luts, only:                         &
+   use viirs_aerosol_luts, only:                     &
                          load_viirs_aerosol_luts,    &
                          unload_viirs_aerosol_luts
 
@@ -372,7 +372,7 @@ contains
     stop
   end if
 
-  status = load_hdfLER(lut_nc4, season)
+  status = load_hdfLER(config%modis_surfdb_file, config%viirs_surfdb_file, config%surfcoeffs_file, season)
   if (status /= 0) then
      print *, "ERROR: Unable to load surface BRDF coefficients: ", status
      stop
@@ -386,7 +386,7 @@ contains
     stop
   end if
 
-  status = load_swir_coeffs(lut_nc4, season)
+  status = load_swir_coeffs(config%swir_vis_surfcoeffs_file, season)
   if (status /= 0) then
     print *, "ERROR: Unable to load swir vs. vis surface coeffs file: ", status
   end if

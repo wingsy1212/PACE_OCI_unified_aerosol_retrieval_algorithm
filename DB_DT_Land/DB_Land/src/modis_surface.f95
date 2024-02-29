@@ -4984,7 +4984,7 @@ module modis_surface
   end function set_limits6
 
 ! -- Load surface LER coefficient tables.
-  integer function load_hdfLER(modis_ler_file, viirs_ler_file, coeffs_file) RESULT(status)
+  integer function load_hdfLER(modis_ler_file, viirs_ler_file, coeffs_file, season) RESULT(status)
 
     include 'hdf.inc'
     include 'dffunc.inc'
@@ -4992,6 +4992,7 @@ module modis_surface
     character(len=*), intent(in)    ::  modis_ler_file
     character(len=*), intent(in)    ::  viirs_ler_file
     character(len=*), intent(in)    ::  coeffs_file
+    integer                         ::  season
 
     integer             :: start2(2), stride2(2), edge2(2)
     integer             :: start4(4), stride4(4), edge4(4)
@@ -5193,15 +5194,15 @@ module modis_surface
   end function load_hdfLER
 
 ! -- Load 2.2 um surface database
-  integer function load_swir_coeffs(file) result(status) !jlee added 05/16/2017
+  integer function load_swir_coeffs(file, season) result(status) !jlee added 05/16/2017
     implicit none
 
     include 'hdf.inc'
     include 'dffunc.inc'
 
     character(len=*), intent(in)  ::  file
-
-    logical                             ::  file_exists
+    integer                       ::  season
+    logical                       ::  file_exists
 
     ! HDF vars
     character(len=255)    ::  sds_name

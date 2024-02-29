@@ -15,7 +15,7 @@ module modis_surface
 
   private
   
-  public  ::  load_terrainflg_tables, load_seasonal_desert 
+  public  ::  load_terrainflg_tables, load_seasonal_desert
   public  ::  load_swir_coeffs
   public  ::  get_swir_coeffs412, get_swir_coeffs470
   public  ::  get_swir_stderr412, get_swir_stderr470
@@ -4910,12 +4910,14 @@ module modis_surface
   end function set_limits6
 
  ! -- Load surface LER coefficient tables.
- integer function load_hdfLER(lut_file, season) RESULT(status)
+ integer function load_hdfLER(modis_ler_file, viirs_ler_file, coeffs_file, season) RESULT(status)
       use netcdf
       USE OCIUAAER_Config_Module
       implicit none
 
-    character(len=255), intent(in)    ::  lut_file
+    character(len=*), intent(in)    ::  modis_ler_file
+    character(len=*), intent(in)    ::  viirs_ler_file
+    character(len=*), intent(in)    ::  coeffs_file
     integer, intent(in)               ::  season
 
     integer             :: start2(3), stride2(3), edges2(3)
@@ -5067,7 +5069,7 @@ module modis_surface
     goto 100
 
 90 continue
-   print *, "Error reading "//trim(sds_name)//" from file "//trim(lut_file)
+   print *, "Error reading "//trim(sds_name)//" from file "//trim(cfg%db_nc4)
    return
 100 continue
 

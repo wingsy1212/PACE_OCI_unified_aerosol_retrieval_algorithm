@@ -218,7 +218,7 @@
 !
 !  Determine fine mode aeorsol location map
 ! 
-       CALL AEROSOL_MAP_NC4(HANDLE_LUTMAP,IMONTH, AEROSOL)
+       CALL AEROSOL_MAP(HANDLE_LUTMAP,IMONTH, AEROSOL)
         
       ENDIF
        

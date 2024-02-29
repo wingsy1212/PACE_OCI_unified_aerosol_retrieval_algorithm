@@ -1,5 +1,5 @@
 platform = VIIRS
-output_file = /home/sam/winhome/nasa/uaa/test/uaa_db_land.nc
+output_l2 = /home/sam/winhome/nasa/uaa/test/uaa_db_land.nc
 output_dir = /home/sam/winhome/nasa/uaa/test
 aero_lut_land = /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DB_Land/tbls/VIIRS_LUT/land_aerosol_luts_20151105.hdf
 aero_lut_dust = /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DB_Land/tbls/VIIRS_LUT/land_aerosol_luts_dust_20170628.hdf

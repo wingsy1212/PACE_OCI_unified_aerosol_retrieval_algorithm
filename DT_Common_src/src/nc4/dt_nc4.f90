@@ -400,7 +400,7 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start2  = (/ 1,NUMCASES /)
+   start2  = (/ 1,NUMCASES+1 /)
    edge2   = (/ 4,NUMCASEB /)
    stride2 = (/ 1,1 /)
    status = nf90_get_var(grp_id, dset_id, Ext_554_large, start=start2, &
@@ -464,6 +464,7 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
+   JPHI = PHC
 
    dset_name = 'WAVE'
    status = nf90_inq_varid(grp_id, dset_name, dset_id)
@@ -496,7 +497,7 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start1  = (/ NUMCASES /)
+   start1  = (/ NUMCASES+1 /)
    edge1   = (/ NUMCASEB /)
    stride1 = (/ 1 /)
    status = nf90_get_var(grp_id, dset_id, RGSB, start=start1, &
@@ -521,7 +522,7 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start1  = (/ NUMCASES /)
+   start1  = (/ NUMCASES+1 /)
    edge1   = (/ NUMCASEB /)
    stride1 = (/ 1 /)
    status = nf90_get_var(grp_id, dset_id, SIGMAB, start=start1, &
@@ -546,7 +547,7 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start1  = (/ NUMCASES /)
+   start1  = (/ NUMCASES+1 /)
    edge1   = (/ NUMCASEB /)
    stride1 = (/ 1 /)
    status = nf90_get_var(grp_id, dset_id, EFFRADBIG, start=start1, &
@@ -571,7 +572,7 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start3  = (/ 1,NUMCASES,1 /)
+   start3  = (/ 1,NUMCASES+1,1 /)
    edge3   = (/ LUT_INDX,NUMCASEB,4 /)
    stride3 = (/ 1,1,1 /)
    status = nf90_get_var(grp_id, dset_id, MOMENTSBIG, start=start3, &
@@ -590,16 +591,7 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
    start2  = (/ 1,1 /)
    edge2   = (/ LUT_INDX,NUMCASES /)
    stride2 = (/ 1,1 /)
-   status = nf90_get_var(grp_id, dset_id, MOMENTSSMALL, start=start2, &
-      stride=stride2, count=edge2)
-   if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-      return
-   end if
-   start2  = (/ 1,NUMCASES /)
-   edge2   = (/ LUT_INDX,NUMCASEB /)
-   stride2 = (/ 1,1 /)
-   status = nf90_get_var(grp_id, dset_id, MOMENTSBIG, start=start2, &
+   status = nf90_get_var(grp_id, dset_id, CCNSMALL, start=start2, &
       stride=stride2, count=edge2)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
@@ -621,7 +613,7 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start3  = (/ 1,NUMCASES,1 /)
+   start3  = (/ 1,NUMCASES+1,1 /)
    edge3   = (/ LUT_INDX,NUMCASEB,NWAV /)
    stride3 = (/ 1,1,1 /)
    status = nf90_get_var(grp_id, dset_id, ALBEDOBIG, start=start3, &
@@ -646,7 +638,7 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start3  = (/ 1,NUMCASES,1 /)
+   start3  = (/ 1,NUMCASES+1,1 /)
    edge3   = (/ LUT_INDX,NUMCASEB,NWAV /)
    stride3 = (/ 1,1,1 /)
    status = nf90_get_var(grp_id, dset_id, ASSYMBIG, start=start3, &
@@ -671,7 +663,7 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start3  = (/ 1,NUMCASES,1 /)
+   start3  = (/ 1,NUMCASES+1,1 /)
    edge3   = (/ LUT_INDX,NUMCASEB,NWAV /)
    stride3 = (/ 1,1,1 /)
    status = nf90_get_var(grp_id, dset_id, EXTBIG, start=start3, &
@@ -696,7 +688,7 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start3  = (/ 1,NUMCASES,1 /)
+   start3  = (/ 1,NUMCASES+1,1 /)
    edge3   = (/ LUT_INDX,NUMCASEB,NWAV /)
    stride3 = (/ 1,1,1 /)
    status = nf90_get_var(grp_id, dset_id, BACKSCTTBIG, start=start3, &
@@ -721,7 +713,7 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start3  = (/ NUMCASES,1,1 /)
+   start3  = (/ NUMCASES+1,1,1 /)
    edge3   = (/ NUMCASEB,NWAV,NTAU /)
    stride3 = (/ 1,1,1 /)
    status = nf90_get_var(grp_id, dset_id, TAUAB, start=start3, &
@@ -746,7 +738,7 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start5  = (/ 1,1,1,1,NUMCASES /)
+   start5  = (/ 1,1,1,1,NUMCASES+1 /)
    edge5   = (/ LUT_INDX,NTH0,NTAU,NWAV,NUMCASEB /)
    stride5 = (/ 1,1,1,1,1 /)
    status = nf90_get_var(grp_id, dset_id, ALBEDO_R_BIG, start=start5, &
@@ -771,10 +763,26 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start5  = (/ 1,1,1,1,NUMCASES /)
+   start5  = (/ 1,1,1,1,NUMCASES+1 /)
    edge5   = (/ LUT_INDX,NTH0,NTAU,NWAV,NUMCASEB /)
    stride5 = (/ 1,1,1,1,1 /)
    status = nf90_get_var(grp_id, dset_id, ALBEDO_T_BIG, start=start5, &
+      stride=stride5, count=edge5)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+
+   dset_name = 'REF_RAYALL'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   start5  = (/ 1,1,1,1,1 /)
+   edge5   = (/ LUT_INDX,NPHI,NTHET,NTH0,NWAV /)
+   stride5 = (/ 1,1,1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, REF_RAYALL, start=start5, &
       stride=stride5, count=edge5)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
@@ -796,7 +804,7 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start7  = (/ 1,1,1,1,1,1,NUMCASES /)
+   start7  = (/ 1,1,1,1,1,1,NUMCASES+1 /)
    edge7   = (/ LUT_INDX,NPHI,NTHET,NTH0,NTAU,NWAV,NUMCASEB /)
    stride7 = (/ 1,1,1,1,1,1,1 /)
    status = nf90_get_var(grp_id, dset_id, AINTB, start=start7, &
@@ -864,6 +872,7 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
    CHARACTER*1 cWS,kws,hhh
    integer  status
    integer, dimension (1)  :: start1, edge1, stride1
+   integer, dimension (3)  :: start3, edge3, stride3
    integer, dimension (4)  :: start4, edge4, stride4
    integer, dimension (7)  :: start7, edge7, stride7
    integer, dimension (9)  :: start9, edge9, stride9
@@ -938,6 +947,7 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
+   JPHI = PHC
 
    dset_name = 'WAVE'
    status = nf90_inq_varid(grp_id, dset_name, dset_id)
@@ -972,7 +982,7 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start4  = (/ 1,1,NUMCASES,1 /)
+   start4  = (/ 1,1,NUMCASES+1,1 /)
    edge4   = (/ NUM_IOMEGA,NUM_HEIGHT,NUMCASEB,NWAV_UV /)
    stride4 = (/ 1,1,1,1 /)
    status = nf90_get_var(grp_id, dset_id, ALBEDOBIG, start=start4, &
@@ -993,17 +1003,44 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
    start4  = (/ 1,1,1,1 /)
    edge4   = (/ NUM_IOMEGA,NUM_HEIGHT,NUMCASES,NWAV_UV /)
    stride4 = (/ 1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, ALBEDOSMALL, start=start4, &
+   status = nf90_get_var(grp_id, dset_id, EXTSMALL, start=start4, &
       stride=stride4, count=edge4)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start4  = (/ 1,1,NUMCASES,1 /)
+   start4  = (/ 1,1,NUMCASES+1,1 /)
    edge4   = (/ NUM_IOMEGA,NUM_HEIGHT,NUMCASEB,NWAV_UV /)
    stride4 = (/ 1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, ALBEDOBIG, start=start4, &
+   status = nf90_get_var(grp_id, dset_id, EXTBIG, start=start4, &
       stride=stride4, count=edge4)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+
+   !  ----
+
+   dset_name = 'TAUA'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   start3  = (/ 1,1,1 /)
+   edge3   = (/ NUMCASES,NWAV_UV,NTAU /)
+   stride3 = (/ 1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, TAUAS(:,1:NWAV_UV,:), start=start3, &
+      stride=stride3, count=edge3)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   start3  = (/ NUMCASES+1,1,1 /)
+   edge3   = (/ NUMCASEB,NWAV_UV,NTAU /)
+   stride3 = (/ 1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, TAUAB(:,1:NWAV_UV,:), start=start3, &
+      stride=stride3, count=edge3)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1021,8 +1058,8 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
    start7  = (/ 1,1,1,1,1,1,1 /)
    edge7   = (/ NUM_IOMEGA,NWIND,NPHI,NTHET,NTH0,NWAV_UV,NUM_HEIGHT /)
    stride7 = (/ 1,1,1,1,1,1,1 /)
-   status = nf90_get_var(grp_id, dset_id, ref_rayall_uv, start=start7, &
-      stride=stride7, count=edge7)
+   status = nf90_get_var(grp_id, dset_id, ref_rayall_uv(:,:,:,:,:,1:NWAV_UV,:), &
+      start=start7, stride=stride7, count=edge7)
    if (status /= NF90_NOERR) then
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
@@ -1048,7 +1085,7 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start9  = (/ 1,1,1,1,1,1,1,1,NUMCASES /)
+   start9  = (/ 1,1,1,1,1,1,1,1,NUMCASES+1 /)
    edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
    stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
    status = nf90_get_var(grp_id, dset_id, H1_AINTB_UV1, start=start9, &
@@ -1067,7 +1104,7 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start9  = (/ 1,1,1,1,1,1,1,2,NUMCASES /)
+   start9  = (/ 1,1,1,1,1,1,1,2,NUMCASES+1 /)
    edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
    stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
    status = nf90_get_var(grp_id, dset_id, H1_AINTB_UV2, start=start9, &
@@ -1088,7 +1125,7 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start9  = (/ 1,2,1,1,1,1,1,1,NUMCASES /)
+   start9  = (/ 1,2,1,1,1,1,1,1,NUMCASES+1 /)
    edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
    stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
    status = nf90_get_var(grp_id, dset_id, H2_AINTB_UV1, start=start9, &
@@ -1107,7 +1144,7 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start9  = (/ 1,2,1,1,1,1,1,2,NUMCASES /)
+   start9  = (/ 1,2,1,1,1,1,1,2,NUMCASES+1 /)
    edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
    stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
    status = nf90_get_var(grp_id, dset_id, H2_AINTB_UV2, start=start9, &
@@ -1129,7 +1166,7 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start9  = (/ 1,3,1,1,1,1,1,1,NUMCASES /)
+   start9  = (/ 1,3,1,1,1,1,1,1,NUMCASES+1 /)
    edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
    stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
    status = nf90_get_var(grp_id, dset_id, H3_AINTB_UV1, start=start9, &
@@ -1148,7 +1185,7 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start9  = (/ 1,3,1,1,1,1,1,2,NUMCASES /)
+   start9  = (/ 1,3,1,1,1,1,1,2,NUMCASES+1 /)
    edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
    stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
    status = nf90_get_var(grp_id, dset_id, H3_AINTB_UV2, start=start9, &
@@ -1169,7 +1206,7 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start9  = (/ 1,4,1,1,1,1,1,1,NUMCASES /)
+   start9  = (/ 1,4,1,1,1,1,1,1,NUMCASES+1 /)
    edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
    stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
    status = nf90_get_var(grp_id, dset_id, H4_AINTB_UV1, start=start9, &
@@ -1188,7 +1225,7 @@ SUBROUTINE  READ_LOOK_UV_NC4(PHC,THET,THET0,&
       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
       return
    end if
-   start9  = (/ 1,4,1,1,1,1,1,2,NUMCASES /)
+   start9  = (/ 1,4,1,1,1,1,1,2,NUMCASES+1 /)
    edge9   = (/ NUM_IOMEGA,1,NWIND,NPHI,NTHET,NTH0,NTAU,1,NUMCASEB /)
    stride9 = (/ 1,1,1,1,1,1,1,1,1 /)
    status = nf90_get_var(grp_id, dset_id, H4_AINTB_UV2, start=start9, &

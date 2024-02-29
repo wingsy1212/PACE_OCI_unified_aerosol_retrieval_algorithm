@@ -70,6 +70,7 @@ class afrt_ocean(object):
         self.ncase = ncase
         self.mode = mode
         self.tstep = 610
+        self.sstep = 52
         self.astep = 11
         self.ds = xr.Dataset(
             data_vars=dict(        
@@ -126,11 +127,12 @@ class afrt_ocean(object):
                 self.ds['ALBEDO_T_RAY'][:,iwav] = a[t+24][1:] + a[t+25][:]
                 self.ds['THET'][:] = a[t+28][2:] + a[t+29][:] + a[t+30][:]
                 for itho in range(NSZA):
+                    s = self.sstep*itho
                     for iphi in range(NRAA):
                         p = 3*iphi;
-                        self.ds['PHI'][iphi] = a[t+31+p][0]
-                        self.ds['REF_RAYALL'][iwav][itho][:][iphi] = \
-                            a[t+31+p][1:] + a[t+32+p][:] + a[t+33+p][:]
+                        self.ds['PHI'][iphi] = a[t+s+p+31][0]
+                        self.ds['REF_RAYALL'][iwav,itho,:,iphi] = \
+                            a[t+s+p+31][1:] + a[t+s+p+32][:] + a[t+s+p+33][:]
                 t += (self.tstep - self.astep)
         for icase in range(self.ncase):
             for iwav in range(self.nwav):
@@ -139,25 +141,27 @@ class afrt_ocean(object):
                     self.ds['RGS'][icase] = a[t+5][2]
                     self.ds['SIGMA'][icase] = a[t+5][4]
                     self.ds['EFFRAD'][icase] = a[t+7][1]
-                    self.ds['MOMENTS'][0][icase] = a[t+8][3]
-                    self.ds['MOMENTS'][1][icase] = a[t+8][7]
-                    self.ds['MOMENTS'][2][icase] = a[t+9][3]
-                    self.ds['MOMENTS'][3][icase] = a[t+9][7]
-                    self.ds['ALBEDO'][iwav][icase] = a[t+10][3]
-                    self.ds['ASSYM'][iwav][icase] = a[t+10][7]
-                    self.ds['BACKSCTT'][iwav][icase] = a[t+11][5]
-                    self.ds['EXT'][iwav][icase] = a[t+12][5]
-                    self.ds['TAUA'][itau][iwav][icase] = a[t+18][3]
+                    self.ds['MOMENTS'][0,icase] = a[t+8][3]
+                    self.ds['MOMENTS'][1,icase] = a[t+8][7]
+                    self.ds['MOMENTS'][2,icase] = a[t+9][3]
+                    self.ds['MOMENTS'][3,icase] = a[t+9][7]
+                    self.ds['ALBEDO'][iwav,icase] = a[t+10][3]
+                    self.ds['ASSYM'][iwav,icase] = a[t+10][7]
+                    self.ds['CCN'][icase] = a[t+11][1]
+                    self.ds['BACKSCTT'][iwav,icase] = a[t+11][5]
+                    self.ds['EXT'][iwav,icase] = a[t+12][5]
+                    self.ds['TAUA'][itau,iwav,icase] = a[t+18][3]
                     self.ds['THET0'][:] = a[t+23][1:] + a[t+24][:]
-                    self.ds['ALBEDO_R'][icase][iwav][itau][:] = a[t+33][1:] + a[t+34][:]
-                    self.ds['ALBEDO_T'][icase][iwav][itau][:] = a[t+35][1:] + a[t+36][:]
+                    self.ds['ALBEDO_R'][icase,iwav,itau,:] = a[t+33][1:] + a[t+34][:]
+                    self.ds['ALBEDO_T'][icase,iwav,itau,:] = a[t+35][1:] + a[t+36][:]
                     self.ds['THET'][:] = a[t+39][2:] + a[t+40][:] + a[t+41][:]
                     for itho in range(NSZA):
+                        s = self.sstep*itho
                         for iphi in range(NRAA):
                             p = 3*iphi;
-                            self.ds['PHI'][iphi] = a[t+42+p][0]
-                            self.ds['AINT'][icase][iwav][itau][itho][:][iphi] = \
-                            a[t+42+p][1:] + a[t+43+p][:] + a[t+44+p][:]
+                            self.ds['PHI'][iphi] = a[t+s+p+42][0]
+                            self.ds['AINT'][icase,iwav,itau,itho,:,iphi] = \
+                            a[t+s+p+42][1:] + a[t+s+p+43][:] + a[t+s+p+44][:]
                     t += self.tstep
  
         return self.ds
@@ -228,27 +232,27 @@ class afrt_land(object):
             self.ds['PHI'][:] = a[t+1][1:]
             b=0 
             for itau in range(NLTAU):
-                self.ds['SSA'][itab][itau] = a[t+b+3][1]
-                self.ds['QEXT'][itab][itau] = a[t+b+3][3]
-                self.ds['BEXT'][itab][itau] = a[t+b+3][5]
-                self.ds['VEXT'][itab][itau] = a[t+b+3][7]
-                self.ds['MEXT'][itab][itau] = a[t+b+3][9]
-                self.ds['MASSCOEF'][itab][itau] = a[t+b+3][11]
+                self.ds['SSA'][itab,itau] = a[t+b+3][1]
+                self.ds['QEXT'][itab,itau] = a[t+b+3][3]
+                self.ds['BEXT'][itab,itau] = a[t+b+3][5]
+                self.ds['VEXT'][itab,itau] = a[t+b+3][7]
+                self.ds['MEXT'][itab,itau] = a[t+b+3][9]
+                self.ds['MASSCOEF'][itab,itau] = a[t+b+3][11]
                 self.ds['WAVE'] = a[t+b+4][1]
-                self.ds['OPTH'][itab][itau] = a[t+b+4][3]
+                self.ds['OPTH'][itab,itau] = a[t+b+4][3]
                 self.ds['ROD'] = a[t+b+4][5]
                 self.ds['GOD'] = a[t+b+4][7]
                 s=0
                 for ith0 in range(NLSZA):
                     self.ds['THET0'][ith0] = a[t+b+s+5][1]
                     self.ds['MU0'][ith0] = a[t+b+s+5][3]
-                    self.ds['SBAR'][itab][itau][ith0] = a[t+b+s+5][5]
-                    self.ds['FD'][itab][itau][ith0] = a[t+b+s+5][7]
-                    self.ds['T'][itab][itau][ith0][:] = a[t+b+s+6][1:]
+                    self.ds['SBAR'][itab,itau,ith0] = a[t+b+s+5][5]
+                    self.ds['FD'][itab,itau,ith0] = a[t+b+s+5][7]
+                    self.ds['T'][itab,itau,ith0,:] = a[t+b+s+6][1:]
                     p=0 
                     for ithe in range(NLVZA):
                         try:
-                            self.ds['INT'][itab][itau][ith0][ithe][:] = a[t+b+s+p+8]
+                            self.ds['INT'][itab,itau,ith0,ithe,:] = a[t+b+s+p+8]
                         except:
                             print( "check for negative values, minus sign occupying the blank spaces at line: ",str(t+b+s+p+9))
                         p += 1
@@ -300,17 +304,18 @@ class afrt_pace(object):
         self.ds['THET0'] = dr.THET0
         self.ds['WAVE'] = dr.WAVE
         if mode == "small":
-            self.ds['EXT'][:,:NSMALL,ht,om] = dr['EXT'] 
-            self.ds['ALBEDO'][:,:NSMALL,ht,om] = dr['ALBEDO']
             self.ds['TAUA'][:,:,:NSMALL] = dr['TAUA']
+            if ws == 0:
+                self.ds['EXT'][:,:NSMALL,ht,om] = dr['EXT'] 
+                self.ds['ALBEDO'][:,:NSMALL,ht,om] = dr['ALBEDO']
             self.ds['AINT'][:NSMALL,:,:,:,:,:,ws,ht,om] = dr['AINT']
             self.ds['REF_RAYALL'][ht,:,:,:,:,ws,om] = dr['REF_RAYALL']
         else:
-            self.ds['EXT'][:,NSMALL:,ht,om] = dr['EXT'] 
-            self.ds['ALBEDO'][:,NSMALL:,ht,om] = dr['ALBEDO']
             self.ds['TAUA'][:,:,NSMALL:] = dr['TAUA']
+            if ws == 0:
+                self.ds['EXT'][:,NSMALL:,ht,om] = dr['EXT'] 
+                self.ds['ALBEDO'][:,NSMALL:,ht,om] = dr['ALBEDO']
             self.ds['AINT'][NSMALL:,:,:,:,:,:,ws,ht,om] = dr['AINT']
-            self.ds['REF_RAYALL'][ht,:,:,:,:,ws,om] = dr['REF_RAYALL']
 
             
 class afrt_viirs_ocean(object):
@@ -375,9 +380,15 @@ class afrt_viirs_ocean(object):
         self.ds['THET0'] = dr.THET0
         self.ds['WAVE'] = dr.WAVE
         if mode == "small":
+            if ws == 0:
+                self.ds['ALBEDO_R_RAY'][:,:] = dr['ALBEDO_R_RAY']
+                self.ds['ALBEDO_T_RAY'][:,:] = dr['ALBEDO_T_RAY']
+                self.ds['RGS'][:NSMALL] = dr['RGS']
+                self.ds['SIGMA'][:NSMALL] = dr['SIGMA']
+                self.ds['TAUA'][:,:,:NSMALL] = dr['TAUA']
+                self.ds['EFFRAD'][:NSMALL] = dr['EFFRAD']
+            self.ds['REF_RAYALL'][:,:,:,:,ws] = dr['REF_RAYALL']
             self.ds['EXT'][:,:NSMALL,ws] = dr['EXT'] 
-            self.ds['RGS'][:NSMALL] = dr['RGS']
-            self.ds['SIGMA'][:NSMALL] = dr['SIGMA']
             self.ds['MOMENTS'][:,:NSMALL,ws] = dr['MOMENTS']
             self.ds['CCN'][:NSMALL,ws] = dr['CCN']
             self.ds['BACKSCTT'][:,:NSMALL,ws] = dr['BACKSCTT']
@@ -385,13 +396,14 @@ class afrt_viirs_ocean(object):
             self.ds['ALBEDO'][:,:NSMALL,ws] = dr['ALBEDO']
             self.ds['ALBEDO_R'][:NSMALL,:,:,:,ws] = dr['ALBEDO_R']
             self.ds['ALBEDO_T'][:NSMALL,:,:,:,ws] = dr['ALBEDO_T']
-            self.ds['TAUA'][:,:,:NSMALL] = dr['TAUA']
             self.ds['AINT'][:NSMALL,:,:,:,:,:,ws] = dr['AINT']
-            self.ds['EFFRAD'][:NSMALL] = dr['EFFRAD']
         else:
+            if ws == 0:
+                self.ds['RGS'][NSMALL:] = dr['RGS']
+                self.ds['SIGMA'][NSMALL:] = dr['SIGMA']
+                self.ds['TAUA'][:,:,NSMALL:] = dr['TAUA']
+                self.ds['EFFRAD'][NSMALL:] = dr['EFFRAD']
             self.ds['EXT'][:,NSMALL:,ws] = dr['EXT'] 
-            self.ds['RGS'][NSMALL:] = dr['RGS']
-            self.ds['SIGMA'][NSMALL:] = dr['SIGMA']
             self.ds['MOMENTS'][:,NSMALL:,ws] = dr['MOMENTS']
             self.ds['CCN'][NSMALL:,ws] = dr['CCN']
             self.ds['BACKSCTT'][:,NSMALL:,ws] = dr['BACKSCTT']
@@ -399,11 +411,11 @@ class afrt_viirs_ocean(object):
             self.ds['ALBEDO'][:,NSMALL:,ws] = dr['ALBEDO']
             self.ds['ALBEDO_R'][NSMALL:,:,:,:,ws] = dr['ALBEDO_R']
             self.ds['ALBEDO_T'][NSMALL:,:,:,:,ws] = dr['ALBEDO_T']
-            self.ds['TAUA'][:,:,NSMALL:] = dr['TAUA']
             self.ds['AINT'][NSMALL:,:,:,:,:,:,ws] = dr['AINT']
-            self.ds['EFFRAD'][NSMALL:] = dr['EFFRAD']
 
-           
+        self.ds['ALBEDO_R'][:,:,0,:,ws] = np.expand_dims(dr['ALBEDO_R_RAY'].T, (0))
+        self.ds['ALBEDO_T'][:,:,0,:,ws] = np.expand_dims(dr['ALBEDO_T_RAY'].T, (0))
+  
 class afrt_viirs_land(object):
    
     def __init__(self):

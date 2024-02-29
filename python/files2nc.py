@@ -18,6 +18,7 @@ import datatree as dtree
 import configparser as cp
 import numpy as np
 from pyhdf.SD import SD, SDC
+from scipy.io import FortranFile
 from afrt import afrt_pace, afrt_viirs_ocean, afrt_viirs_land, afrt_misc
       
 def s2num(s):
@@ -27,6 +28,16 @@ def s2num(s):
         except ValueError:
             return None            
     
+def read_text(key, value):
+    if key == 'sfc':
+        ds = np.zeros((2160,1080), dtype='int32')
+        f = open(value, 'r')
+        lines = f.readlines()
+        a = [list(map(s2num, s.split())) for s in lines]
+        ds = np.asarray(a).T
+        data = xr.DataArray(ds, dims=["dim_lon","dim_lat"])   
+        return xr.Dataset(dict(data=data))
+
 def read_binary(key, value):
     if key == 'sfc':
         ds = np.zeros((2160,1080), dtype='int32')
@@ -34,7 +45,7 @@ def read_binary(key, value):
         p=0
         for i in range(1080):
             for j in range(2160):
-                ds[j,i] = int.from_bytes(f[p:p+3],'big',signed=False)
+                ds[j,i] = int.from_bytes(f[p:p+3],'big',signed=True)
                 p+=3
             p+=1
         data = xr.DataArray(ds, dims=["dim_lon","dim_lat"])   
@@ -69,7 +80,7 @@ def read_binary(key, value):
         ds['sbr'][:] = f[3+4*s+260+4*r:3+4*s+260+4*r+2]
         return ds
     elif key == 'airsco_clm':
-        f = np.fromfile(value, dtype='float32')
+        f = np.fromfile(value, dtype='<f4')
         ds = np.reshape(f[1:-1],(12,180,360))
         data = xr.DataArray(ds, dims=["dim_month","dim_lat", "dim_lon", ])   
         return xr.Dataset(dict(data=data))
@@ -200,11 +211,16 @@ def main():
                 print (key + " : " + val)
                 dsb = read_binary(key, val)
                 dict.update({key: dsb})
+        if section == 'uv_text':
+            for (key, val) in config.items(section):
+                print (key + " : " + val)
+                dst = read_text(key, val)
+                dict.update({key: dst})
 
     dto = dtree.DataTree.from_dict(dict) 
     dto.to_netcdf(args.ofile.name, engine="netcdf4")
     
-    print("generated - " + args.ofile.name)   
+    print("\n nc4 lut file created - " + args.ofile.name)   
     return 0
 
 if __name__=='__main__':

@@ -297,8 +297,8 @@ CALL OCI_l1b_select_wv(L1B, UVtoSWIR_nWavel, &
                             UVtoSWIR_Reflectances)
 
 ! Assign all required L1B variables to common variables. 
-index1 = index(l1b_rad_file, 'PACE_OCI_SIM')
-l1b_date_time_str = l1b_rad_file(index1+13:index1+13+14)
+index1 = index(l1b_rad_file, 'PACE_OCI')
+l1b_date_time_str = l1b_rad_file(index1+9:index1+9+14)
 !PRINT *,'L1B start date-time : ',l1b_date_time_str
 l1b_nXTrack = L1B%l1b_nXTrack
 l1b_nLines = L1B%l1b_nLines

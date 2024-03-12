@@ -2,8 +2,8 @@ output_dir   =    /home/sam/winhome/nasa/uaa/luts/L2_data/
 ! ANCILLARY DATASETS FROM PACE TEAM
 landwater_mask = /home/sam/winhome/nasa/uaa/luts/ancillary/landmask_GMT15ARC.nc 
 ! NC4 LUTs
-dt_nc4 = /home/sam/winhome/nasa/uaa/cp_test/lut_nc4/nclut_dt2.nc
-db_nc4 = /home/sam/winhome/nasa/uaa/cp_test/lut_nc4/nclut_db2.nc
+dt_nc4 = /home/sam/winhome/nasa/uaa/cp_test/lut_nc4/nclut_dt3.nc
+db_nc4 = /home/sam/winhome/nasa/uaa/cp_test/lut_nc4/nclut_db3.nc
 uv_nc4 = /home/sam/winhome/nasa/uaa/cp_test/lut_nc4/nclut_uv2.nc
 ! UV-group LUTs
   uv_ai_mielut = /home/sam/winhome/nasa/uaa/luts/UV/tbls/LUT_TROPOMI_AI_MieCloud_v2_700hPa.h5

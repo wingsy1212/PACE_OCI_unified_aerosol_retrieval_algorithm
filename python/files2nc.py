@@ -132,6 +132,16 @@ def main():
     
     dict = {}
     for section in config.sections():
+        if section == 'dbocean_h4':
+            for (key, val) in config.items(section):
+                print (key + " : " + val)
+                ds4 = read_hdf4(key, val)
+                dict.update({key: ds4})
+        if section == 'dbocean_nc4':
+            for (key, val) in config.items(section):
+                print (key + " : " + val)
+                dti = dtree.open_datatree(val)
+                dict.update({key: dti})
         if section == 'dbland_h4':
             for (key, val) in config.items(section):
                 print (key + " : " + val)

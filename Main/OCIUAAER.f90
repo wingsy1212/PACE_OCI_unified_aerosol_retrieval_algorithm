@@ -103,8 +103,8 @@ CALL h5open_f(hdferr)
    UVtoSWIR_wavelengths = waveTemp(1:UVtoSWIR_nWavel)
 !   WRITE (*,"(A,14(1x,f8.3))") 'UVtoSWIR_wavelengths = ',UVtoSWIR_wavelengths
   
-   print*,'Synthetic Inputfile = ',cfg%input_l1file
-   print*,'Proxydata Inputfile = ',cfg%proxy_l1file
+   print*,'Inputfile = ',cfg%input_l1file
+!   print*,'Proxydata Inputfile = ',cfg%proxy_l1file
 
    IF (cfg%input_l1file /= 'NULL') THEN
      ! Read Synthetic data file
@@ -272,7 +272,7 @@ CALL h5open_f(hdferr)
                    Ret_tau_ocean,Month,interm_file)
            
                                        
-          print *, ' Finished writing  Interim file' 
+!          print *, ' Finished writing  Interim file'
 !
 !******  *********  ML  Land( 0.354.0.388 0.55)
          block
@@ -280,7 +280,7 @@ CALL h5open_f(hdferr)
          endblock
          call read_Output_forUVtau(Ret_Xtrack,Ret_Lines,uvdbdtaod,interm_file)
 
-          print *,'Finished reading ML output'
+!          print *,'Finished reading ML output'
          
 !          print *, shape(Ret_tau_land), Ret_Xtrack, Ret_lines,shape(dbdt_refl)
 

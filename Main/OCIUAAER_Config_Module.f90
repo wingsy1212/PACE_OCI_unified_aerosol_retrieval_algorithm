@@ -70,7 +70,7 @@ INTEGER         :: STATUS, eq_index, nline
 STATUS = 0
 nline = 0
 
-PRINT *, 'Now reading OCIUAAER Configuration file : ',  config_file	 
+! PRINT *, 'Now reading OCIUAAER Configuration file : ',  config_file
  OPEN(1101, FILE=par_file, STATUS='OLD', FORM='FORMATTED',  ACTION='READ', iostat=STATUS)
     IF (STATUS /= 0) THEN
       PRINT *, 'ERROR: failed to OPEN configuration file: ', STATUS
@@ -179,7 +179,7 @@ PRINT *, 'Now reading OCIUAAER Configuration file : ',  config_file
 		cfg%db_aero_lut_dust = trim(val) 
 	case ('db_config')
 		cfg%db_config = trim(val) 	
-		print*,'db_config',cfg%db_config
+!		print*,'db_config',cfg%db_config
 	case default
 		cycle
 	end select

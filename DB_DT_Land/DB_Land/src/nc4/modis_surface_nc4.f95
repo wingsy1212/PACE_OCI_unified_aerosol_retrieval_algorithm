@@ -4668,7 +4668,7 @@ module modis_surface
     integer              :: checkvariable
     integer              :: i, j
     character (len=256)  :: msg
-    real                 :: eastedge, westedge
+    real                 :: eastedge, westedge, test
     status = 0
     
 !   -- if processing extracts, if region of interest is within bounds of the granule, 
@@ -4680,6 +4680,12 @@ module modis_surface
 !      call MODIS_SMF_SETDYNAMICMSG(MODIS_F_GENERIC, msg, 'set_limits')
 !    end if
     
+    if (maxval(lat) < -900.0 .or. maxval(long) < -900.0) then
+        status = -1
+        print *, "ERROR: Bad latitudes and/or longitudes: ", status
+        return
+    end if
+
     eastedge = -999.0
     westedge =  999.0
     dateline = 0
@@ -4694,18 +4700,18 @@ module modis_surface
           enddo
        enddo
        LERstart(1) = 10*(180+floor(eastedge)-1)
-       if (LERstart(1) < 0) LERstart(1) = 0
+       if (LERstart(1) <= 0) LERstart(1) = 1
        dateline = 3600 - LERstart(1)
        LERedge(1) = 10*(180+(floor(westedge)+2)) + dateline
     else
        LERstart(1) = 10*(180+(floor(minval(long, long > -900.0))-1))
        if (LERstart(1) < 0) LERstart(1) = 0
-       LERedge(1) = 10*(180+(floor(maxval(long, long > -900.0))+2)) - LERstart(1)
+        LERedge(1) = 10*(180+(floor(maxval(long, long > -900.0))+2)) - LERstart(1)
        if (LERedge(1)+LERstart(1) > 3600) LERedge(1) = 3600 - LERstart(1)
     endif
     
     LERstart(2) = 10*(90+(floor(minval(lat, lat > -900.0))-1))
-    if (LERstart(2) < 0) LERstart(2) = 0
+    if (LERstart(2) <= 0) LERstart(2) = 1
     LERedge(2) = 10*(90+(floor(maxval(lat, lat > -900.0))+2)) - LERstart(2)
     if (LERedge(2)+LERstart(2) > 1800) LERedge(2) = 1800 - LERstart(2)
         
@@ -4845,6 +4851,12 @@ module modis_surface
 !      call MODIS_SMF_SETDYNAMICMSG(MODIS_F_GENERIC, msg, 'set_limits')
 !    end if
 
+    if (maxval(lat) < -900.0 .or. maxval(long) < -900.0) then
+        status = -1
+        print *, "ERROR: Bad latitudes and/or longitudes: ", status
+        return
+    end if
+
     eastedge = -999.0
     westedge =  999.0
     dateline6 = 0
@@ -4859,18 +4871,18 @@ module modis_surface
           enddo
        enddo
        LERstart6(1) = (180+(floor(eastedge)-1))/0.06
-       if (LERstart6(1) < 0) LERstart6(1) = 0
+       if (LERstart6(1) <= 0) LERstart6(1) = 1
        dateline6 = 6000 - LERstart6(1)
        LERedge6(1) = (180+(floor(westedge)+2))/0.06 + dateline6
     else
        LERstart6(1) = (180+(floor(minval(long, long > -900.0))-1))/0.06
-       if (LERstart6(1) < 0) LERstart6(1) = 0
+       if (LERstart6(1) <= 0) LERstart6(1) = 1
        LERedge6(1) = (180+(floor(maxval(long, long > -900.0))+2))/0.06 - LERstart6(1)
        if (LERedge6(1)+LERstart6(1) > 6000) LERedge6(1) = 6000 - LERstart6(1)
     endif
 
     LERstart6(2) = (90+(floor(minval(lat, lat > -900.0))-1))/0.06
-    if (LERstart6(2) < 0) LERstart6(2) = 0
+    if (LERstart6(2) <= 0) LERstart6(2) = 1
     LERedge6(2) = (90+(floor(maxval(lat, lat > -900.0))+2))/0.06 - LERstart6(2)
     if (LERedge6(2)+LERstart6(2) > 3000) LERedge6(2) = 3000 - LERstart6(2)
 
@@ -5257,7 +5269,7 @@ module modis_surface
     else
       i = lonidx + dateline
     end if
-    j = latidx - LERstart(2)
+    j = latidx + 1 - LERstart(2)
 
     LER = gref865_all(i,j)
 
@@ -5279,7 +5291,7 @@ module modis_surface
     else
       i = lonidx + dateline
     end if
-    j = latidx - LERstart(2)
+    j = latidx + 1 - LERstart(2)
 
 !    print *,"in get_LER412"
 !    print *,"latidx, lonidx = ",latidx, lonidx
@@ -5362,7 +5374,7 @@ module modis_surface
     else
       i = lonidx + dateline
     end if
-    j = latidx - LERstart(2)
+    j = latidx + 1 - LERstart(2)
 
     !print *,"in get_LER470"
     !print *,"latidx, lonidx = ",latidx, lonidx
@@ -5448,7 +5460,7 @@ module modis_surface
     else
       i = lonidx + dateline
     end if
-    j = latidx - LERstart(2)
+    j = latidx + 1 - LERstart(2)
 
 !    print *,"in get_LER650"
 !    print *,"latidx, lonidx = ",latidx, lonidx
@@ -5987,7 +5999,7 @@ module modis_surface
     else
       i = lonidx + dateline
     end if
-    j = latidx - LERstart(2)
+    j = latidx + 1 - LERstart(2)
     
     ref = vgref412_all(i,j)
     return
@@ -6007,7 +6019,7 @@ module modis_surface
     else
       i = lonidx + dateline
     end if
-    j = latidx - LERstart(2)
+    j = latidx + 1 - LERstart(2)
     
     ref = vgref488_all(i,j)
     return
@@ -6027,7 +6039,7 @@ module modis_surface
     else
       i = lonidx + dateline
     end if
-    j = latidx - LERstart(2)
+    j = latidx + 1 - LERstart(2)
     
     ref = vgref670_all(i,j)
     return
@@ -6047,7 +6059,7 @@ module modis_surface
     else
       i = lonidx + dateline
     end if
-    j = latidx - LERstart(2)
+    j = latidx + 1 - LERstart(2)
     
     ref = gref412_all(i,j)
     return
@@ -6067,7 +6079,7 @@ module modis_surface
     else
       i = lonidx + dateline
     end if
-    j = latidx - LERstart(2)
+    j = latidx + 1 - LERstart(2)
     
     ref = gref470_all(i,j)
     return
@@ -6087,7 +6099,7 @@ module modis_surface
     else
       i = lonidx + dateline
     end if
-    j = latidx - LERstart(2)
+    j = latidx + 1 - LERstart(2)
     
     ref = gref650_all(i,j)
     return
@@ -6107,7 +6119,7 @@ module modis_surface
     else
       i = lonidx + dateline
     end if
-    j = latidx - LERstart(2)
+    j = latidx + 1 - LERstart(2)
     
     ref = gref865_all(i,j)
     return

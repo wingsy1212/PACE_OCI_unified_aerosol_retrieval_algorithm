@@ -18,7 +18,6 @@ import datatree as dtree
 import configparser as cp
 import numpy as np
 from pyhdf.SD import SD, SDC
-from scipy.io import FortranFile
 from afrt import afrt_pace, afrt_viirs_ocean, afrt_viirs_land, afrt_misc
       
 def s2num(s):

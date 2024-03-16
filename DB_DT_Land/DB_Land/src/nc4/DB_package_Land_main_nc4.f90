@@ -456,10 +456,10 @@ contains
     do i = 1, viirs_data%xscan
 	
       if (viirs_data%lat(i,j) < -900.0 .OR. viirs_data%lon(i,j) < -900.0) cycle
-      if (viirs_data%lat(i,j)==90.0) viirs_data%lat(i,j)=90.0-0.001
-      if (viirs_data%lat(i,j)==-90.0) viirs_data%lat(i,j)=-90.0+0.001
-      if (viirs_data%lon(i,j)==180.0) viirs_data%lon(i,j)=180.0-0.001
-      if (viirs_data%lon(i,j)==-180.0) viirs_data%lon(i,j)=-180.0+0.001
+      if (viirs_data%lat(i,j)>=90.0) viirs_data%lat(i,j)=90.0-0.001
+      if (viirs_data%lat(i,j)<=-90.0) viirs_data%lat(i,j)=-90.0+0.001
+      if (viirs_data%lon(i,j)>=180.0) viirs_data%lon(i,j)=180.0-0.001
+      if (viirs_data%lon(i,j)<=-180.0) viirs_data%lon(i,j)=-180.0+0.001
 
 !     -- 10 converts to cm.
       wv(i,j) = get_pwat(viirs_data%lat(i,j),(viirs_data%lon(i,j)),status,nrt) / 10.0

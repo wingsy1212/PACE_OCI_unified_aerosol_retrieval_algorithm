@@ -4705,7 +4705,7 @@ module modis_surface
        LERedge(1) = 10*(180+(floor(westedge)+2)) + dateline
     else
        LERstart(1) = 10*(180+(floor(minval(long, long > -900.0))-1))
-       if (LERstart(1) < 0) LERstart(1) = 0
+       if (LERstart(1) <= 0) LERstart(1) = 1
         LERedge(1) = 10*(180+(floor(maxval(long, long > -900.0))+2)) - LERstart(1)
        if (LERedge(1)+LERstart(1) > 3600) LERedge(1) = 3600 - LERstart(1)
     endif

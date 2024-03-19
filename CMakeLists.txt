@@ -162,13 +162,6 @@ add_executable(oci_ua_aer
   DT_Common_src/src/Fillvalue_MOD04_V2.f90
   DT_Common_src/src/compute_temp_from_rad.f90 
   
-  DT_Common_src/src/nc4/dt_nc4.f90 
-  DT_Common_src/src/nc4/UV_processing_nc4.f90
-  DT_Common_src/src/nc4/Process_ocean_V2_nc4.f90
-  DT_Common_src/src/nc4/DT_package_Ocean_main_nc4.f90
-  DT_Common_src/src/nc4/DT_package_Land_main_nc4.f90
-  DT_Common_src/src/nc4/Process_land_V6_nc4.f90 
-  
   # DT Source files
   DT_Ocean/src/write_pacedt_ocean.f90
   DT_Ocean/src/write_UV.f90
@@ -184,6 +177,15 @@ add_executable(oci_ua_aer
 #  DT_Ocean/src/UV_processing.f90
 #  DT_Ocean/src/Process_ocean_V2.f90
 #  DT_Ocean/src/DT_package_Ocean_main.f90
+#  DB_DT_Land/DT_Land/src/DT_package_Land_main.f90
+#  DB_DT_Land/DT_Land/src/Process_land_V6.f90 
+    
+  DT_Common_src/src/nc4/dt_nc4.f90 
+  DT_Common_src/src/nc4/UV_processing_nc4.f90
+  DT_Common_src/src/nc4/Process_ocean_V2_nc4.f90
+  DT_Common_src/src/nc4/DT_package_Ocean_main_nc4.f90
+  DT_Common_src/src/nc4/DT_package_Land_main_nc4.f90
+  DT_Common_src/src/nc4/Process_land_V6_nc4.f90 
   
   # DB Source files
   DB_DT_Land/DB_Land/src/pack_412.f 
@@ -249,9 +251,6 @@ add_executable(oci_ua_aer
   DB_DT_Land/DT_Land/src/Handler_land.f90
   DB_DT_Land/DT_Land/src/cld_flags_forLand.f90
   DB_DT_Land/DT_Land/src/Fill_Output_SDS_land.f90
-  
-#  DB_DT_Land/DT_Land/src/DT_package_Land_main.f90
-#  DB_DT_Land/DT_Land/src/Process_land_V6.f90 
   
   #S_Write
   Write_L2_data/src/write_merged_file.f90

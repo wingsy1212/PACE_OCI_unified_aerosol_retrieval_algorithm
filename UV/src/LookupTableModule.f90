@@ -158,6 +158,7 @@ MODULE LookupTableModule
   READ(unitnum1,IOSTAT=status) airsco_cm
   Close(unitnum1)
   PRINT *, 'AIRSCO MAX-Min = ', maxval(airsco_cm), minval(airsco_cm)
+  airsco_cm = 0
   !PRINT *, 'AIRSCO scaled = ', maxval(airsco_cm)/1e18, minval(airsco_cm)/1e18
   !CALL EXIT(1)
   !==============================================================================

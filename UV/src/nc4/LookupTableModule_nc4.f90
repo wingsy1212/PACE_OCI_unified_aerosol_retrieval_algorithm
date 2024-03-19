@@ -195,7 +195,7 @@ CONTAINS
          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
          return
       end if
-      airsco_cm = airsco_cm/1e18
+      airsco_cm = 0
     
       group_name = 'zaer'
       status = nf90_inq_ncid(nc_id, group_name, grp_id)
@@ -219,6 +219,7 @@ CONTAINS
          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
          return
       end if
+      zaer_cm = 0
 
       group_name = 'zaer2'
       status = nf90_inq_ncid(nc_id, group_name, grp_id)
@@ -242,6 +243,7 @@ CONTAINS
          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
          return
       end if
+      zaer_cm2 = 0
 
       status = nf90_close(nc_id)
       if (status /= NF90_NOERR) then

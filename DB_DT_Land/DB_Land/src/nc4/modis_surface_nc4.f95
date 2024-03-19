@@ -4712,8 +4712,8 @@ module modis_surface
     
     LERstart(2) = 10*(90+(floor(minval(lat, lat > -900.0))-1))
     if (LERstart(2) <= 0) LERstart(2) = 1
-    LERedge(2) = 10*(90+(floor(maxval(lat, lat > -900.0))+2)) - LERstart(2)
-    if (LERedge(2)+LERstart(2) > 1800) LERedge(2) = 1800 - LERstart(2)
+    LERedge(2) = 10*(90+(floor(maxval(lat, lat > -900.0))+2)) + 1 - LERstart(2)
+    if (LERedge(2)+LERstart(2) > 1800) LERedge(2) = 1800 + 1 - LERstart(2)
         
     if (allocated(gref412_all)) deallocate(gref412_all)
     allocate (gref412_all(LERedge(1),LERedge(2)), stat = checkvariable)
@@ -4883,8 +4883,8 @@ module modis_surface
 
     LERstart6(2) = (90+(floor(minval(lat, lat > -900.0))-1))/0.06
     if (LERstart6(2) <= 0) LERstart6(2) = 1
-    LERedge6(2) = (90+(floor(maxval(lat, lat > -900.0))+2))/0.06 - LERstart6(2)
-    if (LERedge6(2)+LERstart6(2) > 3000) LERedge6(2) = 3000 - LERstart6(2)
+    LERedge6(2) = (90+(floor(maxval(lat, lat > -900.0))+2))/0.06 + 1 - LERstart6(2)
+    if (LERedge6(2)+LERstart6(2) > 3000) LERedge6(2) = 3000 + 1 - LERstart6(2)
 
     if (allocated(swir_coeffs412)) deallocate(swir_coeffs412)
     allocate (swir_coeffs412(LERedge6(1),LERedge6(2),3), stat = checkvariable)

@@ -80,6 +80,15 @@ set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+find_package(HDF4 REQUIRED)
+include_directories(${HDF4_INCLUDE_DIRS})
+#find_package(HDFEOS REQUIRED)
+#include_directories(${HDFEOS_INCLUDE_DIRS})
+set(LIBS ${CMAKE_CURRENT_SOURCE_DIR}/opt/lib/libxdr.a ${HDF4_LIBRARIES})
+#set(LIBS ${HDF4_LIBRARIES})
+#list(APPEND LIBS ${HDFEOS_LIBRARIES})
+message("HDF4 libraries " ${HDF4_DIR})
+
 find_package(HDF5 REQUIRED COMPONENTS C HL Fortran Fortran_HL)
 include_directories(${HDF5_INCLUDE_DIRS})
 #find_package(HDFEOS5 REQUIRED)
@@ -242,6 +251,7 @@ add_executable(oci_ua_aer
   DB_DT_Land/DB_Land/src/nc4/viirs_aerosol_luts_nc4.f95
   DB_DT_Land/DB_Land/src/nc4/seawifs_surface_pressure_nc4.f95 
   DB_DT_Land/DB_Land/src/nc4/viirs_db_utils_nc4.f95 
+#  DB_DT_Land/DB_Land/src/nc4/modis_surface_x.f95 
   
   #DT_SRCS_Land
   DB_DT_Land/DT_Land/src/compute_snow_flag.f90

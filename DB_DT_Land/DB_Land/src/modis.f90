@@ -1714,22 +1714,22 @@
 
 !    print *, 'output file: ', output_file
 
-    status = create_viirs_l2(output_file, time_avg, lat_sav, lon_sav, sza_sav, vza_sav, raa_sav,  &
-    &          sca_sav, aot550_avg, aot550_best, naot550_avg, aot412_avg, aot488_avg, aot670_avg, sd550, &
-    &          ae_avg, ae_best, ssa_avg, conf_flag, alg_flag, o_out%alg_flag, o_out%aot,o_out%aot550, oaot550_best,   &
-    &          o_out%ae, oae_best, o_out%fmf, ofmf_best, o_out%aot550_stdv, o_out%npixels,    &
-    &          o_out%ss, oconf_flag, o_out%model_flag, DBDTaot(:,:,2), DBDTaot(:,:,2), cae_avg, cae_best, n_total_pixels, &
-    &          ws_avg, oz_avg, wv_avg, wd_avg, ndvi_avg, rcndvi_avg, ndvi, sr_avg, dstar_avg, btd11_avg, &
-    &          turbid_res, elev_avg,  aerosol_type, combined_type,elev_avg_land, &
-    &          elev_avg_ocean, smoke_count,oreflc_mean, lreflc_mean(1:8,:,:),hires, alg_flag_old,alg_flag_old2,platform, &
-    &          o_out%fmf,DBDTaot,DBDTqa, DBDTflag,dbdt_refl,dbdtfmf)
+!    status = create_viirs_l2(output_file, time_avg, lat_sav, lon_sav, sza_sav, vza_sav, raa_sav,  &
+!    &          sca_sav, aot550_avg, aot550_best, naot550_avg, aot412_avg, aot488_avg, aot670_avg, sd550, &
+!    &          ae_avg, ae_best, ssa_avg, conf_flag, alg_flag, o_out%alg_flag, o_out%aot,o_out%aot550, oaot550_best,   &
+!    &          o_out%ae, oae_best, o_out%fmf, ofmf_best, o_out%aot550_stdv, o_out%npixels,    &
+!    &          o_out%ss, oconf_flag, o_out%model_flag, DBDTaot(:,:,2), DBDTaot(:,:,2), cae_avg, cae_best, n_total_pixels, &
+!    &          ws_avg, oz_avg, wv_avg, wd_avg, ndvi_avg, rcndvi_avg, ndvi, sr_avg, dstar_avg, btd11_avg, &
+!    &          turbid_res, elev_avg,  aerosol_type, combined_type,elev_avg_land, &
+!    &          elev_avg_ocean, smoke_count,oreflc_mean, lreflc_mean(1:8,:,:),hires, alg_flag_old,alg_flag_old2,platform, &
+!    &          o_out%fmf,DBDTaot,DBDTqa, DBDTflag,dbdt_refl,dbdtfmf)
 !     &          o_out%opt_err)
 
 
-    if (status /= 0) then
-      print *, "ERROR: Failed to create VIIRS DB L2 output file: ", status
-      return
-    end if
+!    if (status /= 0) then
+!      print *, "ERROR: Failed to create VIIRS DB L2 output file: ", status
+!      return
+!    end if
 
     return
   end

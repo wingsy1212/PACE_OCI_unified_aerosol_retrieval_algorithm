@@ -1727,4 +1727,61 @@ SUBROUTINE RNLOOKUP_NC4(&
    RETURN
 END
 
+subroutine  Read_urban_Table_nc4(Average_Urban, handle_Urban_Table_10km)
+   use netcdf
+   USE OCIUAAER_Config_Module
+   IMPLICIT NONE
+INCLUDE 'mod04.inc'
+   Real Average_Urban(3601,1801)
+   integer handle_Urban_Table_10km
+
+   integer, dimension (2) :: start2, edge2, stride2
+
+   integer               ::  status
+   character(len=255)    ::  dset_name
+   character(len=255)    ::  group_name
+
+   integer               ::  nc_id
+   integer               ::  dim_id
+   integer               ::  dset_id
+   integer               ::  grp_id
+   integer               ::  cnt
+
+   status = nf90_open(cfg%dt_nc4, nf90_nowrite, nc_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
+      return
+   end if
+
+   group_name = 'urban_table'
+   status = nf90_inq_ncid(nc_id, group_name, grp_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
+      return
+   end if
+
+   dset_name = 'data'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   start2  = (/ 1, 1 /)
+   edge2   = (/ 3601, 1801 /)
+   stride2 = (/ 1, 1 /)
+   status = nf90_get_var(grp_id, dset_id, Average_Urban, start=start2, &
+      stride=stride2, count=edge2)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+
+   status = nf90_close(nc_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to close lut_nc4 file: ", status
+      return
+   end if
+
+   Return
+end
 

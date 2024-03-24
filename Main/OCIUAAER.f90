@@ -38,7 +38,7 @@ INTEGER(KIND=4),DIMENSION(:,:),ALLOCATABLE :: grn_lwmask
 REAL(KIND=4),DIMENSION(:,:),ALLOCATABLE    :: UVAI
 REAL(KIND=4),DIMENSION(:,:,:),ALLOCATABLE  :: UVtoSWIR_Reflectances
 REAL(KIND=4),DIMENSION(:),ALLOCATABLE      :: UVtoSWIR_wavelengths
-INTEGER(KIND=4)                            :: Day, Month, Year, ifile, doy
+INTEGER(KIND=4)                            :: Day, Month, Year, ifile, doy, hr, mn
 INTEGER(KIND=4)                            :: STATUS, hdferr, nXTrack, nLines
 INTEGER(KIND=4), PARAMETER                 :: UVtoSWIR_nWavel=14
 REAL(KIND=4),DIMENSION(UVtoSWIR_nWavel) :: waveTemp = [340.0, 354.0, 388.0, &
@@ -62,6 +62,7 @@ real :: lat_min,lat_max,lon_max,lon_min
                   
   INTEGER :: num_args
   CHARACTER(255) :: par_file, l1b_file, met1_file, met2_file, out_file, interm_file
+  CHARACTER(255) :: metdt_file
 
   num_args = command_argument_count()
   IF (num_args == 6) THEN
@@ -122,6 +123,14 @@ CALL h5open_f(hdferr)
      Read(l1b_date_time_str(1:4), '(I4)' )Year
      Read(l1b_date_time_str(5:6), '(I2)' )Month
      Read(l1b_date_time_str(7:8), '(I2)' )Day
+     Read(l1b_date_time_str(10:11), '(I2)' )hr
+     Read(l1b_date_time_str(12:13), '(I2)' )mn
+
+     if (mod(hr,3) * 60 + mn < 90) then
+        metdt_file = met1_file
+     else
+        metdt_file = met2_file
+     endif
 
    ELSE IF (cfg%proxy_l1file /= 'NULL') THEN
      ! Read Proxydata file
@@ -201,7 +210,7 @@ CALL h5open_f(hdferr)
    !   CldMsk_Native_Land ( 0=cloud 1= clear)   Ret_land_Quality_Flag( 0-3)                
           Ret_ref_allwav_land,Ret_tau_land,Ret_Lat,Ret_Lon,CldMsk_Native_Land,&
           Ret_land_Quality_Flag,Ret_Small_weighting_land,Ret_CLDFRC_land_DT,&
-          Ret_Xtrack,Ret_Lines,met1_file)
+          Ret_Xtrack,Ret_Lines,metdt_file)
           
    call cpu_time(finish)       
    print *, 'end DT', finish
@@ -257,7 +266,7 @@ CALL h5open_f(hdferr)
                    Ret_View_phi,Ret_solar_phi,Ret_tau_ocean,& 
                    Ret_Small_weighting,Ret_ref_ocean,Land_sea_flag,&
                    Ret_average_Omega_Ocean_UV,CldMsk_Native_Ocean,&
-                   Ret_Index_Height,Ret_ocean_Quality,Ret_CLDFRC_Ocean,met1_file)
+                   Ret_Index_Height,Ret_ocean_Quality,Ret_CLDFRC_Ocean,metdt_file)
                       
   
 !            print *,'"Ret_Xtrack,Ret_Lines:" i4,i4 ',Ret_Xtrack,Ret_Lines           

@@ -38,16 +38,10 @@ def read_text(key, value):
         return xr.Dataset(dict(data=data))
 
 def read_binary(key, value):
-    if key == 'sfc':
-        ds = np.zeros((2160,1080), dtype='int32')
-        f = np.fromfile(value, dtype='int8')
-        p=0
-        for i in range(1080):
-            for j in range(2160):
-                ds[j,i] = int.from_bytes(f[p:p+3],'big',signed=True)
-                p+=3
-            p+=1
-        data = xr.DataArray(ds, dims=["dim_lon","dim_lat"])   
+    if key == 'urban_table':
+        f = np.fromfile(value, dtype='<f4')
+        ds = np.reshape(f[1:-1],(1801,3601))
+        data = xr.DataArray(ds, dims=["dim_lat", "dim_lon" ])   
         return xr.Dataset(dict(data=data))
     elif key == 'viirs_ler':
         ds = xr.Dataset(
@@ -204,6 +198,11 @@ def main():
                 print (key + " : " + val)
                 afp.merge_file(key, val)
             dict.update({'pace_ocean_aerosol': afp.ds})
+        if section == 'dt_binary':
+            for (key, val) in config.items(section):
+                print (key + " : " + val)
+                dsb = read_binary(key, val)
+                dict.update({key: dsb})
         if section == 'dt_misc':
             for (key, val) in config.items(section):
                 aft = afrt_misc(key, val)

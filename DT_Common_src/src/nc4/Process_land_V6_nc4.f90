@@ -207,7 +207,7 @@
       
        
        IF(Set_Counter_Land.EQ.1) THEN
-   Call Read_urban_Table(Average_Urban,handle_Urban_Table_10km)        
+   Call Read_urban_Table_nc4(Average_Urban,handle_Urban_Table_10km)
               NUMDATA=NUMSQ
 ! Subroutine RNLOOKUP reads the new look-up tables for land
 
@@ -218,7 +218,7 @@
 !
 !  Determine fine mode aeorsol location map
 ! 
-       CALL AEROSOL_MAP(HANDLE_LUTMAP,IMONTH, AEROSOL)
+       CALL AEROSOL_MAP_NC4(HANDLE_LUTMAP,IMONTH, AEROSOL)
         
       ENDIF
        

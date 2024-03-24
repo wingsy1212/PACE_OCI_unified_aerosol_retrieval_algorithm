@@ -917,7 +917,6 @@ subroutine aero_470(dflag, refl, x1, x2, x3, mm, nn, ll, ma, imod,  &
   tau_x470      = -999.0
   tau_x470_flag = -999
   
-  status = default_lut488%naot
   status = 0
   if (allocated(yy)) deallocate(yy)
   allocate(yy(default_lut488%naot), stat=status)
@@ -929,7 +928,6 @@ subroutine aero_470(dflag, refl, x1, x2, x3, mm, nn, ll, ma, imod,  &
   status = create_reduced_lut_aot(default_lut488, refl, x1,x2,x3, imod,  &
   &   r470, model_frac, yy, debug)
   if (status /= 0) then
-    deallocate(yy, stat=status)
     dflag = .true.
     return
   end if
@@ -956,7 +954,6 @@ subroutine aero_470(dflag, refl, x1, x2, x3, mm, nn, ll, ma, imod,  &
     if (tau_x470 > 5.0) tau_x470 = 5.0
     tau_x470_flag = 1
     if (debug) print *, 'aero_470, hit hi bound: ', refl, yy(10)
-    deallocate(yy, stat=status)
     return
   endif
 
@@ -1061,7 +1058,6 @@ subroutine aero_650(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
   status = create_reduced_lut_aot(default_lut672, refl, x1,x2,x3, 1,  &
   &   r650, 1.0, yy, debug)
   if (status /= 0) then
-    deallocate(yy, stat=status)
     dflag = .true.
     return
   end if
@@ -1087,7 +1083,6 @@ subroutine aero_650(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
     if (tau_x650 > 5.0) tau_x650 = 5.0
     w0_x      = -999.
     tau_x650_flag = 1 
-    deallocate(yy, stat=status)
     return
   end if
 
@@ -1105,7 +1100,7 @@ subroutine aero_650(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
         
     tau_x650 = frac*default_lut672%aot(ii+1+6) + (1.-frac)*default_lut672%aot(ii+6)
     tau_x650_flag = 0
-    deallocate(yy, stat=status)
+  
     return
   
   end if
@@ -1240,7 +1235,6 @@ end subroutine aero_650
   status = create_reduced_lut_aot(default_lut412, refl, x1,x2,x3, imod,  &
   &   r412, model_frac, yy, debug)
   if (status /= 0) then
-    deallocate(yy, stat=status)
     dflag = .true.
     return
   end if
@@ -1268,7 +1262,6 @@ end subroutine aero_650
     
     tau_x412_flag = 1
     if (debug) print *, 'aero_412, hit hi bound: ', refl, yy(10)
-    deallocate(yy, stat=status)
     return
   end if
 !
@@ -1360,6 +1353,7 @@ subroutine aero_412_abs(dflag,refl,x1,x2,x3,mm,nn,ll,r412,tau_x,w0_x)
   &   r412, frac_ia, yyw)
   if (status /= 0) then
     dflag = .true.
+    print *, "ERROR: create_reduced_lut_ssa: aero_412_abs", refl,x1, x2, x3, index_ia, r412  
     return
   end if
   
@@ -1433,6 +1427,7 @@ subroutine aero_470_abs(dflag2,refl,x1,x2,x3,mm,nn,ll,r470,tau_x,w0_x)
   &     r470, frac_ia, yyw)
   if (status /= 0) then
     dflag2 = .true.
+    print *, "ERROR: create_reduced_lut_ssa: aero_470_abs", refl,x1, x2, x3, index_ia, r470      
     return
   end if
        
@@ -1511,7 +1506,6 @@ subroutine aero_470_dust(dflag, refl, x1, x2, x3, mm, nn, ll, ma, imod,  &
   status = create_reduced_lut_aot(dust_lut488, refl, x1,x2,x3, imod,  &
   &   r470, model_frac, yy, debug)
   if (status /= 0) then
-    deallocate(yy, stat=status)
     dflag = .true.
     return
   end if
@@ -1538,7 +1532,6 @@ subroutine aero_470_dust(dflag, refl, x1, x2, x3, mm, nn, ll, ma, imod,  &
     if (tau_x470 > 5.0) tau_x470 = 5.0
     tau_x470_flag = 1
     if (debug) print *, 'aero_470_dust, hit hi bound: ', refl, yy(10)
-    deallocate(yy, stat=status)
     return
   endif
 
@@ -1642,7 +1635,6 @@ subroutine aero_650_dust(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
   status = create_reduced_lut_aot(dust_lut672, refl, x1,x2,x3, 1,  &
   &   r650, 1.0, yy, debug)
   if (status /= 0) then
-    deallocate(yy, stat=status)
     dflag = .true.
     return
   end if
@@ -1668,7 +1660,6 @@ subroutine aero_650_dust(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
     if (tau_x650 > 5.0) tau_x650 = 5.0
     w0_x      = -999.
     tau_x650_flag = 1
-    deallocate(yy, stat=status)
     return
   end if
 
@@ -1821,7 +1812,6 @@ end subroutine aero_650_dust
   status = create_reduced_lut_aot(dust_lut412, refl, x1,x2,x3, imod,  &
   &   r412, model_frac, yy, debug)
   if (status /= 0) then
-    deallocate(yy, stat=status)
     dflag = .true.
     return
   end if
@@ -1849,7 +1839,6 @@ end subroutine aero_650_dust
 
     tau_x412_flag = 1
     if (debug) print *, 'aero_412_dust, hit hi bound: ', refl, yy(10)
-    deallocate(yy, stat=status)
     return
   end if
 !
@@ -1941,6 +1930,7 @@ subroutine aero_412_abs_dust(dflag,refl,x1,x2,x3,mm,nn,ll,r412,tau_x,w0_x)
   &   r412, frac_ia, yyw)
   if (status /= 0) then
     dflag = .true.
+    print *, "ERROR: create_reduced_lut_ssa: aero_412_abs_dust", refl,x1, x2, x3, index_ia, r412
     return
   end if
 
@@ -2014,6 +2004,7 @@ subroutine aero_470_abs_dust(dflag2,refl,x1,x2,x3,mm,nn,ll,r470,tau_x,w0_x)
   &     r470, frac_ia, yyw)
   if (status /= 0) then
     dflag2 = .true.
+    print *, "ERROR: create_reduced_lut_ssa: aero_470_abs_dust", refl,x1, x2, x3, index_ia, r470
     return
   end if
 
@@ -2077,12 +2068,14 @@ integer function create_reduced_lut_aot(lut, refl, sza, vza, raa, imod,  &
       
   index_ii = search(rXXX, lut%sfc, status, frac=frac) 
   if (status /= 0) then 
+!     print *, 'ERROR: Specified SFC not within table: '
     return
   endif
 !  if (debug) print *, 'aero_XXX, sfc indx: ', rXXX, index_ii
   
   ii = search(raa, lut%raa, status, frac=xfrac)
   if (status /= 0) then
+    print *, 'ERROR: Specified RAA not within table: ', raa, lut%raa(1), lut%raa(lut%nraa)
     return
   end if
 !  if (debug) print *, 'aero_XXX, raa: ', raa, ii, lut%raa(ii), lut%raa(ii+1)
@@ -2368,6 +2361,68 @@ end function create_reduced_lut_ssa
 
   end function search
        
+! -- perform a binary search of array xx for j such that x lies between xx(j) and xx(j+1).
+! -- see Numerical Recipes in Fortran, Second Edition, p.110
+! -- returns  values:
+! --     0 if xx(1) > x and size(xx) if xx(size(xx)) < x
+! --    -1, 1 if x < xx(1) or x > xx(size(xx)) respectively.
+! --
+! -- xx must be sorted.
+  integer function locate(x,xx,status,frac) result(j)
+    implicit none
+    
+    real, dimension(:), intent(in)    ::  xx
+    real, intent(in)                  ::  x
+    integer, intent(inout)            ::  status
+    real, intent(inout), optional     ::  frac
+    
+    integer                           ::  jl, jm, ju
+    integer                           ::  i, n
+    
+    n = size(xx)
+    status = 0
+    
+!   -- start binary search.
+    jl = 0
+    ju = n + 1
+    do
+      if (ju-jl > 1) then
+          jm = (ju + jl) / 2
+        if ((xx(n) >= xx(1)) .EQV. (x >= xx(jm))) then
+          jl = jm
+        else
+          ju = jm
+        end if
+      else
+        exit
+      endif
+    end do
+
+!   -- check endpoint equality, otherwise use jl from above.
+    if (x == xx(1)) then 
+      j = 1
+    else if (x == xx(n)) then
+      j = n-1
+    else
+      j = jl
+    end if
+    
+!   -- set status, indicate success or appropriate failure condition.
+    status = 0
+    if (j >= n) status = 1
+    if (j < 1) status = -1
+    
+    if (present(frac) .AND. status == 0) then
+      if (j < n) then
+        frac = (x-xx(j))/ (xx(j+1)-xx(j))
+      else
+        frac = 1.0
+      end if
+    end if
+    
+    return
+     
+  end function locate
   
 ! -- https://en.wikipedia.org/wiki/Extrapolation
   real function extrap(x, xx, yy, status) result(res)
@@ -2442,11 +2497,15 @@ end function create_reduced_lut_ssa
       sxy = sxy + (x(i) * y(i))
       syy = syy + (y(i) * y(i))
     end do
+
+    if (abs((n*sxy) - (sx*sy)) < 1.0e-10 .or. abs((n*sxx)-(sx*sx))<1.0e-10 .or. n==0.) then 
+     status = -1
+    else 
+     r(2) = ((n*sxy) - (sx*sy))/((n*sxx)-(sx*sx))
+     r(1) = (sy/n)-(r(2)*sx/n)
+     status = 0
+    end if
     
-    r(2) = ((n*sxy) - (sx*sy))/((n*sxx)-(sx*sx))
-    r(1) = (sy/n)-(r(2)*sx/n)
-    
-    status = 0
     return
     
   end function linfit

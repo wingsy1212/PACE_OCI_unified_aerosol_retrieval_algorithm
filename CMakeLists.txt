@@ -80,6 +80,15 @@ set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+find_package(HDF4 REQUIRED)
+include_directories(${HDF4_INCLUDE_DIRS})
+#find_package(HDFEOS REQUIRED)
+#include_directories(${HDFEOS_INCLUDE_DIRS})
+set(LIBS ${CMAKE_CURRENT_SOURCE_DIR}/opt/lib/libxdr.a ${HDF4_LIBRARIES})
+#set(LIBS ${HDF4_LIBRARIES})
+#list(APPEND LIBS ${HDFEOS_LIBRARIES})
+message("HDF4 libraries " ${HDF4_DIR})
+
 find_package(HDF5 REQUIRED COMPONENTS C HL Fortran Fortran_HL)
 include_directories(${HDF5_INCLUDE_DIRS})
 #find_package(HDFEOS5 REQUIRED)
@@ -110,40 +119,26 @@ add_executable(oci_ua_aer
   Main/OCIUAAER_Config_Module.f90
   Main/OCIUAAER_L1BModule.f90  
   Main/Proxydata_L1BModule.f90 
-  Main/Merge_land_ocean_Module.f90
-   
-#  UV/src/LookupTableModule.f90  
-#  UV/src/GetSurfAlbLUT_H5module.f90
-#  UV/src/GetLUT_LER_AI_H5module.f90
-#  UV/src/GetLUT_Miecloud_AI_H5module.f90
-#  UV/src/Get_OceanLUT_H5module.f90
-#  UV/src/Get_TerrainPressure_H5module.f90
-#  UV/src/Get_SnowIce_module.f90 
-#  UV/src/GetLUT_H5module.f90
-#  UV/src/Get_ssaclimLUT2_H5module.f90
-#  UV/src/Get_omacaLUT7dim_H5module.f90
-
-  UV/src/nc4/LookupTableModule_nc4.f90  
-  UV/src/nc4/GetSurfAlbLUT_H5module_nc4.f90
-  UV/src/nc4/GetLUT_LER_AI_H5module_nc4.f90
-  UV/src/nc4/GetLUT_Miecloud_AI_H5module_nc4.f90
-  UV/src/nc4/Get_OceanLUT_H5module_nc4.f90
-  UV/src/nc4/Get_TerrainPressure_H5module_nc4.f90
-  UV/src/nc4/Get_SnowIce_module_nc4.f90 
-  UV/src/nc4/GetLUT_H5module_nc4.f90
-  UV/src/nc4/Get_ssaclimLUT2_H5module_nc4.f90
-  UV/src/nc4/Get_omacaLUT7dim_H5module_nc4.f90
-
+  Main/Merge_land_ocean_Module.f90 
+  UV/src/LookupTableModule.f90  
+  UV/src/GetSurfAlbLUT_H5module.f90
+  UV/src/GetLUT_LER_AI_H5module.f90
+  UV/src/GetLUT_Miecloud_AI_H5module.f90
+  UV/src/Get_OceanLUT_H5module.f90
+  UV/src/Get_TerrainPressure_H5module.f90
+  UV/src/Get_SnowIce_module.f90 
+  UV/src/OCI_UV1km_DataModule.f90
+  UV/src/OCI_UVAI_MieCloudModule.f90
+  UV/src/GetLUT_H5module.f90
   UV/src/OCI_UVOutput_DataModule.f90
   DB_DT_Land/DB_Land/src/calendars.f95 
   UV/src/read_for_nuv_test.f90
   UV/src/Nearuv_alhssa_Module.f90
   UV/src/NUV_AerosolModule.f90
+  UV/src/Get_ssaclimLUT2_H5module.f90
+  UV/src/Get_omacaLUT7dim_H5module.f90
   Main/NUV_ACAerosolModule.f90
   UV/src/NUV_package_modules.f90 
-  UV/src/OCI_UV1km_DataModule.f90
-  UV/src/OCI_UVAI_MieCloudModule.f90
-    
   # DT Source files common to ocean and Land
   DT_Common_src/src/Interp.f90
   DT_Common_src/src/Read_gdas.f90
@@ -160,8 +155,7 @@ add_executable(oci_ua_aer
   DT_Common_src/src/SET_INDEX_L1b.f90
   DT_Common_src/src/open_l1b_OCI_data.f90
   DT_Common_src/src/Fillvalue_MOD04_V2.f90
-  DT_Common_src/src/compute_temp_from_rad.f90 
-  
+  DT_Common_src/src/compute_temp_from_rad.f90       
   # DT Source files
   DT_Ocean/src/write_pacedt_ocean.f90
   DT_Ocean/src/write_UV.f90
@@ -173,20 +167,9 @@ add_executable(oci_ua_aer
   DT_Ocean/src/make_ocean_cloudmask.f90
   DT_Ocean/src/Fill_Output_SDS_UV.f90
   DT_Ocean/src/Compute_Sd_for_Dust.f90
-  
-#  DT_Ocean/src/UV_processing.f90
-#  DT_Ocean/src/Process_ocean_V2.f90
-#  DT_Ocean/src/DT_package_Ocean_main.f90
-#  DB_DT_Land/DT_Land/src/DT_package_Land_main.f90
-#  DB_DT_Land/DT_Land/src/Process_land_V6.f90 
-    
-  DT_Common_src/src/nc4/dt_nc4.f90 
-  DT_Common_src/src/nc4/UV_processing_nc4.f90
-  DT_Common_src/src/nc4/Process_ocean_V2_nc4.f90
-  DT_Common_src/src/nc4/DT_package_Ocean_main_nc4.f90
-  DT_Common_src/src/nc4/DT_package_Land_main_nc4.f90
-  DT_Common_src/src/nc4/Process_land_V6_nc4.f90 
-  
+  DT_Ocean/src/UV_processing.f90
+  DT_Ocean/src/Process_ocean_V2.f90
+  DT_Ocean/src/DT_package_Ocean_main.f90
   # DB Source files
   DB_DT_Land/DB_Land/src/pack_412.f 
   DB_DT_Land/DB_Land/src/lmpar.f 
@@ -204,45 +187,33 @@ add_executable(oci_ua_aer
   DB_DT_Land/DB_Land/src/intero.f 
   DB_DT_Land/DB_Land/src/interr.f 
   DB_DT_Land/DB_Land/src/reflec.f 
+  DB_DT_Land/DB_Land/src/viirs_aerosol_luts.f95 
+  DB_DT_Land/DB_Land/src/viirs_ler_luts.f95
   DB_DT_Land/DB_Land/src/lodbuf.f 
   DB_DT_Land/DB_Land/src/prflec.f 
   DB_DT_Land/DB_Land/src/lodsmp.f 
   DB_DT_Land/DB_Land/src/total.f 
   DB_DT_Land/DB_Land/src/sortrx.f 
   DB_DT_Land/DB_Land/src/lmdif1_v2.f 
+  DB_DT_Land/DB_Land/src/landcover.f95 
+  DB_DT_Land/DB_Land/src/viirs_obpg_corrections.f95 
   DB_DT_Land/DB_Land/src/viirs_ocean_aero.f95 
+  DB_DT_Land/DB_Land/src/seawifs_surface_pressure.f95 
+  DB_DT_Land/DB_Land/src/modis_surface.f95 
   DB_DT_Land/DB_Land/src/viirs_config.f95 
+  DB_DT_Land/DB_Land/src/viirs_db_utils.f95 
   DB_DT_Land/DB_Land/src/set_qa_land.f95 
   DB_DT_Land/DB_Land/src/set_qa_ocean.f95 
+  DB_DT_Land/DB_Land/src/db_debug.f95 
+  DB_DT_Land/DB_Land/src/read_l1b.f95 
   DB_DT_Land/DB_Land/src/modis.f90 
+  DB_DT_Land/DB_Land/src/get_lut_211sfc.f90 
+  DB_DT_Land/DB_Land/src/get_lut_igbp_land_cover.f90 
   DB_DT_Land/DB_Land/src/find_v_vegset.f 
   DB_DT_Land/DB_Land/src/find_v_viirs.f 
   DB_DT_Land/DB_Land/src/viirs_ancillary.f95 
   DB_DT_Land/DB_Land/src/screening.f95 
-  
-#  DB_DT_Land/DB_Land/src/DB_package_Land_main.f90
-#  DB_DT_Land/DB_Land/src/read_l1b.f95 
-#  DB_DT_Land/DB_Land/src/viirs_ler_luts.f95
-#  DB_DT_Land/DB_Land/src/landcover.f95 
-#  DB_DT_Land/DB_Land/src/get_lut_igbp_land_cover.f90 
-#  DB_DT_Land/DB_Land/src/get_lut_211sfc.f90 
-#  DB_DT_Land/DB_Land/src/modis_surface.f95 
-#  DB_DT_Land/DB_Land/src/viirs_aerosol_luts.f95 
-#  DB_DT_Land/DB_Land/src/seawifs_surface_pressure.f95 
-#  DB_DT_Land/DB_Land/src/viirs_db_utils.f95 
-#  DB_DT_Land/DB_Land/src/db_debug.f95 
-
-  DB_DT_Land/DB_Land/src/nc4/DB_package_Land_main_nc4.f90
-  DB_DT_Land/DB_Land/src/nc4/read_l1b_nc4.f95 
-  DB_DT_Land/DB_Land/src/nc4/viirs_ler_luts_nc4.f95
-  DB_DT_Land/DB_Land/src/nc4/landcover_nc4.f95
-  DB_DT_Land/DB_Land/src/nc4/get_lut_igbp_land_cover_nc4.f90
-  DB_DT_Land/DB_Land/src/nc4/get_lut_211sfc_nc4.f90
-  DB_DT_Land/DB_Land/src/nc4/modis_surface_nc4.f95
-  DB_DT_Land/DB_Land/src/nc4/viirs_aerosol_luts_nc4.f95
-  DB_DT_Land/DB_Land/src/nc4/seawifs_surface_pressure_nc4.f95 
-  DB_DT_Land/DB_Land/src/nc4/viirs_db_utils_nc4.f95 
-  
+  DB_DT_Land/DB_Land/src/DB_package_Land_main.f90
   #DT_SRCS_Land
   DB_DT_Land/DT_Land/src/compute_snow_flag.f90
   DB_DT_Land/DT_Land/src/write_pacedt_land.f90
@@ -251,7 +222,8 @@ add_executable(oci_ua_aer
   DB_DT_Land/DT_Land/src/Handler_land.f90
   DB_DT_Land/DT_Land/src/cld_flags_forLand.f90
   DB_DT_Land/DT_Land/src/Fill_Output_SDS_land.f90
-  
+  DB_DT_Land/DT_Land/src/DT_package_Land_main.f90
+  DB_DT_Land/DT_Land/src/Process_land_V6.f90  
   #S_Write
   Write_L2_data/src/write_merged_file.f90
   Write_interm_file/src/write_Output_forUVtau.f90

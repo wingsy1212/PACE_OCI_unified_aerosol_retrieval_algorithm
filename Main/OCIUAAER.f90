@@ -201,7 +201,7 @@ CALL h5open_f(hdferr)
    !   CldMsk_Native_Land ( 0=cloud 1= clear)   Ret_land_Quality_Flag( 0-3)                
           Ret_ref_allwav_land,Ret_tau_land,Ret_Lat,Ret_Lon,CldMsk_Native_Land,&
           Ret_land_Quality_Flag,Ret_Small_weighting_land,Ret_CLDFRC_land_DT,&
-          Ret_Xtrack,Ret_Lines,met1_file)
+          Ret_Xtrack,Ret_Lines,met2_file)
           
    call cpu_time(finish)       
    print *, 'end DT', finish
@@ -257,7 +257,7 @@ CALL h5open_f(hdferr)
                    Ret_View_phi,Ret_solar_phi,Ret_tau_ocean,& 
                    Ret_Small_weighting,Ret_ref_ocean,Land_sea_flag,&
                    Ret_average_Omega_Ocean_UV,CldMsk_Native_Ocean,&
-                   Ret_Index_Height,Ret_ocean_Quality,Ret_CLDFRC_Ocean,met1_file)
+                   Ret_Index_Height,Ret_ocean_Quality,Ret_CLDFRC_Ocean,met2_file)
                       
   
 !            print *,'"Ret_Xtrack,Ret_Lines:" i4,i4 ',Ret_Xtrack,Ret_Lines           

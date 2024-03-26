@@ -81,7 +81,7 @@ contains
    include 'newaottbl90.inc'
    include 'sfc21tbl90.inc'      
    
-   CHARACTER(255) :: met1_file, met2_file, lut_nc4
+   CHARACTER(255) :: met1_file, met2_file
 
    integer Year,day,month_int,doy
    INTEGER IX1KM_B,IY1KM_B,nwave,IX1KM,IY1KM,IY
@@ -198,15 +198,14 @@ contains
 !     print *, "ERROR: Failed to get config file from command arguments: ", status
 !     stop
 !   end if
-  config = load_viirs_config(config_file, status)
+!  config = load_viirs_config(config_file, status)
+!  if (status /= 0) then
+!    print *, "ERROR: Failed to read in VIIRS configuration file: ", status
+!    stop
+!  end if
   config%gdas_file1 = trim(met1_file)
   config%gdas_file2 = trim(met2_file)
-  if (status /= 0) then
-    print *, "ERROR: Failed to read in VIIRS configuration file: ", status
-    stop
-  end if
-  platform  =  config%platform    !'VIIRS' or 'AHI' or 'GOES' 
-!  print *, 'Start Deep_blue.f90 :', platform
+  platform  =  'VIIRS'    !'VIIRS' or 'AHI' or 'GOES'
 
   allocate(lat(IX1KM,IY1KM), lon(IX1KM,IY1KM), dum(IX1KM,IY1KM), stat=status)
   if (status /= 0) then
@@ -405,7 +404,7 @@ contains
   end if
   
 ! -- dbdt table landcover 
-  status = load_dbdt_region_table(config%dbdt_file, config%month)
+  status = load_dbdt_region_table(config%dbdt_file, viirs_data%mo)
   if (status /= 0) then
     print *, "Error loading DBDT region input file.", status
   end if  

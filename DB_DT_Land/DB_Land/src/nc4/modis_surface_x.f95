@@ -15,7 +15,13 @@ module modis_surface
 
   private
   
-  public  ::  load_terrainflg_tables, load_seasonal_desert
+  public  ::  load_terrainflg_tables_t, load_seasonal_desert_t
+  public  ::  load_swir_coeffs_t
+  public  ::  load_brdf_t
+  public  ::  set_limits_t, load_hdfLER_t, set_limits6_t
+  private ::  readLER5_t, readLER2_t
+
+  public  ::  load_terrainflg_tables, load_seasonal_desert 
   public  ::  load_swir_coeffs
   public  ::  get_swir_coeffs412, get_swir_coeffs470
   public  ::  get_swir_stderr412, get_swir_stderr470
@@ -77,635 +83,709 @@ module modis_surface
 
   contains
 
-   ! @TODO: should rename this to load_geozone_table or something even more descriptive.
-   integer function load_terrainflg_tables(tflg_file, season) result(status)
-      use netcdf
-      USE OCIUAAER_Config_Module
-      implicit none
-
-      character(len=255), intent(in)  ::  tflg_file
-      integer, intent(in)    ::  season
+! @TODO: should rename this to load_geozone_table or something even more descriptive.
+  integer function load_terrainflg_tables(tflg_file, season) result(status)
+    implicit none
     
-      real, dimension(:,:), allocatable   ::  tmptfn
-      real, dimension(:,:,:), allocatable ::  tmpaod
-      integer                             ::  i, j
-
-      ! HDF vars
-      character(len=255)    ::  sds_name
-      character(len=255)    ::  dset_name
-      character(len=255)    ::  attr_name
-      character(len=255)    ::  group_name
-
-      integer               ::  nc_id
-      integer               ::  dim_id
-      integer               ::  dset_id
-      integer               ::  grp_id
-      integer               ::  sd_id, sds_index, sds_id
-      integer, dimension(2) ::  start2, stride2, edges2
-      integer, dimension(3) ::  start3, stride3, edges3
- 
-      status = -1
+    include 'hdf.inc'
+	  include 'dffunc.inc'
+	
+    character(len=*), intent(in)  ::  tflg_file
+    integer, intent(in)           ::  season 
     
-      !   -- allocate our tmp array
-      allocate(tmptfn(3600,1800), stat=status)
-      if (status /= 0) then
-         print *, "ERROR: Unable to allocate tmp array for geo zone data: ", status
-         return
-      end if
+    logical                             ::  file_exists
+    real, dimension(:,:), allocatable   ::  tmptfn
+    real, dimension(:,:,:), allocatable ::  tmpaod
+    integer                             ::  i, j
 
-      !   -- allocate our tmp array
-      allocate(tmpaod(360,180,4), stat=status)
-      if (status /= 0) then
-         print *, "ERROR: Unable to allocate tmp array for background aod data: ", status
-         return
-      end if
-
-      status = nf90_open(cfg%db_nc4, nf90_nowrite, nc_id)
-      if (status /= NF90_NOERR) then
-         print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
-         return
-      end if
-
-      group_name = 'geozone'
-      status = nf90_inq_ncid(nc_id, group_name, grp_id)
-      if (status /= NF90_NOERR) then
-         print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
-         return
-      end if
-
-      start2  = (/1,1/)
-      stride2 = (/1,1/)
-      edges2  = (/3600,1800/)
-      dset_name = 'geographical_zone_flag'
-      status = nf90_inq_varid(grp_id, dset_name, dset_id)
-      if (status /= NF90_NOERR) then
-         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
-         return
-      end if
-      status = nf90_get_var(grp_id, dset_id, tmptfn, start=start2, &
-         stride=stride2, count=edges2)
-      if (status /= NF90_NOERR) then
-         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-         return
-      end if
-
-      dset_name = 'surface_elevation_stddev'
-      status = nf90_inq_varid(grp_id, dset_name, dset_id)
-      if (status /= NF90_NOERR) then
-         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
-         return
-      end if
-      status = nf90_get_var(grp_id, dset_id, sfc_elev_std, start=start2, &
-         stride=stride2, count=edges2)
-      if (status /= NF90_NOERR) then
-         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-         return
-      end if
-
-      start3  = (/1,1,1/)
-      stride3 = (/1,1,1/)
-      edges3  = (/360,180,4/)
-      dset_name = 'background_aod'
-      status = nf90_inq_varid(grp_id, dset_name, dset_id)
-      if (status /= NF90_NOERR) then
-         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
-         return
-      end if
-      status = nf90_get_var(grp_id, dset_id, tmpaod, start=start3, &
-         stride=stride3, count=edges3)
-      if (status /= NF90_NOERR) then
-         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-         return
-      end if
-
-      status = nf90_close(nc_id)
-      if (status /= NF90_NOERR) then
-         print *, "ERROR: Failed to close lut_nc4 file: ", status
-         return
-      end if
-
-      terrain_flag_new = int(tmptfn)
-      bg_aod(1:360,1:180) = tmpaod(1:360,1:180,season)
-      !print *, "aod test", bg_aod(1,68), tmpaod(1,68,season)
+    ! HDF vars
+    character(len=255)    ::  sds_name
+    integer               ::  sd_id, sds_index, sds_id
+    integer, dimension(2) ::  start2, stride2, edges2
+    integer, dimension(3) ::  start3, stride3, edges3   
  
-      !   -- clean up tmptfn
-      deallocate(tmptfn, stat=status)
-      if (status /= 0) then
-         print *, "ERROR: Unable to deallocate tmp array for geo zone data: ", status
-         return
-      end if
-
-      !   -- clean up tmpaod
-      deallocate(tmpaod, stat=status)
-      if (status /= 0) then
-         print *, "ERROR: Unable to deallocate tmp array for geo zone data: ", status
-         return
-      end if
-
-      status = 0
+    status = -1
+    
+    inquire(file=trim(tflg_file), exist=file_exists, iostat=status)
+    if (status /= 0) then
+      print *, "ERROR: Unable to inquire about terrain flag file: ", status
       return
-   end function load_terrainflg_tables
+    end if
+    if (file_exists .eqv. .false.) then
+      print *, "ERROR: Terrain flag file does not exist. Please check the config file."
+      status = -1
+      return
+    end if
+    
+!   -- allocate our tmp array
+    allocate(tmptfn(3600,1800), stat=status)
+    if (status /= 0) then
+      print *, "ERROR: Unable to allocate tmp array for geo zone data: ", status
+      return
+    end if
+
+!   -- allocate our tmp array
+    allocate(tmpaod(360,180,4), stat=status)
+    if (status /= 0) then
+      print *, "ERROR: Unable to allocate tmp array for background aod data: ", status
+      return
+    end if
+    
+! 	Open HDF and output file.      
+!---------------------------------------------------------------------------------------------------       
+		sd_id = sfstart(tflg_file, DFACC_READ)
+    if (sd_id == FAIL ) then
+    	print *,"ERROR: failed to start SDS interface on terrain flag file: ", sd_id
+      status = -1
+      return
+    end if
+    !================================== 
+    sds_name = 'geographical_zone_flag'
+    sds_index = sfn2index(sd_id, sds_name)
+    if (sds_index == FAIL) then
+      print *, "ERROR: Unable to find index of "//trim(sds_name)//" SDS: ", sds_index
+      status = -1
+      return
+    end if
+    sds_id = sfselect(sd_id, sds_index)
+    if (sds_id == FAIL) then
+      print *, "ERROR: Unable to select "//trim(sds_name)//" SDS: ", sds_id
+      stop
+    end if
+    
+    start2  = (/0,0/)
+    stride2 = (/1,1/)
+    edges2  = (/3600,1800/)
+    status = sfrdata(sds_id, start2, stride2, edges2, tmptfn)
+    if (status == FAIL) then
+      print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
+      status = -1
+      return
+    end if
+    
+    status = sfendacc(sds_id)
+    if (status == FAIL) then
+      print *, "ERROR: Unable to end access to "//trim(sds_name)//" SDS: ", status
+      return
+    end if
+    !====================
+    sds_name = 'surface_elevation_stddev'
+    sds_index = sfn2index(sd_id, sds_name)
+    if (sds_index == FAIL) then
+      print *, "ERROR: Unable to find index of "//trim(sds_name)//" SDS: ", sds_index
+      status = -1
+      return
+    end if
+    sds_id = sfselect(sd_id, sds_index)
+    if (sds_id == FAIL) then
+      print *, "ERROR: Unable to select "//trim(sds_name)//" SDS: ", sds_id
+      stop
+    end if
+
+    start2  = (/0,0/)
+    stride2 = (/1,1/)
+    edges2  = (/3600,1800/)
+    status = sfrdata(sds_id, start2, stride2, edges2, sfc_elev_std)
+    if (status == FAIL) then
+      print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
+      status = -1
+      return
+    end if
+
+    status = sfendacc(sds_id)
+    if (status == FAIL) then
+      print *, "ERROR: Unable to end access to "//trim(sds_name)//" SDS: ", status
+      return
+    end if
+    !====================
+    sds_name = 'background_aod'
+    sds_index = sfn2index(sd_id, sds_name)
+    if (sds_index == FAIL) then
+      print *, "ERROR: Unable to find index of "//trim(sds_name)//" SDS: ", sds_index
+      status = -1
+      return
+    end if
+    sds_id = sfselect(sd_id, sds_index)
+    if (sds_id == FAIL) then
+      print *, "ERROR: Unable to select "//trim(sds_name)//" SDS: ", sds_id
+      stop
+    end if
+
+    start3  = (/0,0,0/)
+    stride3 = (/1,1,1/)
+    edges3  = (/360,180,4/)
+    status = sfrdata(sds_id, start3, stride3, edges3, tmpaod)
+    if (status == FAIL) then
+      print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
+      status = -1
+      return
+    end if
+
+    status = sfendacc(sds_id)
+    if (status == FAIL) then
+      print *, "ERROR: Unable to end access to "//trim(sds_name)//" SDS: ", status
+      return
+    end if
+    !====================
+    status = sfend(sd_id)
+    if (status /= 0) then
+      print *, "ERROR: Unable to close land aerosol model file: ", status
+      return
+    end if
+    
+    terrain_flag_new = int(tmptfn)
+    bg_aod(1:360,1:180) = tmpaod(1:360,1:180,season)
+    !print *, "aod test", bg_aod(1,68), tmpaod(1,68,season)
+ 
+!   -- clean up tmptfn
+    deallocate(tmptfn, stat=status)
+    if (status /= 0) then
+      print *, "ERROR: Unable to deallocate tmp array for geo zone data: ", status
+      return
+    end if
+
+!   -- clean up tmpaod
+    deallocate(tmpaod, stat=status)
+    if (status /= 0) then
+      print *, "ERROR: Unable to deallocate tmp array for geo zone data: ", status
+      return
+    end if    
+
+    status = 0
+    return
+  end function load_terrainflg_tables
   
-   integer function load_seasonal_desert(file) result(status)
-      use netcdf
-      USE OCIUAAER_Config_Module
-      implicit none
-
-      character(len=255), intent(in)  ::  file
+  integer function load_seasonal_desert(file) result(status)
+    implicit none
     
-      real, dimension(:,:), allocatable   ::  tmptfn
-      integer                             ::  i, j
-
-      ! HDF vars
-      character(len=255)    ::  sds_name
-      character(len=255)    ::  dset_name
-      character(len=255)    ::  attr_name
-      character(len=255)    ::  group_name
-
-      integer               ::  nc_id
-      integer               ::  dim_id
-      integer               ::  dset_id
-      integer               ::  grp_id
-      integer               ::  sd_id, sds_index, sds_id
-      integer, dimension(2) ::  start2, stride2, edges2
+    include 'hdf.inc'
+	  include 'dffunc.inc'
+	
+    character(len=*), intent(in)  ::  file
     
+    logical                             ::  file_exists
+    real, dimension(:,:), allocatable   ::  tmptfn
+    integer                             ::  i, j
+
+    ! HDF vars
+    character(len=255)    ::  sds_name
+    integer               ::  sd_id, sds_index, sds_id
+    integer, dimension(2) ::  start2, stride2, edges2
+    
+    status = -1
+    
+    inquire(file=trim(file), exist=file_exists, iostat=status)
+    if (status /= 0) then
+      print *, "ERROR: Unable to inquire about terrain flag file: ", status
+      return
+    end if
+    if (file_exists .eqv. .false.) then
+      print *, "ERROR: Seasonal desert file does not exist. Please check the config file."
       status = -1
-    
-      status = nf90_open(cfg%db_nc4, nf90_nowrite, nc_id)
-      if (status /= NF90_NOERR) then
-         print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
-         return
-      end if
-
-      group_name = 'seasonal_deserts'
-      status = nf90_inq_ncid(nc_id, group_name, grp_id)
-      if (status /= NF90_NOERR) then
-         print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
-         return
-      end if
-
-      start2  = (/1,1/)
-      stride2 = (/1,1/)
-      edges2  = (/3600,1800/)
-      dset_name = 'seasonal_desert_flag'
-      status = nf90_inq_varid(grp_id, dset_name, dset_id)
-      if (status /= NF90_NOERR) then
-         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
-         return
-      end if
-      status = nf90_get_var(grp_id, dset_id, terrain_flag, start=start2, &
-         stride=stride2, count=edges2)
-      if (status /= NF90_NOERR) then
-         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-         return
-      end if
-
-      status = nf90_close(nc_id)
-      if (status /= NF90_NOERR) then
-         print *, "ERROR: Failed to close lut_nc4 file: ", status
-         return
-      end if
-
-      status = 0
       return
-   end function load_seasonal_desert
+    end if
+    
+! 	Open HDF and output file.      
+!---------------------------------------------------------------------------------------------------       
+		sd_id = sfstart(file, DFACC_READ)
+    if (sd_id == FAIL ) then
+    	print *,"ERROR: failed to start SDS interface on terrain flag file: ", sd_id
+      status = -1
+      return
+    end if
 
-   ! -- initialize the AERONET site and surface variables and load the BRDF base
-   ! --    reflectivity file into brdf650 array.
-   !-----------------------------------------------------------------------------------------
-   integer function load_brdf(brdffile) result(status)
-      use netcdf
-      USE OCIUAAER_Config_Module
-      implicit none
+    sds_name = 'seasonal_desert_flag'
+    sds_index = sfn2index(sd_id, sds_name)
+    if (sds_index == FAIL) then
+      print *, "ERROR: Unable to find index of "//trim(sds_name)//" SDS: ", sds_index
+      status = -1
+      return
+    end if
+    sds_id = sfselect(sd_id, sds_index)
+    if (sds_id == FAIL) then
+      print *, "ERROR: Unable to select "//trim(sds_name)//" SDS: ", sds_id
+      status = -1
+      return
+    end if
+    
+    start2  = (/0,0/)
+    stride2 = (/1,1/)
+    edges2  = (/3600,1800/)
+    status = sfrdata(sds_id, start2, stride2, edges2, terrain_flag)
+    if (status == FAIL) then
+      print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
+      return
+    end if
+    
+    status = sfendacc(sds_id)
+    if (status == FAIL) then
+     print *, "ERROR: Unable to end access to "//trim(sds_name)//" SDS: ", status
+      return
+    end if
+    
+    status = sfend(sd_id)
+    if (status /= 0) then
+      print *, "ERROR: Unable to close land aerosol model file: ", status
+      return
+    end if
 
-      character(len=255), intent(in)    ::  brdffile
-    
-      integer, parameter              ::  nsites = 30
-    
-      character(len=255)    ::  sds_name
-      character(len=255)    ::  dset_name
-      character(len=255)    ::  attr_name
-      character(len=255)    ::  group_name
+    status = 0
+    return
+  end function load_seasonal_desert
 
-      integer               ::  nc_id
-      integer               ::  dim_id
-      integer               ::  dset_id
-      integer               ::  grp_id
-      integer               ::  sd_id, sds_index, sds_id
-      integer, dimension(2) ::  start2, stride2, edges2, dims2
+! -- initialize the AERONET site and surface variables and load the BRDF base 
+! --    reflectivity file into brdf650 array.
+!-----------------------------------------------------------------------------------------
+  integer function load_brdf(brdffile) result(status)
+    implicit none
     
-      !   -- assume a successful return.
-      status = 0
+    include 'hdf.inc'
+	  include 'dffunc.inc'
+	
+    character(len=*), intent(in)    ::  brdffile
     
-      !   -- allocate and fill AERONET-related arrays.
-      allocate(aero_sites(nsites), aero_zones(nsites), aero_types(nsites), aero_elev(nsites), &
-         & stat=status)
-      if (status /= 0) then
-         print *, "ERROR: Unable to allocate AERONET site info arrays: ", status
-         return
-      end if
+    integer, parameter              ::  nsites = 30
     
-      allocate(aero_sr412(nsites,4), aero_sr470(nsites,4), aero_sr650(nsites,4), aero_bgaod(nsites,4), stat=status)
-      if (status /= 0) then
-         print *, "ERROR: Unable to allocate AERONET SR arrays: ", status
-         return
-      end if
+    logical                         ::  file_exists
+    
+    character(len=255)              ::  sds_name
+    integer                         ::  sd_id, sds_index, sds_id
+    integer, dimension(2)           ::  start2, stride2, edges2, dims2
+    
+!   -- assume a successful return.
+    status = 0
+    
+!   -- allocate and fill AERONET-related arrays. 
+    allocate(aero_sites(nsites), aero_zones(nsites), aero_types(nsites), aero_elev(nsites), &
+    & stat=status)
+    if (status /= 0) then
+      print *, "ERROR: Unable to allocate AERONET site info arrays: ", status
+      return
+    end if
+    
+    allocate(aero_sr412(nsites,4), aero_sr470(nsites,4), aero_sr650(nsites,4), aero_bgaod(nsites,4), stat=status)
+    if (status /= 0) then
+      print *, "ERROR: Unable to allocate AERONET SR arrays: ", status
+      return
+    end if
 
-      !   -- aero_types = land cover type over AERONET site
-      !   --    0. ocean
-      !   --    1. forest
-      !   --    2. grasslands
-      !   --    3. croplands
-      !   --    4. urban
-      !   --    5. snow/ice
-      !   --    6. barren/desert
+!   -- aero_types = land cover type over AERONET site
+!   --    0. ocean
+!   --    1. forest
+!   --    2. grasslands
+!   --    3. croplands
+!   --    4. urban
+!   --    5. snow/ice
+!   --    6. barren/desert
 
-      !   -- Banizoumbou
-      aero_sites(1)   = 'Banizoumbou'
-      aero_types(1)   = 2
-      aero_zones(1)   = 5
-      aero_elev(1)    = 250
-      aero_sr412(1,:) = (/7.08923, 7.71880, 8.48224, 6.62584/)
-      aero_sr470(1,:) = (/10.5942, 11.6695, 12.4470, 9.9028/)
-      aero_sr650(1,:) = (/28.7862, 31.9045, 31.5499, 25.0119/)
-      aero_bgaod(1,:) = (/0.15000, 0.22800, 0.26300, 0.18500/) !MODIS
-      !    aero_bgaod(1,:) = (/0.18200, 0.41348, 0.37300, 0.19649/) !MISR
+!   -- Banizoumbou
+    aero_sites(1)   = 'Banizoumbou'
+    aero_types(1)   = 2           
+    aero_zones(1)   = 5
+    aero_elev(1)    = 250
+    aero_sr412(1,:) = (/7.08923, 7.71880, 8.48224, 6.62584/)     
+    aero_sr470(1,:) = (/10.5942, 11.6695, 12.4470, 9.9028/)
+    aero_sr650(1,:) = (/28.7862, 31.9045, 31.5499, 25.0119/)
+    aero_bgaod(1,:) = (/0.15000, 0.22800, 0.26300, 0.18500/) !MODIS
+!    aero_bgaod(1,:) = (/0.18200, 0.41348, 0.37300, 0.19649/) !MISR
     
-      !   -- Tinga Tingana
-      aero_sites(2)   = 'Tinga_Tingana'
-      aero_types(2)   = 6
-      aero_zones(2)   = 12
-      aero_elev(2)    = 38
-      aero_sr412(2,:) = (/8.3397, 9.3348, 8.3018, 10.4549/)
-      aero_sr470(2,:) = (/11.5649, 12.8902, 11.5255, 13.5749/)
-      aero_sr650(2,:) = (/29.0277, 31.3340, 27.9479, 30.2249/)
-      aero_bgaod(2,:) = (/0.02300, 0.01900, 0.01800, 0.02100/)
-      !    aero_bgaod(2,:) = (/0.08670, 0.06223, 0.05391, 0.10703/)
+!   -- Tinga Tingana
+    aero_sites(2)   = 'Tinga_Tingana'
+    aero_types(2)   = 6           
+    aero_zones(2)   = 12
+    aero_elev(2)    = 38
+    aero_sr412(2,:) = (/8.3397, 9.3348, 8.3018, 10.4549/)     
+    aero_sr470(2,:) = (/11.5649, 12.8902, 11.5255, 13.5749/)
+    aero_sr650(2,:) = (/29.0277, 31.3340, 27.9479, 30.2249/)
+    aero_bgaod(2,:) = (/0.02300, 0.01900, 0.01800, 0.02100/)
+!    aero_bgaod(2,:) = (/0.08670, 0.06223, 0.05391, 0.10703/) 
  
-      !   -- Zinder_Airport
-      aero_sites(3)   = 'Zinder_Airport'
-      aero_types(3)   = 2
-      aero_zones(3)   = 1
-      aero_elev(3)    = 456
-      aero_sr412(3,:) = (/7.59892, 8.63954, 8.38775, 6.58359/)
-      aero_sr470(3,:) = (/11.3537, 12.8399, 12.3052, 9.87239/)
-      aero_sr650(3,:) = (/26.7511, 30.1220, 27.5969, 21.1145/)
-      aero_bgaod(3,:) = (/0.15400, 0.29600, 0.30200, 0.14300/)
-      !    aero_bgaod(3,:) = (/0.15523, 0.37014, 0.35720, 0.17437/)
+!   -- Zinder_Airport
+    aero_sites(3)   = 'Zinder_Airport'
+    aero_types(3)   = 2           
+    aero_zones(3)   = 1
+    aero_elev(3)    = 456
+    aero_sr412(3,:) = (/7.59892, 8.63954, 8.38775, 6.58359/)     
+    aero_sr470(3,:) = (/11.3537, 12.8399, 12.3052, 9.87239/)   
+    aero_sr650(3,:) = (/26.7511, 30.1220, 27.5969, 21.1145/)  
+    aero_bgaod(3,:) = (/0.15400, 0.29600, 0.30200, 0.14300/)
+!    aero_bgaod(3,:) = (/0.15523, 0.37014, 0.35720, 0.17437/)
     
-      !   -- Moldova
-      aero_sites(4)   = 'Moldova'
-      aero_types(4)   = 4
-      aero_zones(4)   = 17
-      aero_elev(4)    = 205
-      aero_sr412(4,:) = (/-999.000, 6.10670, 5.23876, 5.76111/)
-      aero_sr470(4,:) = (/-999.000, 7.08618, 6.13133, 6.63834/)
-      aero_sr650(4,:) = (/-999.000, 8.11562, 7.51764, 7.96273/)
-      aero_bgaod(4,:) = (/0.01900, 0.05900, 0.07700, 0.04300/)
-      !    aero_bgaod(4,:) = (/0.07450, 0.12211, 0.12758, 0.07907/)
+!   -- Moldova
+    aero_sites(4)   = 'Moldova'
+    aero_types(4)   = 4           
+    aero_zones(4)   = 17
+    aero_elev(4)    = 205
+    aero_sr412(4,:) = (/-999.000, 6.10670, 5.23876, 5.76111/)  
+    aero_sr470(4,:) = (/-999.000, 7.08618, 6.13133, 6.63834/)
+    aero_sr650(4,:) = (/-999.000, 8.11562, 7.51764, 7.96273/)
+    aero_bgaod(4,:) = (/0.01900, 0.05900, 0.07700, 0.04300/)
+!    aero_bgaod(4,:) = (/0.07450, 0.12211, 0.12758, 0.07907/)
 
-      !   -- Beijing
-      aero_sites(5)   = 'Beijing'
-      aero_types(5)   = 4
-      aero_zones(5)   = 16
-      aero_elev(5)    = 92
-      aero_sr412(5,:) = (/5.04678, 6.91650, 6.04189, 5.75009/)
-      aero_sr470(5,:) = (/7.59624, 8.45864, 7.31190, 7.05383/)
-      aero_sr650(5,:) = (/11.7573, 11.3573, 9.2663, 8.54484/)
-      aero_bgaod(5,:) = (/0.13800, 0.18100, 0.14400, 0.11400/)
-      !    aero_bgaod(5,:) = (/0.12670, 0.19608, 0.20208, 0.11582/)
+!   -- Beijing
+    aero_sites(5)   = 'Beijing'
+    aero_types(5)   = 4           
+    aero_zones(5)   = 16
+    aero_elev(5)    = 92
+    aero_sr412(5,:) = (/5.04678, 6.91650, 6.04189, 5.75009/)
+    aero_sr470(5,:) = (/7.59624, 8.45864, 7.31190, 7.05383/)
+    aero_sr650(5,:) = (/11.7573, 11.3573, 9.2663, 8.54484/)
+    aero_bgaod(5,:) = (/0.13800, 0.18100, 0.14400, 0.11400/)
+!    aero_bgaod(5,:) = (/0.12670, 0.19608, 0.20208, 0.11582/)
     
-      !   -- Kanpur, India except for urban areas and Thar Desert
-      aero_sites(6)    = 'Kanpur'
-      aero_types(6)    = 3
-      aero_zones(6)    = 15
-      aero_elev(6)     = 123
-      !   use fall BRDF for summer, 26 January 2018 JLee, TEST
-      aero_sr412(6,:)  = (/8.76996,6.24308,8.49987,7.49987/)
-      aero_sr470(6,:)  = (/6.26996,5.74308,7.99987,5.99987/)
-      aero_sr650(6,:)  = (/10.25542,10.1785,11.75790,10.75790/)
-      aero_bgaod(6,:) = (/0.27400, 0.24800, 0.27600, 0.27900/)
-      !    aero_bgaod(6,:) = (/0.31233, 0.28328, 0.44091, 0.36488/)
+!   -- Kanpur, India except for urban areas and Thar Desert
+    aero_sites(6)    = 'Kanpur'
+    aero_types(6)    = 3           
+    aero_zones(6)    = 15
+    aero_elev(6)     = 123
+!   use fall BRDF for summer, 26 January 2018 JLee, TEST
+!   test
+    aero_sr412(6,:)  = (/8.76996,6.24308,8.49987,7.49987/)
+    aero_sr470(6,:)  = (/6.26996,5.74308,7.99987,5.99987/)
+    aero_sr650(6,:)  = (/10.25542,10.1785,11.75790,10.75790/)
+    aero_bgaod(6,:) = (/0.27400, 0.24800, 0.27600, 0.27900/)
     
-      !   -- Modena
-      aero_sites(7)   = 'Modena'
-      aero_types(7)   = 4
-      aero_zones(7)   = 17
-      aero_elev(7)    = 56
-      aero_sr412(7,:) = (/3.7846,5.30996,5.72852,5.69932/)
-      aero_sr470(7,:) = (/5.3279,6.31288,7.11941,6.54509/)
-      aero_sr650(7,:) = (/5.5748,9.44464,9.73280,10.1099/)
-      aero_bgaod(7,:) = (/0.02100, 0.09200, 0.09900, 0.03900/)
-      !    aero_bgaod(7,:) = (/0.06867, 0.13446, 0.15744, 0.09253/)
-
-      !   -- Palencia
-      aero_sites(8)   = 'Palencia'
-      aero_types(8)   = 3
-      aero_zones(8)   = 17
-      aero_elev(8)    = 750
-      aero_sr412(8,:) = (/-999.000,5.03951,4.76740,-999.000/)
-      aero_sr470(8,:) = (/-999.000,6.17346,6.62762,-999.000/)
-      aero_sr650(8,:) = (/-999.000,8.70520,10.7275,-999.000/)
-      aero_bgaod(8,:) = (/0.02500, 0.04000, 0.02700, 0.03300/)
-      !    aero_bgaod(8,:) = (/0.05151, 0.09216, 0.10017, 0.06591/)
+    aero_bgaod(6,:) = (/0.27400, 0.24800, 0.27600, 0.27900/)
+!    aero_bgaod(6,:) = (/0.31233, 0.28328, 0.44091, 0.36488/)
     
-      !   -- Lecce_University
-      aero_sites(9)   = 'Lecce_University'
-      aero_types(9)   = 2
-      aero_zones(9)   = 17
-      aero_elev(9)    = 30
-      aero_sr412(9,:) = (/4.68698,4.01772,6.14852,5.86577/)
-      aero_sr470(9,:) = (/5.16447,5.68885,8.15023,6.82434/)
-      aero_sr650(9,:) = (/10.1211,10.6153,11.0301,11.3503/)
-      aero_bgaod(9,:) = (/0.05700, 0.08800, 0.06200, 0.06800/)
-      !    aero_bgaod(9,:) = (/0.06377, 0.12146, 0.13148, 0.08287/)
+!   -- Modena
+    aero_sites(7)   = 'Modena'
+    aero_types(7)   = 4           
+    aero_zones(7)   = 17
+    aero_elev(7)    = 56
+    aero_sr412(7,:) = (/3.7846,5.30996,5.72852,5.69932/)
+    aero_sr470(7,:) = (/5.3279,6.31288,7.11941,6.54509/)
+    aero_sr650(7,:) = (/5.5748,9.44464,9.73280,10.1099/)    
+    aero_bgaod(7,:) = (/0.02100, 0.09200, 0.09900, 0.03900/)
+!    aero_bgaod(7,:) = (/0.06867, 0.13446, 0.15744, 0.09253/)
 
-      !   -- Fresno_2
-      !   This controls N. America urban areas. Fresno AERONET validation is affected by
-      !   both Fresno_2 and Fresno_GZ18. Currently optimized for general urban areas,
-      !   as thinking of making separate geozone for Fresno if validation is not
-      !   acceptable at Fresno. Only baseline change would be needed for the new zone.
-      aero_sites(10)   = 'Fresno_2'
-      aero_types(10)   = 4
-      aero_zones(10)   = 13
-      aero_elev(10)    = 0.0
-      aero_sr412(10,:) = (/5.68700,4.64569,4.42003,4.78884/)
-      aero_sr470(10,:) = (/6.91660,6.96638,6.80781,6.73356/)
-      aero_sr650(10,:) = (/11.5361,12.2151,12.2892,12.6795/)
-      aero_bgaod(10,:) = (/0.05300, 0.11500, 0.08500, 0.08100/)
-      !    aero_bgaod(10,:) = (/0.08402, 0.13809, 0.14728, 0.10320/)
+!   -- Palencia
+    aero_sites(8)   = 'Palencia'
+    aero_types(8)   = 3           
+    aero_zones(8)   = 17
+    aero_elev(8)    = 750
+    aero_sr412(8,:) = (/-999.000,5.03951,4.76740,-999.000/)
+    aero_sr470(8,:) = (/-999.000,6.17346,6.62762,-999.000/)
+    aero_sr650(8,:) = (/-999.000,8.70520,10.7275,-999.000/)
+    aero_bgaod(8,:) = (/0.02500, 0.04000, 0.02700, 0.03300/)
+!    aero_bgaod(8,:) = (/0.05151, 0.09216, 0.10017, 0.06591/)
     
-      !   -- Fresno (Central Valley)
-      aero_sites(11)   = 'Fresno_GZ18'
-      aero_types(11)   = 2
-      aero_zones(11)   = 18
-      aero_elev(11)    = 0.0
-      aero_sr412(11,:) = (/6.18700,5.14569,4.92003,5.28884/)
-      aero_sr470(11,:) = (/7.41660,7.46638,7.30781,7.23356/)
-      aero_sr650(11,:) = (/11.5361,12.2151,12.2892,12.6795/)
-      aero_bgaod(11,:) = (/0.05300, 0.11500, 0.08500, 0.08100/)
-      !    aero_bgaod(11,:) = (/0.08402, 0.13809, 0.14728, 0.10320/)
+!   -- Lecce_University
+    aero_sites(9)   = 'Lecce_University'
+    aero_types(9)   = 2         
+    aero_zones(9)   = 17
+    aero_elev(9)    = 30 
+    aero_sr412(9,:) = (/4.68698,4.01772,6.14852,5.86577/)
+    aero_sr470(9,:) = (/5.16447,5.68885,8.15023,6.82434/) 
+    aero_sr650(9,:) = (/10.1211,10.6153,11.0301,11.3503/)
+    aero_bgaod(9,:) = (/0.05700, 0.08800, 0.06200, 0.06800/)
+!    aero_bgaod(9,:) = (/0.06377, 0.12146, 0.13148, 0.08287/)
 
-      !   -- IER_Cinzana
-      aero_sites(12)   = 'IER_Cinzana'
-      aero_types(12)   = 2
-      aero_zones(12)   = 5
-      aero_elev(12)    = 285
-      aero_sr412(12,:) = (/5.33969,6.89590,7.78313,5.45146/)
-      aero_sr470(12,:) = (/8.17876,10.2201,11.0532,7.67885/)
-      aero_sr650(12,:) = (/18.6043,21.9242,19.8147,13.6748/)
-      aero_bgaod(12,:) = (/0.16800, 0.24200, 0.12900, 0.17400/)
-      !    aero_bgaod(12,:) = (/0.14072, 0.32845, 0.29905, 0.18086/)
+!   -- Fresno_2 
+!   This controls N. America urban areas. Fresno AERONET validation is affected by
+!   both Fresno_2 and Fresno_GZ18. Currently optimized for general urban areas,
+!   as thinking of making separate geozone for Fresno if validation is not
+!   acceptable at Fresno. Only baseline change would be needed for the new zone.
+    aero_sites(10)   = 'Fresno_2'
+    aero_types(10)   = 4          
+    aero_zones(10)   = 13
+    aero_elev(10)    = 0.0
+    aero_sr412(10,:) = (/5.68700,4.64569,4.42003,4.78884/)
+    aero_sr470(10,:) = (/6.91660,6.96638,6.80781,6.73356/)
+    aero_sr650(10,:) = (/11.5361,12.2151,12.2892,12.6795/)
+    aero_bgaod(10,:) = (/0.05300, 0.11500, 0.08500, 0.08100/)
+!    aero_bgaod(10,:) = (/0.08402, 0.13809, 0.14728, 0.10320/)
     
-      !   -- Agoufou
-      aero_sites(13)   = 'Agoufou'
-      aero_types(13)   = 2
-      aero_zones(13)   = -1 !5
-      aero_elev(13)    = 305
-      aero_sr412(13,:) = (/6.33764,7.20075,7.12166,5.88014/)
-      aero_sr470(13,:) = (/10.3036,11.2734,10.7413,9.34117/)
-      aero_sr650(13,:) = (/26.6428,30.4116,27.0584,21.6639/)
-      aero_bgaod(13,:) = (/0.11800, 0.20500, 0.19900, 0.13200/)
-      !    aero_bgaod(13,:) = (/0.12562, 0.29455, 0.39775, 0.17390/)
+!   -- Fresno (Central Valley) 
+    aero_sites(11)   = 'Fresno_GZ18'
+    aero_types(11)   = 2          
+    aero_zones(11)   = 18
+    aero_elev(11)    = 0.0
+    aero_sr412(11,:) = (/6.18700,5.14569,4.92003,5.28884/)
+    aero_sr470(11,:) = (/7.41660,7.46638,7.30781,7.23356/)
+    aero_sr650(11,:) = (/11.5361,12.2151,12.2892,12.6795/)
+    aero_bgaod(11,:) = (/0.05300, 0.11500, 0.08500, 0.08100/)
+!    aero_bgaod(11,:) = (/0.08402, 0.13809, 0.14728, 0.10320/)
 
-      !   -- Saada -- leave disabled, decided not to use it. troublesome site.
-      aero_sites(14)   = 'Saada'
-      aero_types(14)   = 3
-      aero_zones(14)   = -1 !2
-      aero_elev(14)    = 420
-      aero_sr412(14,:) = (/7.30339, 5.90723, 6.37791, 6.20939/)
-      aero_sr470(14,:) = (/8.68933, 7.76850, 8.46196, 8.15088/)
-      aero_sr650(14,:) = (/14.1430, 14.5881, 16.7061, 15.5649/)
-      aero_bgaod(14,:) = (/0.08300, 0.06400, 0.08800, 0.08700/)
-      !    aero_bgaod(14,:) = (/0.03898, 0.06964, 0.08859, 0.07119/)
-
-      !   -- Trelew (S. America)
-      aero_sites(15)   = 'Trelew'
-      aero_types(15)   = 6
-      aero_zones(15)   = 14
-      aero_elev(15)    = 15
-      aero_sr412(15,:) = (/5.29937, 5.30638, 6.01197, 5.75946/)
-      aero_sr470(15,:) = (/8.20220, 7.37385, 7.43250, 7.71553/)
-      aero_sr650(15,:) = (/14.0610, 11.7312, 11.2763, 12.9785/)
-      aero_bgaod(15,:) = (/0.02200, 0.01900, 0.01700, 0.01900/)
-      !    aero_bgaod(15,:) = (/0.06490, 0.03365, 0.03397, 0.05836/)
-
-      !   -- Carpentras
-      aero_sites(16)   = 'Carpentras'
-      aero_types(16)   = 3
-      aero_zones(16)   = 17
-      aero_elev(16)    = 100
-      aero_sr412(16,:) = (/-999.000,4.27180,3.84850,3.60839/)
-      aero_sr470(16,:) = (/-999.000,5.77824,5.63915,5.02537/)
-      aero_sr650(16,:) = (/-999.000,9.71739,9.57229,8.67115/)
-      aero_bgaod(16,:) = (/0.01900, 0.03200, 0.03500, 0.02100/)
-      !    aero_bgaod(16,:) = (/0.03448, 0.06474, 0.05331, 0.03388/)
-
-      !   -- 25km BRDF
-      !    aero_sr412(16,:) = (/-999.000,4.72180,4.64850,4.20839/)
-      !    aero_sr470(16,:) = (/-999.000,6.22824,6.43915,5.62537/)
-      !    aero_sr650(16,:) = (/-999.000,9.71739,9.57229,8.67115/)
-
-      !        -- Pune, India urban areas
-      aero_sites(17) = 'Pune'
-      aero_types(17)   = 4
-      aero_zones(17)   = 19
-      aero_elev(17)    = 559
-      aero_sr412(17,:) = (/4.49376,6.22264,4.81305,7.31305/)
-      aero_sr470(17,:) = (/5.42197,8.08891,5.49410,7.99410/)
-      aero_sr650(17,:) = (/8.40501,11.6605,6.73313,9.23313/)
-      aero_bgaod(17,:) = (/0.20400, 0.16400, 0.07500, 0.17100/)
-      !    aero_bgaod(17,:) = (/0.14888, 0.21124, 0.27165, 0.19066/)
+!   -- IER_Cinzana
+    aero_sites(12)   = 'IER_Cinzana'
+    aero_types(12)   = 2           
+    aero_zones(12)   = 5
+    aero_elev(12)    = 285
+    aero_sr412(12,:) = (/5.33969,6.89590,7.78313,5.45146/)
+    aero_sr470(12,:) = (/8.17876,10.2201,11.0532,7.67885/)
+    aero_sr650(12,:) = (/18.6043,21.9242,19.8147,13.6748/)
+    aero_bgaod(12,:) = (/0.16800, 0.24200, 0.12900, 0.17400/)
+!    aero_bgaod(12,:) = (/0.14072, 0.32845, 0.29905, 0.18086/)
     
-      !        -- Evora, Spain
-      aero_sites(18)     = 'Evora'
-      aero_types(18)   = 3
-      aero_zones(18)   = 22
-      aero_elev(18)    = 293
-      aero_sr412(18,:) = (/4.95347,4.48004,4.75238,5.64016/)
-      aero_sr470(18,:) = (/5.60902,5.80674,7.54495,7.83002/)
-      aero_sr650(18,:) = (/6.80235,6.94325,13.3975,11.9871/)
-      aero_bgaod(18,:) = (/0.01900, 0.03400, 0.02600, 0.02500/)
-      !    aero_bgaod(18,:) = (/0.03544, 0.06548, 0.09886, 0.05251/)
+!   -- Agoufou
+    aero_sites(13)   = 'Agoufou'
+    aero_types(13)   = 2           
+    aero_zones(13)   = -1 !5
+    aero_elev(13)    = 305
+    aero_sr412(13,:) = (/6.33764,7.20075,7.12166,5.88014/)
+    aero_sr470(13,:) = (/10.3036,11.2734,10.7413,9.34117/)
+    aero_sr650(13,:) = (/26.6428,30.4116,27.0584,21.6639/)
+    aero_bgaod(13,:) = (/0.11800, 0.20500, 0.19900, 0.13200/)
+!    aero_bgaod(13,:) = (/0.12562, 0.29455, 0.39775, 0.17390/)
 
-      !        -- Blida, N. Africa
-      aero_sites(19)     = 'Blida'
-      aero_types(19)   = 3
-      aero_zones(19)   = -1 !2
-      aero_elev(19)    = 230
-      aero_sr412(19,:) = (/-999.000,5.20722,5.84409,-999.000/)
-      aero_sr470(19,:) = (/-999.000,7.35584,7.89343,-999.000/)
-      aero_sr650(19,:) = (/-999.000,11.1594,13.5330,-999.000/)
-      aero_bgaod(19,:) = (/0.04400, 0.04900, 0.07700, 0.05800/)
-      !    aero_bgaod(19,:) = (/0.07116, 0.10362, 0.15463, 0.09386/)
+!   -- Saada -- leave disabled, decided not to use it. troublesome site.
+    aero_sites(14)   = 'Saada'
+    aero_types(14)   = 3         
+    aero_zones(14)   = -1 !2
+    aero_elev(14)    = 420
+    aero_sr412(14,:) = (/7.30339, 5.90723, 6.37791, 6.20939/)
+    aero_sr470(14,:) = (/8.68933, 7.76850, 8.46196, 8.15088/)
+    aero_sr650(14,:) = (/14.1430, 14.5881, 16.7061, 15.5649/)
+    aero_bgaod(14,:) = (/0.08300, 0.06400, 0.08800, 0.08700/)
+!    aero_bgaod(14,:) = (/0.03898, 0.06964, 0.08859, 0.07119/)
 
-      !        -- Blida, N. Africa
-      aero_sites(20)     = 'Blida_High'
-      aero_types(20)   = 3
-      aero_zones(20)   = -1 !2
-      aero_elev(20)    = 600
-      aero_sr412(20,:) = (/-999.000,5.20722,5.84409,-999.000/)
-      aero_sr470(20,:) = (/-999.000,7.35584,7.89343,-999.000/)
-      aero_sr650(20,:) = (/-999.000,11.1594,13.5330,-999.000/)
-      aero_bgaod(20,:) = (/0.04400, 0.04900, 0.07700, 0.05800/)
-      !    aero_bgaod(20,:) = (/0.07116, 0.10362, 0.15463, 0.09386/)
+!   -- Trelew (S. America)
+    aero_sites(15)   = 'Trelew'
+    aero_types(15)   = 6
+    aero_zones(15)   = 14
+    aero_elev(15)    = 15 
+    aero_sr412(15,:) = (/5.29937, 5.30638, 6.01197, 5.75946/)
+    aero_sr470(15,:) = (/8.20220, 7.37385, 7.43250, 7.71553/)
+    aero_sr650(15,:) = (/14.0610, 11.7312, 11.2763, 12.9785/)
+    aero_bgaod(15,:) = (/0.02200, 0.01900, 0.01700, 0.01900/)
+!    aero_bgaod(15,:) = (/0.06490, 0.03365, 0.03397, 0.05836/)
 
-      !   -- GZ24_Only, covers Taklimakan Desert, only AOT models are used here.
-      aero_sites(21)   = 'GZ24_Only'
-      aero_types(21)   = -1
-      aero_zones(21)   = 24
-      aero_elev(21)    = -1
-      aero_sr412(21,:) = (/-999.0,-999.0,-999.0,-999.0/)      ! new from surf. coeffs.
-      aero_sr470(21,:) = (/-999.0,-999.0,-999.0,-999.0/)
-      aero_sr650(21,:) = (/-999.0,-999.0,-999.0,-999.0/)
-      aero_bgaod(21,:) = (/ -999.0,  -999.0,  -999.0,  -999.0/)
-      !    aero_bgaod(21,:) = (/ -999.0,  -999.0,  -999.0,  -999.0/)
+!   -- Carpentras
+    aero_sites(16)   = 'Carpentras'
+    aero_types(16)   = 3
+    aero_zones(16)   = 17
+    aero_elev(16)    = 100 
+    aero_sr412(16,:) = (/-999.000,4.27180,3.84850,3.60839/)
+    aero_sr470(16,:) = (/-999.000,5.77824,5.63915,5.02537/)
+    aero_sr650(16,:) = (/-999.000,9.71739,9.57229,8.67115/)
+    aero_bgaod(16,:) = (/0.01900, 0.03200, 0.03500, 0.02100/)
+!    aero_bgaod(16,:) = (/0.03448, 0.06474, 0.05331, 0.03388/)
+
+!   -- 25km BRDF
+!    aero_sr412(16,:) = (/-999.000,4.72180,4.64850,4.20839/)
+!    aero_sr470(16,:) = (/-999.000,6.22824,6.43915,5.62537/)
+!    aero_sr650(16,:) = (/-999.000,9.71739,9.57229,8.67115/)
+
+!		-- Pune, India urban areas
+		aero_sites(17)	 = 'Pune'
+		aero_types(17)   = 4
+    aero_zones(17)   = 19
+    aero_elev(17)    = 559
+    aero_sr412(17,:) = (/4.49376,6.22264,4.81305,7.31305/)  
+    aero_sr470(17,:) = (/5.42197,8.08891,5.49410,7.99410/)
+    aero_sr650(17,:) = (/8.40501,11.6605,6.73313,9.23313/)
+    aero_bgaod(17,:) = (/0.20400, 0.16400, 0.07500, 0.17100/)
+!    aero_bgaod(17,:) = (/0.14888, 0.21124, 0.27165, 0.19066/)
+    
+!		-- Evora, Spain
+		aero_sites(18)	 = 'Evora'
+		aero_types(18)   = 3
+    aero_zones(18)   = 22
+    aero_elev(18)    = 293
+    aero_sr412(18,:) = (/4.95347,4.48004,4.75238,5.64016/)    
+    aero_sr470(18,:) = (/5.60902,5.80674,7.54495,7.83002/)
+    aero_sr650(18,:) = (/6.80235,6.94325,13.3975,11.9871/)
+    aero_bgaod(18,:) = (/0.01900, 0.03400, 0.02600, 0.02500/)
+!    aero_bgaod(18,:) = (/0.03544, 0.06548, 0.09886, 0.05251/)
+
+!		-- Blida, N. Africa
+		aero_sites(19)	 = 'Blida'
+		aero_types(19)   = 3
+    aero_zones(19)   = -1 !2
+    aero_elev(19)    = 230
+    aero_sr412(19,:) = (/-999.000,5.20722,5.84409,-999.000/)    
+    aero_sr470(19,:) = (/-999.000,7.35584,7.89343,-999.000/)
+    aero_sr650(19,:) = (/-999.000,11.1594,13.5330,-999.000/)
+    aero_bgaod(19,:) = (/0.04400, 0.04900, 0.07700, 0.05800/)
+!    aero_bgaod(19,:) = (/0.07116, 0.10362, 0.15463, 0.09386/)
+
+!		-- Blida, N. Africa
+		aero_sites(20)	 = 'Blida_High'
+		aero_types(20)   = 3
+    aero_zones(20)   = -1 !2
+    aero_elev(20)    = 600
+    aero_sr412(20,:) = (/-999.000,5.20722,5.84409,-999.000/)    
+    aero_sr470(20,:) = (/-999.000,7.35584,7.89343,-999.000/)
+    aero_sr650(20,:) = (/-999.000,11.1594,13.5330,-999.000/)
+    aero_bgaod(20,:) = (/0.04400, 0.04900, 0.07700, 0.05800/)
+!    aero_bgaod(20,:) = (/0.07116, 0.10362, 0.15463, 0.09386/)
+
+!   -- GZ24_Only, covers Taklimakan Desert, only AOT models are used here.
+    aero_sites(21)   = 'GZ24_Only'
+    aero_types(21)   = -1           
+    aero_zones(21)   = 24
+    aero_elev(21)    = -1    
+    aero_sr412(21,:) = (/-999.0,-999.0,-999.0,-999.0/)      ! new from surf. coeffs.
+    aero_sr470(21,:) = (/-999.0,-999.0,-999.0,-999.0/)
+    aero_sr650(21,:) = (/-999.0,-999.0,-999.0,-999.0/)
+    aero_bgaod(21,:) = (/ -999.0,  -999.0,  -999.0,  -999.0/)
+!    aero_bgaod(21,:) = (/ -999.0,  -999.0,  -999.0,  -999.0/) 
    
-      !   -- Ilorin
-      aero_sites(22)   = 'Ilorin'
-      aero_types(22)   = 2
-      aero_zones(22)   = 26
-      aero_elev(22)    = 350
-      aero_sr412(22,:) = (/4.79848, 4.13429, -999.000, -999.000/)
-      aero_sr470(22,:) = (/5.73108, 5.07124, -999.000, -999.000/)
-      aero_sr650(22,:) = (/10.0571, 9.28994, -999.000, -999.000/)
-      aero_bgaod(22,:) = (/0.34500, 0.29700, 0.17300, 0.16400/)
-      !    aero_bgaod(22,:) = (/0.32718, 0.32547, -999.00000, 0.22936/)
+!   -- Ilorin
+    aero_sites(22)   = 'Ilorin'
+    aero_types(22)   = 2           
+    aero_zones(22)   = 26
+    aero_elev(22)    = 350
+    aero_sr412(22,:) = (/4.79848, 4.13429, -999.000, -999.000/)     
+    aero_sr470(22,:) = (/5.73108, 5.07124, -999.000, -999.000/)
+    aero_sr650(22,:) = (/10.0571, 9.28994, -999.000, -999.000/)
+    aero_bgaod(22,:) = (/0.34500, 0.29700, 0.17300, 0.16400/)
+!    aero_bgaod(22,:) = (/0.32718, 0.32547, -999.00000, 0.22936/)
 
-      !   -- CCNY
-      aero_sites(23)   = 'CCNY'
-      aero_types(23)   = 4
-      aero_zones(23)   = 25
-      aero_elev(23)    = 0.0
-      aero_sr412(23,:) = (/5.7380,6.3655,8.7437,5.3349/)
-      aero_sr470(23,:) = (/7.0723,7.5391,8.8168,6.8278/)
-      aero_sr650(23,:) = (/10.1025,10.7149,10.1311,10.5906/)
-      aero_bgaod(23,:) = (/0.04800, 0.06600, 0.13500, 0.06100/)
-      !    aero_bgaod(23,:) = (/0.06593, 0.09566, 0.09318, 0.05144/)
+!   -- CCNY
+    aero_sites(23)   = 'CCNY'
+    aero_types(23)   = 4          
+    aero_zones(23)   = 25
+    aero_elev(23)    = 0.0    
+    aero_sr412(23,:) = (/5.7380,6.3655,8.7437,5.3349/)
+    aero_sr470(23,:) = (/7.0723,7.5391,8.8168,6.8278/)
+    aero_sr650(23,:) = (/10.1025,10.7149,10.1311,10.5906/)
+    aero_bgaod(23,:) = (/0.04800, 0.06600, 0.13500, 0.06100/)
+!    aero_bgaod(23,:) = (/0.06593, 0.09566, 0.09318, 0.05144/)
 
-      !   -- Ilorin
-      aero_sites(24)   = 'Ilorin_Transition'
-      aero_types(24)   = 2
-      !    aero_zones(24)   = -1 !27
-      aero_zones(24)   = 27
-      aero_elev(24)    = 350
-      aero_sr412(24,:) = (/4.79848, 4.13429, -999.000, -999.000/)
-      aero_sr470(24,:) = (/5.73108, 5.07124, -999.000, -999.000/)
-      aero_sr650(24,:) = (/10.0571, 9.28994, -999.000, -999.000/)
-      aero_bgaod(24,:) = (/0.34500, 0.29700, 0.17300, 0.16400/)
-      !    aero_bgaod(24,:) = (/0.32718, 0.32547, -999.00000, 0.22936/)
+!   -- Ilorin
+    aero_sites(24)   = 'Ilorin_Transition'
+    aero_types(24)   = 2           
+!    aero_zones(24)   = -1 !27
+    aero_zones(24)   = 27
+    aero_elev(24)    = 350
+    aero_sr412(24,:) = (/4.79848, 4.13429, -999.000, -999.000/)     
+    aero_sr470(24,:) = (/5.73108, 5.07124, -999.000, -999.000/)
+    aero_sr650(24,:) = (/10.0571, 9.28994, -999.000, -999.000/)
+    aero_bgaod(24,:) = (/0.34500, 0.29700, 0.17300, 0.16400/)
+!    aero_bgaod(24,:) = (/0.32718, 0.32547, -999.00000, 0.22936/)
 
-      !   -- SACOL
-      aero_sites(25)   = 'SACOL'
-      aero_types(25)   = 2
-      aero_zones(25)   = 28
-      aero_elev(25)    = 1965
-      aero_sr412(25,:) = (/6.57751, 5.85782, 4.26251, 5.79214/)
-      aero_sr470(25,:) = (/8.5020, 8.2185, 5.56137, 6.24013/)
-      aero_sr650(25,:) = (/16.6909, 16.8518, 11.5214, 12.5133/)
-      aero_bgaod(25,:) = (/0.03700, 0.05400, 0.05700, 0.03400/)
-      !    aero_bgaod(25,:) = (/0.12611, 0.20761, 0.17829, 0.11342/)
+!   -- SACOL
+    aero_sites(25)   = 'SACOL'
+    aero_types(25)   = 2           
+    aero_zones(25)   = 28
+    aero_elev(25)    = 1965
+    aero_sr412(25,:) = (/6.57751, 5.85782, 4.26251, 5.79214/)     
+    aero_sr470(25,:) = (/8.5020, 8.2185, 5.56137, 6.24013/)
+    aero_sr650(25,:) = (/16.6909, 16.8518, 11.5214, 12.5133/)
+    aero_bgaod(25,:) = (/0.03700, 0.05400, 0.05700, 0.03400/)
+!    aero_bgaod(25,:) = (/0.12611, 0.20761, 0.17829, 0.11342/)
     
-      !   -- Mexico_City
-      aero_sites(26)   = 'Mexico_City'
-      aero_types(26)   = 4
-      aero_zones(26)   = 29
-      aero_elev(26)    = 2268.0
-      aero_sr412(26,:) = (/6.73461, 6.20030, -999.000, 8.10955 /)
-      aero_sr470(26,:) = (/7.50571, 7.88785, -999.000, 9.46562/)
-      aero_sr650(26,:) = (/7.7320, 10.2994, -999.000, 11.9709/)
-      aero_bgaod(26,:) = (/0.01900, 0.02100, 0.03900, 0.02600/)
-      !    aero_bgaod(26,:) = (/0.07039, 0.10752, 0.11487, 0.09446/)
+!   -- Mexico_City
+    aero_sites(26)   = 'Mexico_City'
+    aero_types(26)   = 4        
+    aero_zones(26)   = 29
+    aero_elev(26)    = 2268.0
+    aero_sr412(26,:) = (/6.73461, 6.20030, -999.000, 8.10955 /)     
+    aero_sr470(26,:) = (/7.50571, 7.88785, -999.000, 9.46562/)
+    aero_sr650(26,:) = (/7.7320, 10.2994, -999.000, 11.9709/)
+    aero_bgaod(26,:) = (/0.01900, 0.02100, 0.03900, 0.02600/)
+!    aero_bgaod(26,:) = (/0.07039, 0.10752, 0.11487, 0.09446/)
     
-      !   -- Solar Village
-      aero_sites(27)   = 'Solar_Village'
-      aero_types(27)   = 6
-      aero_zones(27)   = 10
-      aero_elev(27)    = 764.0
-      aero_sr412(27,:) = (/10.4297, 10.8623, 10.7472, 11.9705/)
-      aero_sr470(27,:) = (/15.0892, 16.1351, 16.0690, 17.0390/)
-      aero_sr650(27,:) = (/32.0747, 34.5677, 35.3692, 34.6681/)
-      aero_bgaod(27,:) = (/0.10100, 0.09800, 0.16700, 0.10900/)
-      !    aero_bgaod(27,:) = (/0.14651, 0.27687, 0.34036, 0.23912/)
+!   -- Solar Village
+    aero_sites(27)   = 'Solar_Village'
+    aero_types(27)   = 6           
+    aero_zones(27)   = 10
+    aero_elev(27)    = 764.0
+    aero_sr412(27,:) = (/10.4297, 10.8623, 10.7472, 11.9705/)     
+    aero_sr470(27,:) = (/15.0892, 16.1351, 16.0690, 17.0390/)
+    aero_sr650(27,:) = (/32.0747, 34.5677, 35.3692, 34.6681/)
+    aero_bgaod(27,:) = (/0.10100, 0.09800, 0.16700, 0.10900/)
+!    aero_bgaod(27,:) = (/0.14651, 0.27687, 0.34036, 0.23912/)
     
-      !   -- Jaipur, Thar Desert
-      aero_sites(28)   = 'Jaipur'
-      aero_types(28)   = 4
-      aero_zones(28)   = 20
-      aero_elev(28)    = 450.0
-      aero_sr412(28,:) = (/6.46991, 7.40196, 7.28651, 5.22799/)
-      aero_sr470(28,:) = (/8.49850, 9.42026, 9.49201, 7.03474/)
-      aero_sr650(28,:) = (/11.3653, 12.0653, 15.2039, 10.3618/)
-      aero_bgaod(28,:) = (/0.07100, 0.10500, 0.09500, 0.07100/)
-      !    aero_bgaod(28,:) = (/0.16877, 0.23449, 0.43655, 0.22099/)
+!   -- Jaipur, Thar Desert
+    aero_sites(28)   = 'Jaipur'
+    aero_types(28)   = 4         
+    aero_zones(28)   = 20 
+    aero_elev(28)    = 450.0
+    aero_sr412(28,:) = (/6.46991, 7.40196, 7.28651, 5.22799/)     
+    aero_sr470(28,:) = (/8.49850, 9.42026, 9.49201, 7.03474/)
+    aero_sr650(28,:) = (/11.3653, 12.0653, 15.2039, 10.3618/)
+    aero_bgaod(28,:) = (/0.07100, 0.10500, 0.09500, 0.07100/)
+!    aero_bgaod(28,:) = (/0.16877, 0.23449, 0.43655, 0.22099/)
 
-      !   -- NW_India_Desert
-      aero_sites(29)   = 'NW_India_Desert'
-      aero_types(29)   = 4
-      aero_zones(29)   = 30
-      aero_elev(29)    = 450.0
-      aero_sr412(29,:) = (/7.09280, 5.90470, 6.97091, 4.24017/)
-      aero_sr470(29,:) = (/8.31369, 7.69160, 8.73495, 5.41526/)
-      aero_sr650(29,:) = (/11.8653, 13.1653, 15.0039, 10.9618/)
-      aero_bgaod(29,:) = (/0.07100, 0.10500, 0.09500, 0.07100/)
-      !    aero_bgaod(29,:) = (/0.16877, 0.23449, 0.43655, 0.22099/)
+!   -- NW_India_Desert
+    aero_sites(29)   = 'NW_India_Desert'
+    aero_types(29)   = 4         
+    aero_zones(29)   = 30 
+    aero_elev(29)    = 450.0
+    aero_sr412(29,:) = (/7.09280, 5.90470, 6.97091, 4.24017/)     
+    aero_sr470(29,:) = (/8.31369, 7.69160, 8.73495, 5.41526/)
+    aero_sr650(29,:) = (/11.8653, 13.1653, 15.0039, 10.9618/)
+    aero_bgaod(29,:) = (/0.07100, 0.10500, 0.09500, 0.07100/)
+!    aero_bgaod(29,:) = (/0.16877, 0.23449, 0.43655, 0.22099/)
     
-      !   --Yuma
-      aero_sites(30)   = 'Yuma'
-      aero_types(30)   = 6
-      aero_zones(30)   = 31
-      aero_elev(30)    = 63
-      aero_sr412(30,:) = (/6.7668, 6.9406, 8.3705, 7.4484/)
-      aero_sr470(30,:) = (/9.8905, 9.9898, 10.8432, 10.9740/)
-      aero_sr650(30,:) = (/24.7466, 24.4755, 25.5649, 25.4377/)
-      aero_bgaod(30,:) = (/0.07100, 0.12300, 0.11500, 0.08600/)
-      !    aero_bgaod(30,:) = (/0.05629, 0.12101, 0.13732, 0.07340/)
+!   --Yuma
+    aero_sites(30)   = 'Yuma'
+    aero_types(30)   = 6  
+    aero_zones(30)   = 31 
+    aero_elev(30)    = 63 
+    aero_sr412(30,:) = (/6.7668, 6.9406, 8.3705, 7.4484/)
+    aero_sr470(30,:) = (/9.8905, 9.9898, 10.8432, 10.9740/)
+    aero_sr650(30,:) = (/24.7466, 24.4755, 25.5649, 25.4377/) 
+    aero_bgaod(30,:) = (/0.07100, 0.12300, 0.11500, 0.08600/)
+!    aero_bgaod(30,:) = (/0.05629, 0.12101, 0.13732, 0.07340/)
 
-      !   -- read in base BRDF reflectivitiy @ 650nm from infile.
-      allocate(brdf650(3600,1800), stat=status)
-      if (status /= 0) then
-         print *, "ERROR: Unable to allocate array for BRDF base data: ", status
-         return
-      end if
-
-      status = nf90_open(cfg%db_nc4, nf90_nowrite, nc_id)
-      if (status /= NF90_NOERR) then
-         print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
-         return
-      end if
-
-      group_name = 'brdfbase'
-      status = nf90_inq_ncid(nc_id, group_name, grp_id)
-      if (status /= NF90_NOERR) then
-         print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
-         return
-      end if
-
-      dset_name = 'brdf_base_650'
-      status = nf90_inq_varid(grp_id, dset_name, dset_id)
-      if (status /= NF90_NOERR) then
-         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
-         return
-      end if
-    
-      start2  = (/1,1/)
-      stride2 = (/1,1/)
-      edges2  = (/3600,1800/)
-      status = nf90_get_var(grp_id, dset_id, brdf650, start=start2, &
-         stride=stride2, count=edges2)
-      if (status /= NF90_NOERR) then
-         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-         return
-      end if
-
-      status = nf90_close(nc_id)
-      if (status /= NF90_NOERR) then
-         print *, "ERROR: Failed to close lut_nc4 file: ", status
-         return
-      end if
-    
+!   -- read in base BRDF reflectivitiy @ 650nm from infile.
+    inquire(file=trim(brdffile), exist=file_exists, iostat=status)
+    if (status /= 0) then
+      print *, "ERROR: Unable to inquire about BRDF base file: ", status
       return
-   end function load_brdf
+    end if
+    if (file_exists .eqv. .false.) then
+      print *, "ERROR: BRDF base file does not exist. Please check the config file."
+      status = -1
+      return
+    end if
+   
+    allocate(brdf650(3600,1800), stat=status)
+    if (status /= 0) then
+      print *, "ERROR: Unable to allocate array for BRDF base data: ", status
+      return
+    end if
+    
+! 	--open and read      
+		sd_id = sfstart(brdffile, DFACC_READ)
+    if (sd_id == -1 ) then
+    	print *,"ERROR: failed to start SDS interface on BRDF file: ", sd_id
+      status = sd_id
+      return
+    end if
+
+    sds_name = 'brdf_base_650'
+    sds_index = sfn2index(sd_id, sds_name)
+    if (sds_index == -1) then
+      print *, "ERROR: Unable to find index of "//trim(sds_name)//" SDS: ", sds_index
+      status = sds_index
+      return
+    end if
+    sds_id = sfselect(sd_id, sds_index)
+    if (sds_id == -1) then
+      print *, "ERROR: Unable to select "//trim(sds_name)//" SDS: ", sds_id
+      status = sds_id 
+      return
+    end if
+    
+    start2  = (/0,0/)
+    stride2 = (/1,1/)
+    edges2  = (/3600,1800/)
+    status = sfrdata(sds_id, start2, stride2, edges2, brdf650)
+    if (status == FAIL) then
+      print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
+      return
+    end if
+    
+    status = sfendacc(sds_id)
+    if (status == FAIL) then
+      print *, "ERROR: Unable to end access to "//trim(sds_name)//" SDS: ", status
+      return
+    end if
+    
+    status = sfend(sd_id)
+    if (status /= 0) then
+      print *, "ERROR: Unable to close base BRDF file: ", status
+      return
+    end if
+    
+    return
+  
+  end function load_brdf
 
 ! -- deallocate brdf650 array and AERONET site and surface reflectivity variables.
   subroutine unload_brdf(status) 
@@ -4668,7 +4748,7 @@ module modis_surface
     integer              :: checkvariable
     integer              :: i, j
     character (len=256)  :: msg
-    real                 :: eastedge, westedge, test
+    real                 :: eastedge, westedge
     status = 0
     
 !   -- if processing extracts, if region of interest is within bounds of the granule, 
@@ -4680,12 +4760,6 @@ module modis_surface
 !      call MODIS_SMF_SETDYNAMICMSG(MODIS_F_GENERIC, msg, 'set_limits')
 !    end if
     
-    if (maxval(lat) < -900.0 .or. maxval(long) < -900.0) then
-        status = -1
-        print *, "ERROR: Bad latitudes and/or longitudes: ", status
-        return
-    end if
-
     eastedge = -999.0
     westedge =  999.0
     dateline = 0
@@ -4700,18 +4774,18 @@ module modis_surface
           enddo
        enddo
        LERstart(1) = 10*(180+floor(eastedge)-1)
-       if (LERstart(1) <= 0) LERstart(1) = 0
+       if (LERstart(1) < 0) LERstart(1) = 0
        dateline = 3600 - LERstart(1)
        LERedge(1) = 10*(180+(floor(westedge)+2)) + dateline
     else
        LERstart(1) = 10*(180+(floor(minval(long, long > -900.0))-1))
-       if (LERstart(1) <= 0) LERstart(1) = 0
-        LERedge(1) = 10*(180+(floor(maxval(long, long > -900.0))+2)) - LERstart(1)
+       if (LERstart(1) < 0) LERstart(1) = 0
+       LERedge(1) = 10*(180+(floor(maxval(long, long > -900.0))+2)) - LERstart(1)
        if (LERedge(1)+LERstart(1) > 3600) LERedge(1) = 3600 - LERstart(1)
     endif
     
     LERstart(2) = 10*(90+(floor(minval(lat, lat > -900.0))-1))
-    if (LERstart(2) <= 0) LERstart(2) = 0
+    if (LERstart(2) < 0) LERstart(2) = 0
     LERedge(2) = 10*(90+(floor(maxval(lat, lat > -900.0))+2)) - LERstart(2)
     if (LERedge(2)+LERstart(2) > 1800) LERedge(2) = 1800 - LERstart(2)
         
@@ -4851,12 +4925,6 @@ module modis_surface
 !      call MODIS_SMF_SETDYNAMICMSG(MODIS_F_GENERIC, msg, 'set_limits')
 !    end if
 
-    if (maxval(lat) < -900.0 .or. maxval(long) < -900.0) then
-        status = -1
-        print *, "ERROR: Bad latitudes and/or longitudes: ", status
-        return
-    end if
-
     eastedge = -999.0
     westedge =  999.0
     dateline6 = 0
@@ -4871,18 +4939,18 @@ module modis_surface
           enddo
        enddo
        LERstart6(1) = (180+(floor(eastedge)-1))/0.06
-       if (LERstart6(1) <= 0) LERstart6(1) = 0
+       if (LERstart6(1) < 0) LERstart6(1) = 0
        dateline6 = 6000 - LERstart6(1)
        LERedge6(1) = (180+(floor(westedge)+2))/0.06 + dateline6
     else
        LERstart6(1) = (180+(floor(minval(long, long > -900.0))-1))/0.06
-       if (LERstart6(1) <= 0) LERstart6(1) = 0
+       if (LERstart6(1) < 0) LERstart6(1) = 0
        LERedge6(1) = (180+(floor(maxval(long, long > -900.0))+2))/0.06 - LERstart6(1)
        if (LERedge6(1)+LERstart6(1) > 6000) LERedge6(1) = 6000 - LERstart6(1)
     endif
 
     LERstart6(2) = (90+(floor(minval(lat, lat > -900.0))-1))/0.06
-    if (LERstart6(2) <= 0) LERstart6(2) = 0
+    if (LERstart6(2) < 0) LERstart6(2) = 0
     LERedge6(2) = (90+(floor(maxval(lat, lat > -900.0))+2))/0.06 - LERstart6(2)
     if (LERedge6(2)+LERstart6(2) > 3000) LERedge6(2) = 3000 - LERstart6(2)
 
@@ -4921,258 +4989,303 @@ module modis_surface
 
   end function set_limits6
 
- ! -- Load surface LER coefficient tables.
- integer function load_hdfLER(modis_ler_file, viirs_ler_file, coeffs_file, season) RESULT(status)
-      use netcdf
-      USE OCIUAAER_Config_Module
-      implicit none
+! -- Load surface LER coefficient tables.
+  integer function load_hdfLER(modis_ler_file, viirs_ler_file, coeffs_file, season) RESULT(status)
+
+    include 'hdf.inc'
+    include 'dffunc.inc'
 
     character(len=*), intent(in)    ::  modis_ler_file
     character(len=*), intent(in)    ::  viirs_ler_file
     character(len=*), intent(in)    ::  coeffs_file
-    integer, intent(in)               ::  season
+    integer                         ::  season
 
-    integer             :: start2(3), stride2(3), edges2(3)
-    integer             :: start4(5), stride4(5), edge4(5)
+    integer             :: start2(2), stride2(2), edge2(2)
+    integer             :: start4(4), stride4(4), edge4(4)
       
-    character(len=255)    ::  sds_name
-    character(len=255)    ::  dset_name
-    character(len=255)    ::  test_name
-    character(len=255)    ::  group_name
+    logical             ::  file_exists
 
-    integer               ::  nc_id
-    integer               ::  dim_id
-    integer               ::  dset_id
-    integer               ::  grp_id
+    character(len=255)  ::  sds_name
     integer             ::  sd_id, sds_index, sds_id
 
-    start2 = (/LERstart(1),LERstart(2),season/)
-    edges2 = (/LERedge(1),LERedge(2),1/)
-    stride2 = (/1,1,1/)
+    start2 = (/LERstart(1),LERstart(2)/)
+    edge2 = (/LERedge(1),LERedge(2)/)
+    stride2 = (/1,1/)
       
-    start4 = (/LERstart(1),LERstart(2),1,1,season/)
-    edge4 = (/LERedge(1),LERedge(2),4,3,1/)
-    stride4 = (/1,1,1,1,1/)
-
-    status = nf90_open(cfg%db_nc4, nf90_nowrite, nc_id)
-    if (status /= NF90_NOERR) then
-       print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
-       return
+    start4 = (/LERstart(1),LERstart(2),0,0/)
+    edge4 = (/LERedge(1),LERedge(2),4,3/)
+    stride4 = (/1,1,1,1/)
+      
+!   --  Inquire to see if files exist
+    inquire(file=trim(trim(coeffs_file)), exist=file_exists, iostat=status)
+    if (status /= 0) then
+      print *, "ERROR: Unable to inquire about LER file: "//trim(coeffs_file)
+      return
+    end if
+    if (file_exists .eqv. .false.) then
+      print *, "ERROR: LER file does not exist. Please check the config file."
+      return
+    end if
+    
+!   -- Open HDF file.      
+    sd_id = sfstart(trim(coeffs_file), DFACC_READ)
+    if (sd_id == FAIL ) then
+      print *, "ERROR: failed to start SDS interface on LER file: "//trim(coeffs_file)
+      return
     end if
 
-    group_name = 'surface_coeffs'
-    status = nf90_inq_ncid(nc_id, group_name, grp_id)
-    if (status /= NF90_NOERR) then
-       print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
-       return
-    end if
+    !sds_name = "412_fwd_TP"
+    !status = readLER5(start5, edge5, stride5, sds_name, sd_id, coefs412_fwd_tp)
+    !if (status < 0) goto 90
+
+    !sds_name = "412_all_TP"
+    !status = readLER5(start5, edge5, stride5, sds_name, sd_id, coefs412_all_tp)
+    !if (status < 0) goto 90
 
     sds_name = "412_fwd"
-    status = readLER5(start4, edge4, stride4, sds_name, grp_id, coefs412_fwd)
+    status = readLER5(start4, edge4, stride4, sds_name, sd_id, coefs412_fwd)
     if (status < 0) goto 90
 
     sds_name = "412_all"
-    status = readLER5(start4, edge4, stride4, sds_name, grp_id, coefs412_all)
+    status = readLER5(start4, edge4, stride4, sds_name, sd_id, coefs412_all)
     if (status < 0) goto 90
 
+    !sds_name = "470_fwd_TP"
+    !status = readLER5(start5, edge5, stride5, sds_name, sd_id, coefs470_fwd_tp)
+    !if (status < 0) goto 90
+
+    !sds_name = "470_all_TP"
+    !status = readLER5(start5, edge5, stride5, sds_name, sd_id, coefs470_all_tp)
+    !if (status < 0) goto 90
+
     sds_name = "470_fwd"
-    status = readLER5(start4, edge4, stride4, sds_name, grp_id, coefs470_fwd)
+    status = readLER5(start4, edge4, stride4, sds_name, sd_id, coefs470_fwd)
     if (status < 0) goto 90
 
     sds_name = "470_all"
-    status = readLER5(start4, edge4, stride4, sds_name, grp_id, coefs470_all)
+    status = readLER5(start4, edge4, stride4, sds_name, sd_id, coefs470_all)
     if (status < 0) goto 90
 
+    !sds_name = "650_fwd_TP"
+    !status = readLER5(start5, edge5, stride5, sds_name, sd_id, coefs650_fwd_tp)
+    !if (status < 0) goto 90
+
+    !sds_name = "650_all_TP"
+    !status = readLER5(start5, edge5, stride5, sds_name, sd_id, coefs650_all_tp)
+    !if (status < 0) goto 90
+
     sds_name = "650_fwd"
-    status = readLER5(start4, edge4, stride4, sds_name, grp_id, coefs650_fwd)
+    status = readLER5(start4, edge4, stride4, sds_name, sd_id, coefs650_fwd)
     if (status < 0) goto 90
 
     sds_name = "650_all"
-    status = readLER5(start4, edge4, stride4, sds_name, grp_id, coefs650_all)
+    status = readLER5(start4, edge4, stride4, sds_name, sd_id, coefs650_all)
     if (status < 0) goto 90
 
-    status = nf90_close(nc_id)
-    if (status /= NF90_NOERR) then
-       print *, "ERROR: Failed to close lut_nc4 file: ", status
-       return
+    status = sfend(sd_id)
+    if (status /= 0) then
+      print *, "ERROR: Unable to close LER file: "//trim(coeffs_file)
+      return
     end if
 
-    !   -- MODIS, all-angle surface database
-    status = nf90_open(cfg%db_nc4, nf90_nowrite, nc_id)
-    if (status /= NF90_NOERR) then
-       print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
-       return
+!   -- MODIS, all-angle surface database
+    inquire(file=trim(modis_ler_file), exist=file_exists, iostat=status)
+    if (status /= 0) then
+      print *, "ERROR: Unable to inquire about LER file: "//trim(modis_ler_file)
+      return
     end if
-
-    group_name = 'modis_surface'
-    status = nf90_inq_ncid(nc_id, group_name, grp_id)
-    if (status /= NF90_NOERR) then
-       print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
-       return
+    if (file_exists .eqv. .false.) then
+      print *, "ERROR: LER file does not exist. Please check the config file."
+      return
+    end if
+    
+    ! Open HDF file.      
+    sd_id = sfstart(trim(modis_ler_file), DFACC_READ)
+    if (sd_id == FAIL ) then
+      print *, "ERROR: failed to start SDS interface on LER file: "//trim(modis_ler_file)
+      return
     end if
 
     sds_name = "412_all"
-    status = readLER2(start2, edges2, stride2, sds_name, grp_id, gref412_all)
+    status = readLER2(start2, edge2, stride2, sds_name, sd_id, gref412_all)
     if (status < 0) goto 90
 
     sds_name = "412_fwd"
-    status = readLER2(start2, edges2, stride2, sds_name, grp_id, gref412_fwd)
+    status = readLER2(start2, edge2, stride2, sds_name, sd_id, gref412_fwd)
     if (status < 0) goto 90
 
+    !sds_name = "412_bkd"
+    !status = readLER2(start2, edge2, stride2, sds_name, sd_id, gref412_bkd)
+    !if (status < 0) goto 90
+
     sds_name = "470_all"
-    status = readLER2(start2, edges2, stride2, sds_name, grp_id, gref470_all)
+    status = readLER2(start2, edge2, stride2, sds_name, sd_id, gref470_all)
     if (status < 0) goto 90
 
     sds_name = "470_fwd"
-    status = readLER2(start2, edges2, stride2, sds_name, grp_id, gref470_fwd)
+    status = readLER2(start2, edge2, stride2, sds_name, sd_id, gref470_fwd)
     if (status < 0) goto 90
 
+    !sds_name = "470_bkd"
+    !status = readLER2(start2, edge2, stride2, sds_name, sd_id, gref470_bkd)
+    !if (status < 0) goto 90
+
     sds_name = "650_all"
-    status = readLER2(start2, edges2, stride2, sds_name, grp_id, gref650_all)
+    status = readLER2(start2, edge2, stride2, sds_name, sd_id, gref650_all)
     if (status < 0) goto 90
 
     sds_name = "650_fwd"
-    status = readLER2(start2, edges2, stride2, sds_name, grp_id, gref650_fwd)
+    status = readLER2(start2, edge2, stride2, sds_name, sd_id, gref650_fwd)
     if (status < 0) goto 90
+
+    !sds_name = "650_bkd"
+    !status = readLER2(start2, edge2, stride2, sds_name, sd_id, gref650_bkd)
+    !if (status < 0) goto 90
 
     sds_name = "865_all_all"
-    status = readLER2(start2, edges2, stride2, sds_name, grp_id, gref865_all)
+    status = readLER2(start2, edge2, stride2, sds_name, sd_id, gref865_all)
     if (status < 0) goto 90
 
-    status = nf90_close(nc_id)
-    if (status /= NF90_NOERR) then
-       print *, "ERROR: Failed to close lut_nc4 file: ", status
-       return
+    status = sfend(sd_id)
+    if (status /= 0) then
+      print *, "ERROR: Unable to close LER file: "//trim(modis_ler_file)
+      return
     end if
 
-    !   -- VIIRS, all-angle surface database
-    status = nf90_open(cfg%db_nc4, nf90_nowrite, nc_id)
-    if (status /= NF90_NOERR) then
-       print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
-       return
+!   -- VIIRS, all-angle surface database
+    inquire(file=trim(viirs_ler_file), exist=file_exists, iostat=status)
+    if (status /= 0) then
+      print *, "ERROR: Unable to inquire about VIIRS LER file: "//trim(viirs_ler_file)
+      return
     end if
-
-    group_name = 'viirs_surface'
-    status = nf90_inq_ncid(nc_id, group_name, grp_id)
-    if (status /= NF90_NOERR) then
-       print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
-       return
+    if (file_exists .eqv. .false.) then
+      print *, "ERROR: VIIRS LER file does not exist. Please check the config file."
+      return
+    end if
+        
+!   -- Open file and read in data.      
+    sd_id = sfstart(trim(viirs_ler_file), DFACC_READ)
+    if (sd_id == FAIL ) then
+      print *, "ERROR: failed to start SDS interface on LER file: "//trim(viirs_ler_file)
+      return
     end if
 
     sds_name = "412_all"
-    status = readLER2(start2, edges2, stride2, sds_name, grp_id, vgref412_all)
+    status = readLER2(start2, edge2, stride2, sds_name, sd_id, vgref412_all)
     if (status < 0) goto 90
 
     sds_name = "488_all"
-    status = readLER2(start2, edges2, stride2, sds_name, grp_id, vgref488_all)
+    status = readLER2(start2, edge2, stride2, sds_name, sd_id, vgref488_all)
     if (status < 0) goto 90
     
     sds_name = "670_all"
-    status = readLER2(start2, edges2, stride2, sds_name, grp_id, vgref670_all)
+    status = readLER2(start2, edge2, stride2, sds_name, sd_id, vgref670_all)
     if (status < 0) goto 90
     
-    status = nf90_close(nc_id)
-    if (status /= NF90_NOERR) then
-       print *, "ERROR: Failed to close lut_nc4 file: ", status
-       return
+    status = sfend(sd_id)
+    if (status /= 0) then
+      print *, "ERROR: Unable to close LER file: "//trim(viirs_ler_file)
+      return
     end if
     
+
     ! Close up shop and go home
     goto 100
 
-90 continue
-   print *, "Error reading "//trim(sds_name)//" from file "//trim(cfg%db_nc4)
-   return
+90  continue
+    print *, "Error reading "//trim(sds_name)//" from file "//trim(modis_ler_file)
+    return
 100 continue
 
- end function load_hdfLER
+  end function load_hdfLER
 
- ! -- Load 2.2 um surface database
- integer function load_swir_coeffs(lut_file, season) result(status) !jlee added 05/16/2017
-    use netcdf
-    USE OCIUAAER_Config_Module
+! -- Load 2.2 um surface database
+  integer function load_swir_coeffs(file, season) result(status) !jlee added 05/16/2017
     implicit none
 
-    character(len=255), intent(in)  ::  lut_file
-    integer, intent(in)   ::  season
+    include 'hdf.inc'
+    include 'dffunc.inc'
+
+    character(len=*), intent(in)  ::  file
+    integer                       ::  season
+    logical                       ::  file_exists
 
     ! HDF vars
     character(len=255)    ::  sds_name
-    character(len=255)    ::  dset_name
-    character(len=255)    ::  attr_name
-    character(len=255)    ::  group_name
-
-    integer               ::  nc_id
-    integer               ::  dim_id
-    integer               ::  dset_id
-    integer               ::  grp_id
     integer               ::  sd_id, sds_index, sds_id
-    integer, dimension(3) ::  start2, stride2, edges2
-    integer, dimension(4) ::  start3, stride3, edges3
+    integer, dimension(2) ::  start2, stride2, edge2
+    integer, dimension(3) ::  start3, stride3, edge3
 
     status = -1
 
-    start2 = (/LERstart6(1),LERstart6(2),season/)
-    edges2 =  (/LERedge6(1),LERedge6(2),1/)
-    stride2 =(/1,1,1/)
+    start2 = (/LERstart6(1),LERstart6(2)/)
+    edge2 =  (/LERedge6(1),LERedge6(2)/)
+    stride2 =(/1,1/)
 
-    start3 = (/LERstart6(1),LERstart6(2),1,season/)
-    edges3 =  (/LERedge6(1),LERedge6(2),3,1/)
-    stride3 =(/1,1,1,1/)
+    start3 = (/LERstart6(1),LERstart6(2),0/)
+    edge3 =  (/LERedge6(1),LERedge6(2),3/)
+    stride3 =(/1,1,1/)
 
-    status = nf90_open(cfg%db_nc4, nf90_nowrite, nc_id)
-    if (status /= NF90_NOERR) then
-       print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
-       return
+    inquire(file=trim(file), exist=file_exists, iostat=status)
+    if (status /= 0) then
+      print *, "ERROR: Unable to inquire about 2.2 um surface database file: ", status
+      return
+    end if
+    if (file_exists .eqv. .false.) then
+      print *, "ERROR: 2.2 um surface database file does not exist. Please check the config file."
+      status = -1
+      return
     end if
 
-    group_name = 'swir_vis_surface_coeffs'
-    status = nf90_inq_ncid(nc_id, group_name, grp_id)
-    if (status /= NF90_NOERR) then
-       print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
-       return
+!   Open HDF and output file.
+!---------------------------------------------------------------------------------------------------
+    sd_id = sfstart(file, DFACC_READ)
+    if (sd_id == FAIL ) then
+      print *,"ERROR: failed to start SDS interface on 2.2 um surface database file: ", sd_id
+      status = -1
+      return 
     end if
 
     sds_name = 'coeffs_2250_to_412'
-    status = readSWIR3(start3, edges3, stride3, sds_name, grp_id, swir_coeffs412)
+    status = readSWIR3(start3, edge3, stride3, sds_name, sd_id, swir_coeffs412)
     if (status < 0) goto 90
     !============================================================================
     sds_name = 'stderr_412'
-    status = readSWIR2(start2, edges2, stride2, sds_name, grp_id, swir_stderr412)
+    status = readSWIR2(start2, edge2, stride2, sds_name, sd_id, swir_stderr412)
     if (status < 0) goto 90
     !============================================================================
     sds_name = 'coeffs_2250_to_488'
-    status = readSWIR3(start3, edges3, stride3, sds_name, grp_id, swir_coeffs470)
+    status = readSWIR3(start3, edge3, stride3, sds_name, sd_id, swir_coeffs470)
     if (status < 0) goto 90
     !============================================================================
     sds_name = 'stderr_488'
-    status = readSWIR2(start2, edges2, stride2, sds_name, grp_id, swir_stderr470)
+    status = readSWIR2(start2, edge2, stride2, sds_name, sd_id, swir_stderr470)
     if (status < 0) goto 90
     !============================================================================
     sds_name = 'min_2250_for_488'
-    status = readSWIR2(start2, edges2, stride2, sds_name, grp_id, swir_min)
+    status = readSWIR2(start2, edge2, stride2, sds_name, sd_id, swir_min)
     if (status < 0) goto 90
     !============================================================================
     sds_name = 'max_2250_for_488'
-    status = readSWIR2(start2, edges2, stride2, sds_name, grp_id, swir_max)
+    status = readSWIR2(start2, edge2, stride2, sds_name, sd_id, swir_max)
     if (status < 0) goto 90
     !============================================================================
 
-    status = nf90_close(nc_id)
-    if (status /= NF90_NOERR) then
-       print *, "ERROR: Failed to close lut_nc4 file: ", status
-       return
+    status = sfend(sd_id)
+    if (status /= 0) then
+      print *, "ERROR: Unable to close swir vs. vis surf coeffs. file: ", status
+      return
     end if
 
     goto 100
 
-90 continue
-   print *, "Error reading "//trim(sds_name)//" from file "//trim(lut_file)
-   return
+90  continue
+    print *, "Error reading "//trim(sds_name)//" from file "//trim(file)
+    return
 
 100 continue
   
- end function load_swir_coeffs
+  end function load_swir_coeffs
    
 
 ! Retrieve swir vs. vis coefficients
@@ -5528,310 +5641,313 @@ module modis_surface
 
   end function get_LER650
 
- ! Read in LER tables
- integer function readLER2(start, edge, stride, sds_name, grp_id, outref) RESULT(status)
-
-    !   include 'hdf.f90'
-    !   include 'dffunc.f90'
-    use netcdf
-
+  ! Read in LER tables
+  integer function readLER2(start, edge, stride, sds_name, sd_id, outref) RESULT(status)
     implicit none
     
-    integer, dimension(3), intent(in)   ::  start, edge, stride
-    integer, intent(in)                 ::  grp_id
+    integer, dimension(2), intent(in)   ::  start, edge, stride
+    integer, intent(in)                 ::  sd_id
+    character (len=255), intent(in)     ::  sds_name
     real, intent(out)                   ::  outref(edge(1),edge(2))
 
-    ! HDF vars
-    character(len=255)    ::  sds_name
-    character(len=255)    ::  dset_name
-    character(len=255)    ::  attr_name
-    character(len=255)    ::  group_name
+    include 'hdf.inc'
+    include 'dffunc.inc'
 
-    integer               ::  nc_id
-    integer               ::  dim_id
-    integer               ::  dset_id
+    ! HDF vars
     integer                           ::  sds_index, sds_id 
-    integer, dimension(3)             ::  tmpedge, tmpstart
+    integer, dimension(2)             ::  tmpedge, tmpstart
     real, dimension(:,:), allocatable ::  tmpout
 
-    dset_name = sds_name
-    status = nf90_inq_varid(grp_id, dset_name, dset_id)
-    if (status /= NF90_NOERR) then
-       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
-       return
+    sds_index = sfn2index(sd_id, sds_name)
+    if (sds_index == FAIL) then
+      print *, "ERROR: Unable to find index of "//trim(sds_name)//" SDS: ", sds_index
+      status = -1
+      return
     end if
-
-    tmpstart(:) = start(:)
-    if (tmpstart(1) == 0) tmpstart(1) = 1
-    if (tmpstart(2) == 0) tmpstart(2) = 1
-
-    if (dateline .eq. 0) then
-       status = nf90_get_var(grp_id, dset_id, outref, start=tmpstart, &
-          stride=stride, count=edge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
-    else
-       ! The granule straddles the dateline, so we need to make an accommodation
-       tmpedge(:) = edge(:)
-       tmpedge(1) = dateline
-       allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
-       if (status /= 0) then
-          print *, "ERROR: Unable to allocate tmpedge: ", status
-          return
-       end if
-       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
-          stride=stride, count=tmpedge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
-       outref(1:dateline, :) = tmpout
-
-       deallocate(tmpout, stat=status)
-       if (status /= 0) then
-          print *, "Failed to deallocate tmpout: ", status
-          return
-       end if
-
-       tmpstart(1) = 1
-       tmpedge(1) = edge(1) - dateline
-       allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
-       if (status /= 0) then
-          print *, "ERROR: Unable to allocate tmpedge: ", status
-          return
-       end if
-       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
-          stride=stride, count=tmpedge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
-       outref(dateline+1:edge(1),:) = tmpout
-      
-       deallocate(tmpout, stat=status)
-       if (status /= 0) then
-          print *, "Failed to deallocate tmpout: ", status
-          return
-       end if
+    sds_id = sfselect(sd_id, sds_index)
+    if (sds_id == FAIL) then
+      print *, "ERROR: Unable to select "//trim(sds_name)//" SDS: ", sds_id
+      status = -1
+      return
     end if
     
+    if (dateline .eq. 0) then
+      status = sfrdata(sds_id, start, stride, edge, outref)
+      if (status == FAIL) then
+        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
+        status = -1
+        return
+      end if
+    else
+      ! The granule straddles the dateline, so we need to make an accommodation
+      tmpedge(:) = edge(:)
+      tmpedge(1) = dateline
+      allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
+      if (status /= 0) then
+        print *, "ERROR: Unable to allocate tmpedge: ", status
+        return
+      end if
+      status = sfrdata(sds_id, start, stride, tmpedge, tmpout)
+      if (status == FAIL) then
+        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
+        status = -1
+        return
+      end if
+      outref(1:dateline, :) = tmpout
+      
+      deallocate(tmpout, stat=status)
+      if (status /= 0) then
+        print *, "Failed to deallocate tmpout: ", status
+        return
+      end if
+      
+      
+      tmpstart(:) = start(:)
+      tmpstart(1) = 0
+      tmpedge(1) = edge(1) - dateline
+      allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
+      if (status /= 0) then
+        print *, "ERROR: Unable to allocate tmpedge: ", status
+        return
+      end if
+      status = sfrdata(sds_id, tmpstart, stride, tmpedge, tmpout)
+      if (status == FAIL) then
+        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
+        status = -1
+        return
+      end if
+      outref(dateline+1:edge(1),:) = tmpout
+      
+      deallocate(tmpout, stat=status)
+      if (status /= 0) then
+        print *, "Failed to deallocate tmpout: ", status
+        return
+      end if
+      
+    end if
+    
+    status = sfendacc(sds_id)
+    if (status == FAIL) then
+      print *, "ERROR: Unable to end access to "//trim(sds_name)//" SDS: ", status
+      return
+    end if
+
     return
- end function readLER2
 
- ! Read in LER tables
- integer function readLER5(start, edge, stride, sds_name, grp_id, outref) RESULT(status)
+  end function readLER2
 
-    !   include 'hdf.f90'
-    !   include 'dffunc.f90'
-    use netcdf
-
+  ! Read in LER tables
+  integer function readLER5(start, edge, stride, sds_name, sd_id, outref) RESULT(status)
     implicit none
     
     integer, dimension(:), intent(in)       ::  start, edge, stride
-    character(len=255), intent(in)          ::  sds_name
-    integer, intent(in)                     ::  grp_id
+    integer, intent(in)                     ::  sd_id
+    character (len=*), intent(in)           ::  sds_name
     real, dimension(:,:,:,:), intent(inout) ::  outref
     
-    ! HDF vars
-    character(len=255)    ::  dset_name
+    include 'hdf.inc'
+    include 'dffunc.inc'
 
-    integer               ::  nc_id
-    integer               ::  dim_id
-    integer               ::  dset_id
+    ! HDF vars
     integer               ::  sds_index, sds_id 
-    integer, dimension(5) ::  tmpedge, tmpstart
+    integer, dimension(4) ::  tmpedge, tmpstart
     real, dimension(:,:,:,:), allocatable ::  tmpout
     character(len=255)    ::  tmp_name
     integer               ::  rank, ntype, nattrs
-    integer, dimension(5) ::  dims
+    integer, dimension(4) ::  dims
     
     status = -1
     
-    dset_name = sds_name
-    status = nf90_inq_varid(grp_id, dset_name, dset_id)
-    if (status /= NF90_NOERR) then
-       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
-       return
+    sds_index = sfn2index(sd_id, trim(sds_name))
+    if (sds_index == FAIL) then
+      print *, "ERROR: Unable to find index of "//trim(sds_name)//" SDS: ", sds_index
+      status = -1
+      return
+    end if
+
+    sds_id = sfselect(sd_id, sds_index)
+    if (sds_id == FAIL) then
+      print *, "ERROR: Unable to select "//trim(sds_name)//" SDS: ", sds_id
+      status = -1
+      return
     end if
     
-    tmpstart(:) = start(:)
-    if (tmpstart(1) == 0) tmpstart(1) = 1
-    if (tmpstart(2) == 0) tmpstart(2) = 1
-
     if (dateline .eq. 0) then
-       status = nf90_get_var(grp_id, dset_id, outref, start=tmpstart, &
-          stride=stride, count=edge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
+      status = sfrdata(sds_id, start, stride, edge, outref)
+      if (status == FAIL) then
+        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
+        status = -1
+        return
+      end if      
     else
-       ! The granule straddles the dateline, so we need to make an accommodation
-       tmpedge(:) = edge(:)
-       tmpedge(1) = dateline
-       allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3), tmpedge(4)), stat=status)
-       if (status /= 0) then
-          print *, "ERROR: Unable to allocate tmpedge: ", status
-          return
-       end if
-       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
-          stride=stride, count=tmpedge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
-       outref(1:dateline, :, :, :) = tmpout(:,:,:,:)
+      ! The granule straddles the dateline, so we need to make an accommodation
+      tmpedge(:) = edge(:)
+      tmpedge(1) = dateline
+      allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3), tmpedge(4)), stat=status)
+      if (status /= 0) then
+        print *, "ERROR: Unable to allocate tmpedge: ", status
+        return
+      end if
+      status = sfrdata(sds_id, start, stride, tmpedge, tmpout)
+      if (status == FAIL) then
+        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
+        status = -1
+        return
+      end if
+      outref(1:dateline, :, :, :) = tmpout(:,:,:,:)
+      
+      deallocate(tmpout, stat=status)
+      if (status /= 0) then
+        print *, "Failed to deallocate tmpout: ", status
+        return
+      end if
+      
+      tmpstart(:) = start(:)
+      tmpstart(1) = 0
+      tmpedge(1) = edge(1) - dateline
+      allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3), tmpedge(4)), stat=status)
+      if (status /= 0) then
+        print *, "ERROR: Unable to allocate tmpedge: ", status
+        return
+      end if
+      
+      status = sfrdata(sds_id, tmpstart, stride, tmpedge, tmpout)
+      if (status == FAIL) then
+        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
+        status = -1
+        return
+      end if
+      outref(dateline+1:edge(1),:,:,:) = tmpout(:,:,:,:)
 
-       deallocate(tmpout, stat=status)
-       if (status /= 0) then
-          print *, "Failed to deallocate tmpout: ", status
-          return
-       end if
-
-       tmpstart(1) = 1
-       tmpedge(1) = edge(1) - dateline
-       allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3), tmpedge(4)), stat=status)
-       if (status /= 0) then
-          print *, "ERROR: Unable to allocate tmpedge: ", status
-          return
-       end if
-       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
-          stride=stride, count=tmpedge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
-       outref(dateline+1:edge(1),:,:,:) = tmpout(:,:,:,:)
-
-       deallocate(tmpout, stat=status)
-       if (status /= 0) then
-          print *, "Failed to deallocate tmpout: ", status
-          return
-       end if
+      deallocate(tmpout, stat=status)
+      if (status /= 0) then
+        print *, "Failed to deallocate tmpout: ", status
+        return
+      end if
       
     end if
+    
+    status = sfendacc(sds_id)
+    if (status == FAIL) then
+      print *, "ERROR: Unable to end access to "//trim(sds_name)//" SDS: ", status
+      return
+    end if
+
     status = 0
     return
 
- end function readLER5
+  end function readLER5
 
- ! Read in 2.2 um surface database
- integer function readSWIR2(start, edge, stride, sds_name, grp_id, outref) RESULT(status)
-
-    !   include 'hdf.f90'
-    !   include 'dffunc.f90'
-    use netcdf
-
+  ! Read in 2.2 um surface database 
+  integer function readSWIR2(start, edge, stride, sds_name, sd_id, outref) RESULT(status)
     implicit none
 
-    integer, dimension(3), intent(in)   ::  start, edge, stride
-    integer, intent(in)                 ::  grp_id
+    integer, dimension(2), intent(in)   ::  start, edge, stride
+    integer, intent(in)                 ::  sd_id
+    character (len=255), intent(in)     ::  sds_name
     real, intent(out)                   ::  outref(edge(1),edge(2))
 
-    ! HDF vars
-    character(len=255)    ::  sds_name
-    character(len=255)    ::  dset_name
-    character(len=255)    ::  attr_name
-    character(len=255)    ::  group_name
+    include 'hdf.inc'
+    include 'dffunc.inc'
 
-    integer               ::  nc_id
-    integer               ::  dim_id
-    integer               ::  dset_id
+    ! HDF vars
     integer                           ::  sds_index, sds_id
-    integer, dimension(3)             ::  tmpedge, tmpstart
+    integer, dimension(2)             ::  tmpedge, tmpstart
     real, dimension(:,:), allocatable ::  tmpout
 
-    dset_name = sds_name
-    status = nf90_inq_varid(grp_id, dset_name, dset_id)
-    if (status /= NF90_NOERR) then
-       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
-       return
+    sds_index = sfn2index(sd_id, sds_name)
+    if (sds_index == FAIL) then
+      print *, "ERROR: Unable to find index of "//trim(sds_name)//" SDS: ", sds_index
+      status = -1
+      return
     end if
-
-    tmpstart(:) = start(:)
-    if (tmpstart(1) == 0) tmpstart(1) = 1
-    if (tmpstart(2) == 0) tmpstart(2) = 1
+    sds_id = sfselect(sd_id, sds_index)
+    if (sds_id == FAIL) then
+      print *, "ERROR: Unable to select "//trim(sds_name)//" SDS: ", sds_id
+      status = -1
+      return
+    end if
 
     if (dateline6 .eq. 0) then
-       status = nf90_get_var(grp_id, dset_id, outref, start=tmpstart, &
-          stride=stride, count=edge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
+      status = sfrdata(sds_id, start, stride, edge, outref)
+      if (status == FAIL) then
+        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
+        status = -1
+        return
+      end if
     else
-       ! The granule straddles the dateline6, so we need to make an accommodation
-       tmpedge(:) = edge(:)
-       tmpedge(1) = dateline6
-       allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
-       if (status /= 0) then
-          print *, "ERROR: Unable to allocate tmpedge: ", status
-          return
-       end if
-       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
-          stride=stride, count=tmpedge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
-       outref(1:dateline6, :) = tmpout
+      ! The granule straddles the dateline6, so we need to make an accommodation
+      tmpedge(:) = edge(:)
+      tmpedge(1) = dateline6
+      allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
+      if (status /= 0) then
+        print *, "ERROR: Unable to allocate tmpedge: ", status
+        return
+      end if
+      status = sfrdata(sds_id, start, stride, tmpedge, tmpout)
+      if (status == FAIL) then
+        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
+        status = -1
+        return
+      end if
+      outref(1:dateline6, :) = tmpout
 
-       deallocate(tmpout, stat=status)
-       if (status /= 0) then
-          print *, "Failed to deallocate tmpout: ", status
-          return
-       end if
+      deallocate(tmpout, stat=status)
+      if (status /= 0) then
+        print *, "Failed to deallocate tmpout: ", status
+        return
+      end if
 
-       tmpstart(1) = 1
-       tmpedge(1) = edge(1) - dateline6
-       allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
-       if (status /= 0) then
-          print *, "ERROR: Unable to allocate tmpedge: ", status
-          return
-       end if
-       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
-          stride=stride, count=tmpedge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
-       outref(dateline6+1:edge(1),:) = tmpout
 
-       deallocate(tmpout, stat=status)
-       if (status /= 0) then
-          print *, "Failed to deallocate tmpout: ", status
-          return
-       end if
+      tmpstart(:) = start(:)
+      tmpstart(1) = 0
+      tmpedge(1) = edge(1) - dateline6
+      allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
+      if (status /= 0) then
+        print *, "ERROR: Unable to allocate tmpedge: ", status
+        return
+      end if
+      status = sfrdata(sds_id, tmpstart, stride, tmpedge, tmpout)
+      if (status == FAIL) then
+        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
+        status = -1
+        return
+      end if
+      outref(dateline6+1:edge(1),:) = tmpout
+
+      deallocate(tmpout, stat=status)
+      if (status /= 0) then
+        print *, "Failed to deallocate tmpout: ", status
+        return
+      end if
+
     end if
+
+    status = sfendacc(sds_id)
+    if (status == FAIL) then
+      print *, "ERROR: Unable to end access to "//trim(sds_name)//" SDS: ", status
+      return
+    end if
+
     return
 
- end function readSWIR2
+  end function readSWIR2
 
- ! Read in 2.2 um surface database
- integer function readSWIR3(start3, edges3, stride3, sds_name, grp_id, outref) RESULT(status)
-
-    !   include 'hdf.f90'
-    !   include 'dffunc.f90'
-    use netcdf
-
+  ! Read in 2.2 um surface database 
+  integer function readSWIR3(start, edge, stride, sds_name, sd_id, outref) RESULT(status)
     implicit none
 
-    integer, dimension(4), intent(in)     ::  start3, edges3, stride3
-    integer, intent(in)                   ::  grp_id
+    integer, dimension(:), intent(in)       ::  start, edge, stride
+    integer, intent(in)                     ::  sd_id
+    character (len=*), intent(in)           ::  sds_name
     real, dimension(:,:,:), intent(inout) ::  outref
-    ! HDF vars
-    character(len=255)    ::  sds_name
-    character(len=255)    ::  dset_name
-    character(len=255)    ::  attr_name
-    character(len=255)    ::  group_name
 
-    integer               ::  nc_id
-    integer               ::  dim_id
-    integer               ::  dset_id
+    include 'hdf.inc'
+    include 'dffunc.inc'
+
+    ! HDF vars
     integer               ::  sds_index, sds_id
-    integer, dimension(4) ::  tmpedge, tmpstart
+    integer, dimension(3) ::  tmpedge, tmpstart
     real, dimension(:,:,:), allocatable ::  tmpout
     character(len=255)    ::  tmp_name
     integer               ::  rank, ntype, nattrs
@@ -5839,73 +5955,85 @@ module modis_surface
 
     status = -1
 
-    dset_name = sds_name
-    status = nf90_inq_varid(grp_id, dset_name, dset_id)
-    if (status /= NF90_NOERR) then
-       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
-       return
+    sds_index = sfn2index(sd_id, trim(sds_name))
+    if (sds_index == FAIL) then
+      print *, "ERROR: Unable to find index of "//trim(sds_name)//" SDS: ", sds_index
+      status = -1
+      return
     end if
 
-    tmpstart(:) = start3(:)
-    if (tmpstart(1) == 0) tmpstart(1) = 1
-    if (tmpstart(2) == 0) tmpstart(2) = 1
+    sds_id = sfselect(sd_id, sds_index)
+    if (sds_id == FAIL) then
+      print *, "ERROR: Unable to select "//trim(sds_name)//" SDS: ", sds_id
+      status = -1
+      return
+    end if
 
     if (dateline6 .eq. 0) then
-       status = nf90_get_var(grp_id, dset_id, outref, start=tmpstart, &
-          stride=stride3, count=edges3)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
+      status = sfrdata(sds_id, start, stride, edge, outref)
+      if (status == FAIL) then
+        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
+        status = -1
+        return
+      end if
     else
-       ! The granule straddles the dateline6, so we need to make an accommodation
-       tmpedge(:) = edges3(:)
-       tmpedge(1) = dateline6
-       allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3)), stat=status)
-       if (status /= 0) then
-          print *, "ERROR: Unable to allocate tmpedge: ", status
-          return
-       end if
-       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
-          stride=stride3, count=tmpedge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
-       outref(1:dateline6, :, :) = tmpout
+      ! The granule straddles the dateline6, so we need to make an accommodation
+      tmpedge(:) = edge(:)
+      tmpedge(1) = dateline6
+      allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3)), stat=status)
+      if (status /= 0) then
+        print *, "ERROR: Unable to allocate tmpedge: ", status
+        return
+      end if
+      status = sfrdata(sds_id, start, stride, tmpedge, tmpout)
+      if (status == FAIL) then
+        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
+        status = -1
+        return
+      end if
+      outref(1:dateline6, :, :) = tmpout(:,:,:)
 
-       deallocate(tmpout, stat=status)
-       if (status /= 0) then
-          print *, "Failed to deallocate tmpout: ", status
-          return
-       end if
+      deallocate(tmpout, stat=status)
+      if (status /= 0) then
+        print *, "Failed to deallocate tmpout: ", status
+        return
+      end if
 
-       tmpstart(1) = 1
-       tmpedge(1) = edges3(1) - dateline6
-       allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3)), stat=status)
-       if (status /= 0) then
-          print *, "ERROR: Unable to allocate tmpedge: ", status
-          return
-       end if
-       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
-          stride=stride3, count=tmpedge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
-       outref(dateline6+1:edges3(1),:,:) = tmpout
+      tmpstart(:) = start(:)
+      tmpstart(1) = 0
+      tmpedge(1) = edge(1) - dateline6
+      allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3)), stat=status)
+      if (status /= 0) then
+        print *, "ERROR: Unable to allocate tmpedge: ", status
+        return
+      end if
 
-       deallocate(tmpout, stat=status)
-       if (status /= 0) then
-          print *, "Failed to deallocate tmpout: ", status
-          return
-       end if
+      status = sfrdata(sds_id, tmpstart, stride, tmpedge, tmpout)
+      if (status == FAIL) then
+        print *, "ERROR: Unable to read "//trim(sds_name)//" SDS: ", status
+        status = -1
+        return
+      end if
+      outref(dateline6+1:edge(1),:,:) = tmpout(:,:,:)
+
+      deallocate(tmpout, stat=status)
+      if (status /= 0) then
+        print *, "Failed to deallocate tmpout: ", status
+        return
+      end if
+
+    end if
+
+    status = sfendacc(sds_id)
+    if (status == FAIL) then
+      print *, "ERROR: Unable to end access to "//trim(sds_name)//" SDS: ", status
+      return
     end if
 
     status = 0
     return
 
- end function readSWIR3
+  end function readSWIR3
   
   integer function latlon_to_index_LER(lat, lon, ilat, ilon) result(status)
     implicit none
@@ -6319,5 +6447,1530 @@ module modis_surface
     if(status /= 0) then 
       print *, str, status
     end if
-  end subroutine check_status    
+  end subroutine check_status
+
+   integer function load_terrainflg_tables_t(tflg_file, season) result(status)
+      use netcdf
+      USE OCIUAAER_Config_Module
+      implicit none
+
+      character(len=255), intent(in)  ::  tflg_file
+      integer, intent(in)    ::  season
+
+      real, dimension(:,:), allocatable   ::  tmptfn
+      real, dimension(:,:,:), allocatable ::  tmpaod
+      integer                             ::  i, j
+
+      ! HDF vars
+      character(len=255)    ::  sds_name
+      character(len=255)    ::  dset_name
+      character(len=255)    ::  attr_name
+      character(len=255)    ::  group_name
+
+      integer               ::  nc_id
+      integer               ::  dim_id
+      integer               ::  dset_id
+      integer               ::  grp_id
+      integer               ::  sd_id, sds_index, sds_id
+      integer, dimension(2) ::  start2, stride2, edges2
+      integer, dimension(3) ::  start3, stride3, edges3
+
+      status = -1
+
+      !   -- allocate our tmp array
+      allocate(tmptfn(3600,1800), stat=status)
+      if (status /= 0) then
+         print *, "ERROR: Unable to allocate tmp array for geo zone data: ", status
+         return
+      end if
+
+      !   -- allocate our tmp array
+      allocate(tmpaod(360,180,4), stat=status)
+      if (status /= 0) then
+         print *, "ERROR: Unable to allocate tmp array for background aod data: ", status
+         return
+      end if
+
+      status = nf90_open(cfg%db_nc4, nf90_nowrite, nc_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
+         return
+      end if
+
+      group_name = 'geozone'
+      status = nf90_inq_ncid(nc_id, group_name, grp_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
+         return
+      end if
+
+      start2  = (/1,1/)
+      stride2 = (/1,1/)
+      edges2  = (/3600,1800/)
+      dset_name = 'geographical_zone_flag'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      status = nf90_get_var(grp_id, dset_id, tmptfn, start=start2, &
+         stride=stride2, count=edges2)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+
+      dset_name = 'surface_elevation_stddev'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      status = nf90_get_var(grp_id, dset_id, sfc_elev_std, start=start2, &
+         stride=stride2, count=edges2)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+
+      start3  = (/1,1,1/)
+      stride3 = (/1,1,1/)
+      edges3  = (/360,180,4/)
+      dset_name = 'background_aod'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      status = nf90_get_var(grp_id, dset_id, tmpaod, start=start3, &
+         stride=stride3, count=edges3)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+
+      status = nf90_close(nc_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to close lut_nc4 file: ", status
+         return
+      end if
+
+      terrain_flag_new = int(tmptfn)
+      bg_aod(1:360,1:180) = tmpaod(1:360,1:180,season)
+      !print *, "aod test", bg_aod(1,68), tmpaod(1,68,season)
+
+      !   -- clean up tmptfn
+      deallocate(tmptfn, stat=status)
+      if (status /= 0) then
+         print *, "ERROR: Unable to deallocate tmp array for geo zone data: ", status
+         return
+      end if
+
+      !   -- clean up tmpaod
+      deallocate(tmpaod, stat=status)
+      if (status /= 0) then
+         print *, "ERROR: Unable to deallocate tmp array for geo zone data: ", status
+         return
+      end if
+
+      status = 0
+      return
+   end function load_terrainflg_tables_t
+
+   integer function load_seasonal_desert_t(file) result(status)
+      use netcdf
+      USE OCIUAAER_Config_Module
+      implicit none
+
+      character(len=255), intent(in)  ::  file
+
+      real, dimension(:,:), allocatable   ::  tmptfn
+      integer                             ::  i, j
+
+      ! HDF vars
+      character(len=255)    ::  sds_name
+      character(len=255)    ::  dset_name
+      character(len=255)    ::  attr_name
+      character(len=255)    ::  group_name
+
+      integer               ::  nc_id
+      integer               ::  dim_id
+      integer               ::  dset_id
+      integer               ::  grp_id
+      integer               ::  sd_id, sds_index, sds_id
+      integer, dimension(2) ::  start2, stride2, edges2
+
+      status = -1
+
+      status = nf90_open(cfg%db_nc4, nf90_nowrite, nc_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
+         return
+      end if
+
+      group_name = 'seasonal_deserts'
+      status = nf90_inq_ncid(nc_id, group_name, grp_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
+         return
+      end if
+
+      start2  = (/1,1/)
+      stride2 = (/1,1/)
+      edges2  = (/3600,1800/)
+      dset_name = 'seasonal_desert_flag'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+      status = nf90_get_var(grp_id, dset_id, terrain_flag, start=start2, &
+         stride=stride2, count=edges2)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+
+      status = nf90_close(nc_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to close lut_nc4 file: ", status
+         return
+      end if
+
+      status = 0
+      return
+   end function load_seasonal_desert_t
+
+   ! -- initialize the AERONET site and surface variables and load the BRDF base
+   ! --    reflectivity file into brdf650 array.
+   !-----------------------------------------------------------------------------------------
+   integer function load_brdf_t(brdffile) result(status)
+      use netcdf
+      USE OCIUAAER_Config_Module
+      implicit none
+
+      character(len=255), intent(in)    ::  brdffile
+
+      integer, parameter              ::  nsites = 30
+
+      character(len=255)    ::  sds_name
+      character(len=255)    ::  dset_name
+      character(len=255)    ::  attr_name
+      character(len=255)    ::  group_name
+
+      integer               ::  nc_id
+      integer               ::  dim_id
+      integer               ::  dset_id
+      integer               ::  grp_id
+      integer               ::  sd_id, sds_index, sds_id
+      integer, dimension(2) ::  start2, stride2, edges2, dims2
+
+      !   -- assume a successful return.
+      status = 0
+
+      !   -- allocate and fill AERONET-related arrays.
+      allocate(aero_sites(nsites), aero_zones(nsites), aero_types(nsites), aero_elev(nsites), &
+         & stat=status)
+      if (status /= 0) then
+         print *, "ERROR: Unable to allocate AERONET site info arrays: ", status
+         return
+      end if
+
+      allocate(aero_sr412(nsites,4), aero_sr470(nsites,4), aero_sr650(nsites,4), aero_bgaod(nsites,4), stat=status)
+      if (status /= 0) then
+         print *, "ERROR: Unable to allocate AERONET SR arrays: ", status
+         return
+      end if
+
+      !   -- aero_types = land cover type over AERONET site
+      !   --    0. ocean
+      !   --    1. forest
+      !   --    2. grasslands
+      !   --    3. croplands
+      !   --    4. urban
+      !   --    5. snow/ice
+      !   --    6. barren/desert
+
+      !   -- Banizoumbou
+      aero_sites(1)   = 'Banizoumbou'
+      aero_types(1)   = 2
+      aero_zones(1)   = 5
+      aero_elev(1)    = 250
+      aero_sr412(1,:) = (/7.08923, 7.71880, 8.48224, 6.62584/)
+      aero_sr470(1,:) = (/10.5942, 11.6695, 12.4470, 9.9028/)
+      aero_sr650(1,:) = (/28.7862, 31.9045, 31.5499, 25.0119/)
+      aero_bgaod(1,:) = (/0.15000, 0.22800, 0.26300, 0.18500/) !MODIS
+      !    aero_bgaod(1,:) = (/0.18200, 0.41348, 0.37300, 0.19649/) !MISR
+
+      !   -- Tinga Tingana
+      aero_sites(2)   = 'Tinga_Tingana'
+      aero_types(2)   = 6
+      aero_zones(2)   = 12
+      aero_elev(2)    = 38
+      aero_sr412(2,:) = (/8.3397, 9.3348, 8.3018, 10.4549/)
+      aero_sr470(2,:) = (/11.5649, 12.8902, 11.5255, 13.5749/)
+      aero_sr650(2,:) = (/29.0277, 31.3340, 27.9479, 30.2249/)
+      aero_bgaod(2,:) = (/0.02300, 0.01900, 0.01800, 0.02100/)
+      !    aero_bgaod(2,:) = (/0.08670, 0.06223, 0.05391, 0.10703/)
+
+      !   -- Zinder_Airport
+      aero_sites(3)   = 'Zinder_Airport'
+      aero_types(3)   = 2
+      aero_zones(3)   = 1
+      aero_elev(3)    = 456
+      aero_sr412(3,:) = (/7.59892, 8.63954, 8.38775, 6.58359/)
+      aero_sr470(3,:) = (/11.3537, 12.8399, 12.3052, 9.87239/)
+      aero_sr650(3,:) = (/26.7511, 30.1220, 27.5969, 21.1145/)
+      aero_bgaod(3,:) = (/0.15400, 0.29600, 0.30200, 0.14300/)
+      !    aero_bgaod(3,:) = (/0.15523, 0.37014, 0.35720, 0.17437/)
+
+      !   -- Moldova
+      aero_sites(4)   = 'Moldova'
+      aero_types(4)   = 4
+      aero_zones(4)   = 17
+      aero_elev(4)    = 205
+      aero_sr412(4,:) = (/-999.000, 6.10670, 5.23876, 5.76111/)
+      aero_sr470(4,:) = (/-999.000, 7.08618, 6.13133, 6.63834/)
+      aero_sr650(4,:) = (/-999.000, 8.11562, 7.51764, 7.96273/)
+      aero_bgaod(4,:) = (/0.01900, 0.05900, 0.07700, 0.04300/)
+      !    aero_bgaod(4,:) = (/0.07450, 0.12211, 0.12758, 0.07907/)
+
+      !   -- Beijing
+      aero_sites(5)   = 'Beijing'
+      aero_types(5)   = 4
+      aero_zones(5)   = 16
+      aero_elev(5)    = 92
+      aero_sr412(5,:) = (/5.04678, 6.91650, 6.04189, 5.75009/)
+      aero_sr470(5,:) = (/7.59624, 8.45864, 7.31190, 7.05383/)
+      aero_sr650(5,:) = (/11.7573, 11.3573, 9.2663, 8.54484/)
+      aero_bgaod(5,:) = (/0.13800, 0.18100, 0.14400, 0.11400/)
+      !    aero_bgaod(5,:) = (/0.12670, 0.19608, 0.20208, 0.11582/)
+
+      !   -- Kanpur, India except for urban areas and Thar Desert
+      aero_sites(6)    = 'Kanpur'
+      aero_types(6)    = 3
+      aero_zones(6)    = 15
+      aero_elev(6)     = 123
+      !   use fall BRDF for summer, 26 January 2018 JLee, TEST
+      aero_sr412(6,:)  = (/8.76996,6.24308,8.49987,7.49987/)
+      aero_sr470(6,:)  = (/6.26996,5.74308,7.99987,5.99987/)
+      aero_sr650(6,:)  = (/10.25542,10.1785,11.75790,10.75790/)
+      aero_bgaod(6,:) = (/0.27400, 0.24800, 0.27600, 0.27900/)
+      !    aero_bgaod(6,:) = (/0.31233, 0.28328, 0.44091, 0.36488/)
+
+      !   -- Modena
+      aero_sites(7)   = 'Modena'
+      aero_types(7)   = 4
+      aero_zones(7)   = 17
+      aero_elev(7)    = 56
+      aero_sr412(7,:) = (/3.7846,5.30996,5.72852,5.69932/)
+      aero_sr470(7,:) = (/5.3279,6.31288,7.11941,6.54509/)
+      aero_sr650(7,:) = (/5.5748,9.44464,9.73280,10.1099/)
+      aero_bgaod(7,:) = (/0.02100, 0.09200, 0.09900, 0.03900/)
+      !    aero_bgaod(7,:) = (/0.06867, 0.13446, 0.15744, 0.09253/)
+
+      !   -- Palencia
+      aero_sites(8)   = 'Palencia'
+      aero_types(8)   = 3
+      aero_zones(8)   = 17
+      aero_elev(8)    = 750
+      aero_sr412(8,:) = (/-999.000,5.03951,4.76740,-999.000/)
+      aero_sr470(8,:) = (/-999.000,6.17346,6.62762,-999.000/)
+      aero_sr650(8,:) = (/-999.000,8.70520,10.7275,-999.000/)
+      aero_bgaod(8,:) = (/0.02500, 0.04000, 0.02700, 0.03300/)
+      !    aero_bgaod(8,:) = (/0.05151, 0.09216, 0.10017, 0.06591/)
+
+      !   -- Lecce_University
+      aero_sites(9)   = 'Lecce_University'
+      aero_types(9)   = 2
+      aero_zones(9)   = 17
+      aero_elev(9)    = 30
+      aero_sr412(9,:) = (/4.68698,4.01772,6.14852,5.86577/)
+      aero_sr470(9,:) = (/5.16447,5.68885,8.15023,6.82434/)
+      aero_sr650(9,:) = (/10.1211,10.6153,11.0301,11.3503/)
+      aero_bgaod(9,:) = (/0.05700, 0.08800, 0.06200, 0.06800/)
+      !    aero_bgaod(9,:) = (/0.06377, 0.12146, 0.13148, 0.08287/)
+
+      !   -- Fresno_2
+      !   This controls N. America urban areas. Fresno AERONET validation is affected by
+      !   both Fresno_2 and Fresno_GZ18. Currently optimized for general urban areas,
+      !   as thinking of making separate geozone for Fresno if validation is not
+      !   acceptable at Fresno. Only baseline change would be needed for the new zone.
+      aero_sites(10)   = 'Fresno_2'
+      aero_types(10)   = 4
+      aero_zones(10)   = 13
+      aero_elev(10)    = 0.0
+      aero_sr412(10,:) = (/5.68700,4.64569,4.42003,4.78884/)
+      aero_sr470(10,:) = (/6.91660,6.96638,6.80781,6.73356/)
+      aero_sr650(10,:) = (/11.5361,12.2151,12.2892,12.6795/)
+      aero_bgaod(10,:) = (/0.05300, 0.11500, 0.08500, 0.08100/)
+      !    aero_bgaod(10,:) = (/0.08402, 0.13809, 0.14728, 0.10320/)
+
+      !   -- Fresno (Central Valley)
+      aero_sites(11)   = 'Fresno_GZ18'
+      aero_types(11)   = 2
+      aero_zones(11)   = 18
+      aero_elev(11)    = 0.0
+      aero_sr412(11,:) = (/6.18700,5.14569,4.92003,5.28884/)
+      aero_sr470(11,:) = (/7.41660,7.46638,7.30781,7.23356/)
+      aero_sr650(11,:) = (/11.5361,12.2151,12.2892,12.6795/)
+      aero_bgaod(11,:) = (/0.05300, 0.11500, 0.08500, 0.08100/)
+      !    aero_bgaod(11,:) = (/0.08402, 0.13809, 0.14728, 0.10320/)
+
+      !   -- IER_Cinzana
+      aero_sites(12)   = 'IER_Cinzana'
+      aero_types(12)   = 2
+      aero_zones(12)   = 5
+      aero_elev(12)    = 285
+      aero_sr412(12,:) = (/5.33969,6.89590,7.78313,5.45146/)
+      aero_sr470(12,:) = (/8.17876,10.2201,11.0532,7.67885/)
+      aero_sr650(12,:) = (/18.6043,21.9242,19.8147,13.6748/)
+      aero_bgaod(12,:) = (/0.16800, 0.24200, 0.12900, 0.17400/)
+      !    aero_bgaod(12,:) = (/0.14072, 0.32845, 0.29905, 0.18086/)
+
+      !   -- Agoufou
+      aero_sites(13)   = 'Agoufou'
+      aero_types(13)   = 2
+      aero_zones(13)   = -1 !5
+      aero_elev(13)    = 305
+      aero_sr412(13,:) = (/6.33764,7.20075,7.12166,5.88014/)
+      aero_sr470(13,:) = (/10.3036,11.2734,10.7413,9.34117/)
+      aero_sr650(13,:) = (/26.6428,30.4116,27.0584,21.6639/)
+      aero_bgaod(13,:) = (/0.11800, 0.20500, 0.19900, 0.13200/)
+      !    aero_bgaod(13,:) = (/0.12562, 0.29455, 0.39775, 0.17390/)
+
+      !   -- Saada -- leave disabled, decided not to use it. troublesome site.
+      aero_sites(14)   = 'Saada'
+      aero_types(14)   = 3
+      aero_zones(14)   = -1 !2
+      aero_elev(14)    = 420
+      aero_sr412(14,:) = (/7.30339, 5.90723, 6.37791, 6.20939/)
+      aero_sr470(14,:) = (/8.68933, 7.76850, 8.46196, 8.15088/)
+      aero_sr650(14,:) = (/14.1430, 14.5881, 16.7061, 15.5649/)
+      aero_bgaod(14,:) = (/0.08300, 0.06400, 0.08800, 0.08700/)
+      !    aero_bgaod(14,:) = (/0.03898, 0.06964, 0.08859, 0.07119/)
+
+      !   -- Trelew (S. America)
+      aero_sites(15)   = 'Trelew'
+      aero_types(15)   = 6
+      aero_zones(15)   = 14
+      aero_elev(15)    = 15
+      aero_sr412(15,:) = (/5.29937, 5.30638, 6.01197, 5.75946/)
+      aero_sr470(15,:) = (/8.20220, 7.37385, 7.43250, 7.71553/)
+      aero_sr650(15,:) = (/14.0610, 11.7312, 11.2763, 12.9785/)
+      aero_bgaod(15,:) = (/0.02200, 0.01900, 0.01700, 0.01900/)
+      !    aero_bgaod(15,:) = (/0.06490, 0.03365, 0.03397, 0.05836/)
+
+      !   -- Carpentras
+      aero_sites(16)   = 'Carpentras'
+      aero_types(16)   = 3
+      aero_zones(16)   = 17
+      aero_elev(16)    = 100
+      aero_sr412(16,:) = (/-999.000,4.27180,3.84850,3.60839/)
+      aero_sr470(16,:) = (/-999.000,5.77824,5.63915,5.02537/)
+      aero_sr650(16,:) = (/-999.000,9.71739,9.57229,8.67115/)
+      aero_bgaod(16,:) = (/0.01900, 0.03200, 0.03500, 0.02100/)
+      !    aero_bgaod(16,:) = (/0.03448, 0.06474, 0.05331, 0.03388/)
+
+      !   -- 25km BRDF
+      !    aero_sr412(16,:) = (/-999.000,4.72180,4.64850,4.20839/)
+      !    aero_sr470(16,:) = (/-999.000,6.22824,6.43915,5.62537/)
+      !    aero_sr650(16,:) = (/-999.000,9.71739,9.57229,8.67115/)
+
+      !        -- Pune, India urban areas
+      aero_sites(17) = 'Pune'
+      aero_types(17)   = 4
+      aero_zones(17)   = 19
+      aero_elev(17)    = 559
+      aero_sr412(17,:) = (/4.49376,6.22264,4.81305,7.31305/)
+      aero_sr470(17,:) = (/5.42197,8.08891,5.49410,7.99410/)
+      aero_sr650(17,:) = (/8.40501,11.6605,6.73313,9.23313/)
+      aero_bgaod(17,:) = (/0.20400, 0.16400, 0.07500, 0.17100/)
+      !    aero_bgaod(17,:) = (/0.14888, 0.21124, 0.27165, 0.19066/)
+
+      !        -- Evora, Spain
+      aero_sites(18)     = 'Evora'
+      aero_types(18)   = 3
+      aero_zones(18)   = 22
+      aero_elev(18)    = 293
+      aero_sr412(18,:) = (/4.95347,4.48004,4.75238,5.64016/)
+      aero_sr470(18,:) = (/5.60902,5.80674,7.54495,7.83002/)
+      aero_sr650(18,:) = (/6.80235,6.94325,13.3975,11.9871/)
+      aero_bgaod(18,:) = (/0.01900, 0.03400, 0.02600, 0.02500/)
+      !    aero_bgaod(18,:) = (/0.03544, 0.06548, 0.09886, 0.05251/)
+
+      !        -- Blida, N. Africa
+      aero_sites(19)     = 'Blida'
+      aero_types(19)   = 3
+      aero_zones(19)   = -1 !2
+      aero_elev(19)    = 230
+      aero_sr412(19,:) = (/-999.000,5.20722,5.84409,-999.000/)
+      aero_sr470(19,:) = (/-999.000,7.35584,7.89343,-999.000/)
+      aero_sr650(19,:) = (/-999.000,11.1594,13.5330,-999.000/)
+      aero_bgaod(19,:) = (/0.04400, 0.04900, 0.07700, 0.05800/)
+      !    aero_bgaod(19,:) = (/0.07116, 0.10362, 0.15463, 0.09386/)
+
+      !        -- Blida, N. Africa
+      aero_sites(20)     = 'Blida_High'
+      aero_types(20)   = 3
+      aero_zones(20)   = -1 !2
+      aero_elev(20)    = 600
+      aero_sr412(20,:) = (/-999.000,5.20722,5.84409,-999.000/)
+      aero_sr470(20,:) = (/-999.000,7.35584,7.89343,-999.000/)
+      aero_sr650(20,:) = (/-999.000,11.1594,13.5330,-999.000/)
+      aero_bgaod(20,:) = (/0.04400, 0.04900, 0.07700, 0.05800/)
+      !    aero_bgaod(20,:) = (/0.07116, 0.10362, 0.15463, 0.09386/)
+
+      !   -- GZ24_Only, covers Taklimakan Desert, only AOT models are used here.
+      aero_sites(21)   = 'GZ24_Only'
+      aero_types(21)   = -1
+      aero_zones(21)   = 24
+      aero_elev(21)    = -1
+      aero_sr412(21,:) = (/-999.0,-999.0,-999.0,-999.0/)      ! new from surf. coeffs.
+      aero_sr470(21,:) = (/-999.0,-999.0,-999.0,-999.0/)
+      aero_sr650(21,:) = (/-999.0,-999.0,-999.0,-999.0/)
+      aero_bgaod(21,:) = (/ -999.0,  -999.0,  -999.0,  -999.0/)
+      !    aero_bgaod(21,:) = (/ -999.0,  -999.0,  -999.0,  -999.0/)
+
+      !   -- Ilorin
+      aero_sites(22)   = 'Ilorin'
+      aero_types(22)   = 2
+      aero_zones(22)   = 26
+      aero_elev(22)    = 350
+      aero_sr412(22,:) = (/4.79848, 4.13429, -999.000, -999.000/)
+      aero_sr470(22,:) = (/5.73108, 5.07124, -999.000, -999.000/)
+      aero_sr650(22,:) = (/10.0571, 9.28994, -999.000, -999.000/)
+      aero_bgaod(22,:) = (/0.34500, 0.29700, 0.17300, 0.16400/)
+      !    aero_bgaod(22,:) = (/0.32718, 0.32547, -999.00000, 0.22936/)
+
+      !   -- CCNY
+      aero_sites(23)   = 'CCNY'
+      aero_types(23)   = 4
+      aero_zones(23)   = 25
+      aero_elev(23)    = 0.0
+      aero_sr412(23,:) = (/5.7380,6.3655,8.7437,5.3349/)
+      aero_sr470(23,:) = (/7.0723,7.5391,8.8168,6.8278/)
+      aero_sr650(23,:) = (/10.1025,10.7149,10.1311,10.5906/)
+      aero_bgaod(23,:) = (/0.04800, 0.06600, 0.13500, 0.06100/)
+      !    aero_bgaod(23,:) = (/0.06593, 0.09566, 0.09318, 0.05144/)
+
+      !   -- Ilorin
+      aero_sites(24)   = 'Ilorin_Transition'
+      aero_types(24)   = 2
+      !    aero_zones(24)   = -1 !27
+      aero_zones(24)   = 27
+      aero_elev(24)    = 350
+      aero_sr412(24,:) = (/4.79848, 4.13429, -999.000, -999.000/)
+      aero_sr470(24,:) = (/5.73108, 5.07124, -999.000, -999.000/)
+      aero_sr650(24,:) = (/10.0571, 9.28994, -999.000, -999.000/)
+      aero_bgaod(24,:) = (/0.34500, 0.29700, 0.17300, 0.16400/)
+      !    aero_bgaod(24,:) = (/0.32718, 0.32547, -999.00000, 0.22936/)
+
+      !   -- SACOL
+      aero_sites(25)   = 'SACOL'
+      aero_types(25)   = 2
+      aero_zones(25)   = 28
+      aero_elev(25)    = 1965
+      aero_sr412(25,:) = (/6.57751, 5.85782, 4.26251, 5.79214/)
+      aero_sr470(25,:) = (/8.5020, 8.2185, 5.56137, 6.24013/)
+      aero_sr650(25,:) = (/16.6909, 16.8518, 11.5214, 12.5133/)
+      aero_bgaod(25,:) = (/0.03700, 0.05400, 0.05700, 0.03400/)
+      !    aero_bgaod(25,:) = (/0.12611, 0.20761, 0.17829, 0.11342/)
+
+      !   -- Mexico_City
+      aero_sites(26)   = 'Mexico_City'
+      aero_types(26)   = 4
+      aero_zones(26)   = 29
+      aero_elev(26)    = 2268.0
+      aero_sr412(26,:) = (/6.73461, 6.20030, -999.000, 8.10955 /)
+      aero_sr470(26,:) = (/7.50571, 7.88785, -999.000, 9.46562/)
+      aero_sr650(26,:) = (/7.7320, 10.2994, -999.000, 11.9709/)
+      aero_bgaod(26,:) = (/0.01900, 0.02100, 0.03900, 0.02600/)
+      !    aero_bgaod(26,:) = (/0.07039, 0.10752, 0.11487, 0.09446/)
+
+      !   -- Solar Village
+      aero_sites(27)   = 'Solar_Village'
+      aero_types(27)   = 6
+      aero_zones(27)   = 10
+      aero_elev(27)    = 764.0
+      aero_sr412(27,:) = (/10.4297, 10.8623, 10.7472, 11.9705/)
+      aero_sr470(27,:) = (/15.0892, 16.1351, 16.0690, 17.0390/)
+      aero_sr650(27,:) = (/32.0747, 34.5677, 35.3692, 34.6681/)
+      aero_bgaod(27,:) = (/0.10100, 0.09800, 0.16700, 0.10900/)
+      !    aero_bgaod(27,:) = (/0.14651, 0.27687, 0.34036, 0.23912/)
+
+      !   -- Jaipur, Thar Desert
+      aero_sites(28)   = 'Jaipur'
+      aero_types(28)   = 4
+      aero_zones(28)   = 20
+      aero_elev(28)    = 450.0
+      aero_sr412(28,:) = (/6.46991, 7.40196, 7.28651, 5.22799/)
+      aero_sr470(28,:) = (/8.49850, 9.42026, 9.49201, 7.03474/)
+      aero_sr650(28,:) = (/11.3653, 12.0653, 15.2039, 10.3618/)
+      aero_bgaod(28,:) = (/0.07100, 0.10500, 0.09500, 0.07100/)
+      !    aero_bgaod(28,:) = (/0.16877, 0.23449, 0.43655, 0.22099/)
+
+      !   -- NW_India_Desert
+      aero_sites(29)   = 'NW_India_Desert'
+      aero_types(29)   = 4
+      aero_zones(29)   = 30
+      aero_elev(29)    = 450.0
+      aero_sr412(29,:) = (/7.09280, 5.90470, 6.97091, 4.24017/)
+      aero_sr470(29,:) = (/8.31369, 7.69160, 8.73495, 5.41526/)
+      aero_sr650(29,:) = (/11.8653, 13.1653, 15.0039, 10.9618/)
+      aero_bgaod(29,:) = (/0.07100, 0.10500, 0.09500, 0.07100/)
+      !    aero_bgaod(29,:) = (/0.16877, 0.23449, 0.43655, 0.22099/)
+
+      !   --Yuma
+      aero_sites(30)   = 'Yuma'
+      aero_types(30)   = 6
+      aero_zones(30)   = 31
+      aero_elev(30)    = 63
+      aero_sr412(30,:) = (/6.7668, 6.9406, 8.3705, 7.4484/)
+      aero_sr470(30,:) = (/9.8905, 9.9898, 10.8432, 10.9740/)
+      aero_sr650(30,:) = (/24.7466, 24.4755, 25.5649, 25.4377/)
+      aero_bgaod(30,:) = (/0.07100, 0.12300, 0.11500, 0.08600/)
+      !    aero_bgaod(30,:) = (/0.05629, 0.12101, 0.13732, 0.07340/)
+
+      !   -- read in base BRDF reflectivitiy @ 650nm from infile.
+      allocate(brdf650(3600,1800), stat=status)
+      if (status /= 0) then
+         print *, "ERROR: Unable to allocate array for BRDF base data: ", status
+         return
+      end if
+
+      status = nf90_open(cfg%db_nc4, nf90_nowrite, nc_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
+         return
+      end if
+
+      group_name = 'brdfbase'
+      status = nf90_inq_ncid(nc_id, group_name, grp_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
+         return
+      end if
+
+      dset_name = 'brdf_base_650'
+      status = nf90_inq_varid(grp_id, dset_name, dset_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+         return
+      end if
+
+      start2  = (/1,1/)
+      stride2 = (/1,1/)
+      edges2  = (/3600,1800/)
+      status = nf90_get_var(grp_id, dset_id, brdf650, start=start2, &
+         stride=stride2, count=edges2)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+         return
+      end if
+
+      status = nf90_close(nc_id)
+      if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to close lut_nc4 file: ", status
+         return
+      end if
+
+      return
+   end function load_brdf_t
+
+
+! --  Find granule limits and set LER offsets, and allocate space for the tables
+  integer function set_limits_t(locedge, lat, long) RESULT(status)
+
+    integer, intent(in)  :: locedge(2)
+    real, intent(in)     :: lat(locedge(1),locedge(2)), long(locedge(1),locedge(2))
+
+    integer              :: checkvariable
+    integer              :: i, j
+    character (len=256)  :: msg
+    real                 :: eastedge, westedge, test
+    status = 0
+
+!   -- if processing extracts, if region of interest is within bounds of the granule,
+!   -- but not actually contained in the granule quadralateral, lat and lon values may be
+!   -- set to fill values (-999). Check this condition and fail.
+!   -- @TODO - utilize the status variable and check where called.
+!    if (minval(lat) < -900.0 .OR. minval(long) < -900.0) then
+!      msg = "Min lat or min lon is fill value. Failing."
+!      call MODIS_SMF_SETDYNAMICMSG(MODIS_F_GENERIC, msg, 'set_limits')
+!    end if
+
+    if (maxval(lat) < -900.0 .or. maxval(long) < -900.0) then
+        status = -1
+        print *, "ERROR: Bad latitudes and/or longitudes: ", status
+        return
+    end if
+
+    eastedge = -999.0
+    westedge =  999.0
+    dateline = 0
+    if (minval(long, long > -900.0) < -175.0 .and. maxval(long, long > -900.0) > 175.0) then
+       eastedge = 180.0
+       westedge = -180.0
+       do i=1, locedge(1)
+          do j=1, locedge(2)
+             if (long(i,j) < -900.0) cycle    ! skip undefined
+             if (long(i,j) > 0.0 .and. long(i,j) < eastedge) eastedge = long(i,j)
+             if (long(i,j) < 0.0 .and. long(i,j) > westedge) westedge = long(i,j)
+          enddo
+       enddo
+       LERstart(1) = 10*(180+floor(eastedge)-1)
+       if (LERstart(1) <= 0) LERstart(1) = 0
+       dateline = 3600 - LERstart(1)
+       LERedge(1) = 10*(180+(floor(westedge)+2)) + dateline
+    else
+       LERstart(1) = 10*(180+(floor(minval(long, long > -900.0))-1))
+       if (LERstart(1) <= 0) LERstart(1) = 0
+        LERedge(1) = 10*(180+(floor(maxval(long, long > -900.0))+2)) - LERstart(1)
+       if (LERedge(1)+LERstart(1) > 3600) LERedge(1) = 3600 - LERstart(1)
+    endif
+
+    LERstart(2) = 10*(90+(floor(minval(lat, lat > -900.0))-1))
+    if (LERstart(2) <= 0) LERstart(2) = 0
+    LERedge(2) = 10*(90+(floor(maxval(lat, lat > -900.0))+2)) - LERstart(2)
+    if (LERedge(2)+LERstart(2) > 1800) LERedge(2) = 1800 - LERstart(2)
+
+    if (allocated(gref412_all)) deallocate(gref412_all)
+    allocate (gref412_all(LERedge(1),LERedge(2)), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+    if (allocated(gref470_all)) deallocate(gref470_all)
+    allocate (gref470_all(LERedge(1),LERedge(2)), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+    if (allocated(gref650_all)) deallocate(gref650_all)
+    allocate (gref650_all(LERedge(1),LERedge(2)), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+    if (allocated(gref412_fwd)) deallocate(gref412_fwd)
+    allocate (gref412_fwd(LERedge(1),LERedge(2)), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+    if (allocated(gref470_fwd)) deallocate(gref470_fwd)
+    allocate (gref470_fwd(LERedge(1),LERedge(2)), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+    if (allocated(gref650_fwd)) deallocate(gref650_fwd)
+    allocate (gref650_fwd(LERedge(1),LERedge(2)), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+    !if (allocated(gref412_bkd)) deallocate(gref412_bkd)
+    !allocate (gref412_bkd(LERedge(1),LERedge(2)), stat = checkvariable)
+    !if ( checkvariable /= 0 ) goto 90
+
+    !if (allocated(gref470_bkd)) deallocate(gref470_bkd)
+    !allocate (gref470_bkd(LERedge(1),LERedge(2)), stat = checkvariable)
+    !if ( checkvariable /= 0 ) goto 90
+
+    !if (allocated(gref650_bkd)) deallocate(gref650_bkd)
+    !allocate (gref650_bkd(LERedge(1),LERedge(2)), stat = checkvariable)
+    !if ( checkvariable /= 0 ) goto 90
+
+    if (allocated(gref865_all)) deallocate(gref865_all)
+    allocate (gref865_all(LERedge(1),LERedge(2)), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+    !if (allocated(coefs412_all_tp)) deallocate(coefs412_all_tp)
+    !allocate (coefs412_all_tp(LERedge(1),LERedge(2),4,3,2), stat = checkvariable)
+    !if ( checkvariable /= 0 ) goto 90
+
+    !if (allocated(coefs412_fwd_tp)) deallocate(coefs412_fwd_tp)
+    !allocate (coefs412_fwd_tp(LERedge(1),LERedge(2),4,3,2), stat = checkvariable)
+    !if ( checkvariable /= 0 ) goto 90
+
+    if (allocated(coefs412_all)) deallocate(coefs412_all)
+    allocate (coefs412_all(LERedge(1),LERedge(2),4,3), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+    if (allocated(coefs412_fwd)) deallocate(coefs412_fwd)
+    allocate (coefs412_fwd(LERedge(1),LERedge(2),4,3), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+    !if (allocated(coefs470_all_tp)) deallocate(coefs470_all_tp)
+    !allocate (coefs470_all_tp(LERedge(1),LERedge(2),4,3,2), stat = checkvariable)
+    !if ( checkvariable /= 0 ) goto 90
+
+    !if (allocated(coefs470_fwd_tp)) deallocate(coefs470_fwd_tp)
+    !allocate (coefs470_fwd_tp(LERedge(1),LERedge(2),4,3,2), stat = checkvariable)
+    !if ( checkvariable /= 0 ) goto 90
+
+    if (allocated(coefs470_all)) deallocate(coefs470_all)
+    allocate (coefs470_all(LERedge(1),LERedge(2),4,3), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+    if (allocated(coefs470_fwd)) deallocate(coefs470_fwd)
+    allocate (coefs470_fwd(LERedge(1),LERedge(2),4,3), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+    !if (allocated(coefs650_all_tp)) deallocate(coefs650_all_tp)
+    !allocate (coefs650_all_tp(LERedge(1),LERedge(2),4,3,2), stat = checkvariable)
+    !if ( checkvariable /= 0 ) goto 90
+
+    !if (allocated(coefs650_fwd_tp)) deallocate(coefs650_fwd_tp)
+    !allocate (coefs650_fwd_tp(LERedge(1),LERedge(2),4,3,2), stat = checkvariable)
+    !if ( checkvariable /= 0 ) goto 90
+
+    if (allocated(coefs650_all)) deallocate(coefs650_all)
+    allocate (coefs650_all(LERedge(1),LERedge(2),4,3), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+    if (allocated(coefs650_fwd)) deallocate(coefs650_fwd)
+    allocate (coefs650_fwd(LERedge(1),LERedge(2),4,3), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+!   -- allocate arrays for VIIRS, all-angle surface database
+    if (allocated(vgref412_all)) deallocate(vgref412_all)
+    allocate (vgref412_all(LERedge(1),LERedge(2)), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+    if (allocated(vgref488_all)) deallocate(vgref488_all)
+    allocate (vgref488_all(LERedge(1),LERedge(2)), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+    if (allocated(vgref670_all)) deallocate(vgref670_all)
+    allocate (vgref670_all(LERedge(1),LERedge(2)), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+    goto 100
+
+90  continue
+    print *, "ERROR: Unable to allocate coefficient array: ", status
+    return
+
+100 continue
+    return
+
+  end function set_limits_t
+
+! --  Find granule limits and set offsets for 2.2 um surface database, and allocate space for the
+! tables, 0.06 degree resolution
+  integer function set_limits6_t(locedge, lat, long) RESULT(status)
+
+    integer, intent(in)  :: locedge(2)
+    real, intent(in)     :: lat(locedge(1),locedge(2)), long(locedge(1),locedge(2))
+
+    integer              :: checkvariable
+    integer              :: i, j
+    character (len=256)  :: msg
+    real                 :: eastedge, westedge
+    status = 0
+
+!   -- if processing extracts, if region of interest is within bounds of the
+!   granule,
+!   -- but not actually contained in the granule quadralateral, lat and lon
+!   values may be
+!   -- set to fill values (-999). Check this condition and fail.
+!   -- @TODO - utilize the status variable and check where called.
+!    if (minval(lat) < -900.0 .OR. minval(long) < -900.0) then
+!      msg = "Min lat or min lon is fill value. Failing."
+!      call MODIS_SMF_SETDYNAMICMSG(MODIS_F_GENERIC, msg, 'set_limits')
+!    end if
+
+    if (maxval(lat) < -900.0 .or. maxval(long) < -900.0) then
+        status = -1
+        print *, "ERROR: Bad latitudes and/or longitudes: ", status
+        return
+    end if
+
+    eastedge = -999.0
+    westedge =  999.0
+    dateline6 = 0
+    if (minval(long, long > -900.0) < -175.0 .and. maxval(long, long > -900.0) > 175.0) then
+       eastedge = 180.0
+       westedge = -180.0
+       do i=1, locedge(1)
+          do j=1, locedge(2)
+             if (long(i,j) < -900.0) cycle    ! skip undefined
+             if (long(i,j) > 0.0 .and. long(i,j) < eastedge) eastedge = long(i,j)
+             if (long(i,j) < 0.0 .and. long(i,j) > westedge) westedge = long(i,j)
+          enddo
+       enddo
+       LERstart6(1) = (180+(floor(eastedge)-1))/0.06
+       if (LERstart6(1) <= 0) LERstart6(1) = 0
+       dateline6 = 6000 - LERstart6(1)
+       LERedge6(1) = (180+(floor(westedge)+2))/0.06 + dateline6
+    else
+       LERstart6(1) = (180+(floor(minval(long, long > -900.0))-1))/0.06
+       if (LERstart6(1) <= 0) LERstart6(1) = 0
+       LERedge6(1) = (180+(floor(maxval(long, long > -900.0))+2))/0.06 - LERstart6(1)
+       if (LERedge6(1)+LERstart6(1) > 6000) LERedge6(1) = 6000 - LERstart6(1)
+    endif
+
+    LERstart6(2) = (90+(floor(minval(lat, lat > -900.0))-1))/0.06
+    if (LERstart6(2) <= 0) LERstart6(2) = 0
+    LERedge6(2) = (90+(floor(maxval(lat, lat > -900.0))+2))/0.06 - LERstart6(2)
+    if (LERedge6(2)+LERstart6(2) > 3000) LERedge6(2) = 3000 - LERstart6(2)
+
+    if (allocated(swir_coeffs412)) deallocate(swir_coeffs412)
+    allocate (swir_coeffs412(LERedge6(1),LERedge6(2),3), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+    if (allocated(swir_coeffs470)) deallocate(swir_coeffs470)
+    allocate (swir_coeffs470(LERedge6(1),LERedge6(2),3), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+    if (allocated(swir_stderr412)) deallocate(swir_stderr412)
+    allocate (swir_stderr412(LERedge6(1),LERedge6(2)), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+    if (allocated(swir_stderr470)) deallocate(swir_stderr470)
+    allocate (swir_stderr470(LERedge6(1),LERedge6(2)), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+    if (allocated(swir_min)) deallocate(swir_min)
+    allocate (swir_min(LERedge6(1),LERedge6(2)), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+    if (allocated(swir_max)) deallocate(swir_max)
+    allocate (swir_max(LERedge6(1),LERedge6(2)), stat = checkvariable)
+    if ( checkvariable /= 0 ) goto 90
+
+    goto 100
+
+90  continue
+    print *, "ERROR: Unable to allocate 2.2 um surface database array: ", status
+    return
+
+100 continue
+    return
+
+  end function set_limits6_t
+
+ ! -- Load surface LER coefficient tables.
+ integer function load_hdfLER_t(modis_ler_file, viirs_ler_file, coeffs_file, season) RESULT(status)
+      use netcdf
+      USE OCIUAAER_Config_Module
+      implicit none
+
+    character(len=*), intent(in)    ::  modis_ler_file
+    character(len=*), intent(in)    ::  viirs_ler_file
+    character(len=*), intent(in)    ::  coeffs_file
+    integer, intent(in)               ::  season
+
+    integer             :: start2(3), stride2(3), edges2(3)
+    integer             :: start4(5), stride4(5), edge4(5)
+
+    character(len=255)    ::  sds_name
+    character(len=255)    ::  dset_name
+    character(len=255)    ::  test_name
+    character(len=255)    ::  group_name
+
+    integer               ::  nc_id
+    integer               ::  dim_id
+    integer               ::  dset_id
+    integer               ::  grp_id
+    integer             ::  sd_id, sds_index, sds_id
+
+    start2 = (/LERstart(1),LERstart(2),season/)
+    edges2 = (/LERedge(1),LERedge(2),1/)
+    stride2 = (/1,1,1/)
+
+    start4 = (/LERstart(1),LERstart(2),1,1,season/)
+    edge4 = (/LERedge(1),LERedge(2),4,3,1/)
+    stride4 = (/1,1,1,1,1/)
+
+    status = nf90_open(cfg%db_nc4, nf90_nowrite, nc_id)
+    if (status /= NF90_NOERR) then
+       print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
+       return
+    end if
+
+    group_name = 'surface_coeffs'
+    status = nf90_inq_ncid(nc_id, group_name, grp_id)
+    if (status /= NF90_NOERR) then
+       print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
+       return
+    end if
+
+    sds_name = "412_fwd"
+    status = readLER5_t(start4, edge4, stride4, sds_name, grp_id, coefs412_fwd)
+    if (status < 0) goto 90
+
+    sds_name = "412_all"
+    status = readLER5_t(start4, edge4, stride4, sds_name, grp_id, coefs412_all)
+    if (status < 0) goto 90
+
+    sds_name = "470_fwd"
+    status = readLER5_t(start4, edge4, stride4, sds_name, grp_id, coefs470_fwd)
+    if (status < 0) goto 90
+
+    sds_name = "470_all"
+    status = readLER5_t(start4, edge4, stride4, sds_name, grp_id, coefs470_all)
+    if (status < 0) goto 90
+
+    sds_name = "650_fwd"
+    status = readLER5_t(start4, edge4, stride4, sds_name, grp_id, coefs650_fwd)
+    if (status < 0) goto 90
+
+    sds_name = "650_all"
+    status = readLER5_t(start4, edge4, stride4, sds_name, grp_id, coefs650_all)
+    if (status < 0) goto 90
+
+    status = nf90_close(nc_id)
+    if (status /= NF90_NOERR) then
+       print *, "ERROR: Failed to close lut_nc4 file: ", status
+       return
+    end if
+
+    !   -- MODIS, all-angle surface database
+    status = nf90_open(cfg%db_nc4, nf90_nowrite, nc_id)
+    if (status /= NF90_NOERR) then
+       print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
+       return
+    end if
+
+    group_name = 'modis_surface'
+    status = nf90_inq_ncid(nc_id, group_name, grp_id)
+    if (status /= NF90_NOERR) then
+       print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
+       return
+    end if
+
+    sds_name = "412_all"
+    status = readLER2_t(start2, edges2, stride2, sds_name, grp_id, gref412_all)
+    if (status < 0) goto 90
+
+    sds_name = "412_fwd"
+    status = readLER2_t(start2, edges2, stride2, sds_name, grp_id, gref412_fwd)
+    if (status < 0) goto 90
+
+    sds_name = "470_all"
+    status = readLER2_t(start2, edges2, stride2, sds_name, grp_id, gref470_all)
+    if (status < 0) goto 90
+
+    sds_name = "470_fwd"
+    status = readLER2_t(start2, edges2, stride2, sds_name, grp_id, gref470_fwd)
+    if (status < 0) goto 90
+
+    sds_name = "650_all"
+    status = readLER2_t(start2, edges2, stride2, sds_name, grp_id, gref650_all)
+    if (status < 0) goto 90
+
+    sds_name = "650_fwd"
+    status = readLER2_t(start2, edges2, stride2, sds_name, grp_id, gref650_fwd)
+    if (status < 0) goto 90
+
+    sds_name = "865_all_all"
+    status = readLER2_t(start2, edges2, stride2, sds_name, grp_id, gref865_all)
+    if (status < 0) goto 90
+
+    status = nf90_close(nc_id)
+    if (status /= NF90_NOERR) then
+       print *, "ERROR: Failed to close lut_nc4 file: ", status
+       return
+    end if
+
+    !   -- VIIRS, all-angle surface database
+    status = nf90_open(cfg%db_nc4, nf90_nowrite, nc_id)
+    if (status /= NF90_NOERR) then
+       print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
+       return
+    end if
+
+    group_name = 'viirs_surface'
+    status = nf90_inq_ncid(nc_id, group_name, grp_id)
+    if (status /= NF90_NOERR) then
+       print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
+       return
+    end if
+
+    sds_name = "412_all"
+    status = readLER2_t(start2, edges2, stride2, sds_name, grp_id, vgref412_all)
+    if (status < 0) goto 90
+
+    sds_name = "488_all"
+    status = readLER2_t(start2, edges2, stride2, sds_name, grp_id, vgref488_all)
+    if (status < 0) goto 90
+
+    sds_name = "670_all"
+    status = readLER2_t(start2, edges2, stride2, sds_name, grp_id, vgref670_all)
+    if (status < 0) goto 90
+
+    status = nf90_close(nc_id)
+    if (status /= NF90_NOERR) then
+       print *, "ERROR: Failed to close lut_nc4 file: ", status
+       return
+    end if
+
+    ! Close up shop and go home
+    goto 100
+
+90 continue
+   print *, "Error reading "//trim(sds_name)//" from file "//trim(cfg%db_nc4)
+   return
+100 continue
+
+ end function load_hdfLER_t
+
+ ! -- Load 2.2 um surface database
+ integer function load_swir_coeffs_t(lut_file, season) result(status) !jlee added 05/16/2017
+    use netcdf
+    USE OCIUAAER_Config_Module
+    implicit none
+
+    character(len=255), intent(in)  ::  lut_file
+    integer, intent(in)   ::  season
+
+    ! HDF vars
+    character(len=255)    ::  sds_name
+    character(len=255)    ::  dset_name
+    character(len=255)    ::  attr_name
+    character(len=255)    ::  group_name
+
+    integer               ::  nc_id
+    integer               ::  dim_id
+    integer               ::  dset_id
+    integer               ::  grp_id
+    integer               ::  sd_id, sds_index, sds_id
+    integer, dimension(3) ::  start2, stride2, edges2
+    integer, dimension(4) ::  start3, stride3, edges3
+
+    status = -1
+
+    start2 = (/LERstart6(1),LERstart6(2),season/)
+    edges2 =  (/LERedge6(1),LERedge6(2),1/)
+    stride2 =(/1,1,1/)
+
+    start3 = (/LERstart6(1),LERstart6(2),1,season/)
+    edges3 =  (/LERedge6(1),LERedge6(2),3,1/)
+    stride3 =(/1,1,1,1/)
+
+    status = nf90_open(cfg%db_nc4, nf90_nowrite, nc_id)
+    if (status /= NF90_NOERR) then
+       print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
+       return
+    end if
+
+    group_name = 'swir_vis_surface_coeffs'
+    status = nf90_inq_ncid(nc_id, group_name, grp_id)
+    if (status /= NF90_NOERR) then
+       print *, "ERROR: Failed to get ID of group "//trim(group_name)//": ", status
+       return
+    end if
+
+    sds_name = 'coeffs_2250_to_412'
+    status = readSWIR3_t(start3, edges3, stride3, sds_name, grp_id, swir_coeffs412)
+    if (status < 0) goto 90
+    !============================================================================
+    sds_name = 'stderr_412'
+    status = readSWIR2_t(start2, edges2, stride2, sds_name, grp_id, swir_stderr412)
+    if (status < 0) goto 90
+    !============================================================================
+    sds_name = 'coeffs_2250_to_488'
+    status = readSWIR3_t(start3, edges3, stride3, sds_name, grp_id, swir_coeffs470)
+    if (status < 0) goto 90
+    !============================================================================
+    sds_name = 'stderr_488'
+    status = readSWIR2_t(start2, edges2, stride2, sds_name, grp_id, swir_stderr470)
+    if (status < 0) goto 90
+    !============================================================================
+    sds_name = 'min_2250_for_488'
+    status = readSWIR2_t(start2, edges2, stride2, sds_name, grp_id, swir_min)
+    if (status < 0) goto 90
+    !============================================================================
+    sds_name = 'max_2250_for_488'
+    status = readSWIR2_t(start2, edges2, stride2, sds_name, grp_id, swir_max)
+    if (status < 0) goto 90
+    !============================================================================
+
+    status = nf90_close(nc_id)
+    if (status /= NF90_NOERR) then
+       print *, "ERROR: Failed to close lut_nc4 file: ", status
+       return
+    end if
+
+    goto 100
+
+90 continue
+   print *, "Error reading "//trim(sds_name)//" from file "//trim(lut_file)
+   return
+
+100 continue
+
+ end function load_swir_coeffs_t
+
+
+
+ ! Read in LER tables
+ integer function readLER2_t(start, edge, stride, sds_name, grp_id, outref) RESULT(status)
+
+    !   include 'hdf.f90'
+    !   include 'dffunc.f90'
+    use netcdf
+
+    implicit none
+
+    integer, dimension(3), intent(in)   ::  start, edge, stride
+    integer, intent(in)                 ::  grp_id
+    real, intent(out)                   ::  outref(edge(1),edge(2))
+
+    ! HDF vars
+    character(len=255)    ::  sds_name
+    character(len=255)    ::  dset_name
+    character(len=255)    ::  attr_name
+    character(len=255)    ::  group_name
+
+    integer               ::  nc_id
+    integer               ::  dim_id
+    integer               ::  dset_id
+    integer                           ::  sds_index, sds_id
+    integer, dimension(3)             ::  tmpedge, tmpstart
+    real, dimension(:,:), allocatable ::  tmpout
+
+    dset_name = sds_name
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+       return
+    end if
+
+    tmpstart(:) = start(:)
+    if (tmpstart(1) == 0) tmpstart(1) = 1
+    if (tmpstart(2) == 0) tmpstart(2) = 1
+
+    if (dateline .eq. 0) then
+       status = nf90_get_var(grp_id, dset_id, outref, start=tmpstart, &
+          stride=stride, count=edge)
+       if (status /= NF90_NOERR) then
+          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+          return
+       end if
+    else
+       ! The granule straddles the dateline, so we need to make an accommodation
+       tmpedge(:) = edge(:)
+       tmpedge(1) = dateline
+       allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
+       if (status /= 0) then
+          print *, "ERROR: Unable to allocate tmpedge: ", status
+          return
+       end if
+       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
+          stride=stride, count=tmpedge)
+       if (status /= NF90_NOERR) then
+          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+          return
+       end if
+       outref(1:dateline, :) = tmpout
+
+       deallocate(tmpout, stat=status)
+       if (status /= 0) then
+          print *, "Failed to deallocate tmpout: ", status
+          return
+       end if
+
+       tmpstart(1) = 1
+       tmpedge(1) = edge(1) - dateline
+       allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
+       if (status /= 0) then
+          print *, "ERROR: Unable to allocate tmpedge: ", status
+          return
+       end if
+       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
+          stride=stride, count=tmpedge)
+       if (status /= NF90_NOERR) then
+          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+          return
+       end if
+       outref(dateline+1:edge(1),:) = tmpout
+
+       deallocate(tmpout, stat=status)
+       if (status /= 0) then
+          print *, "Failed to deallocate tmpout: ", status
+          return
+       end if
+    end if
+
+    return
+ end function readLER2_t
+
+ ! Read in LER tables
+ integer function readLER5_t(start, edge, stride, sds_name, grp_id, outref) RESULT(status)
+
+    !   include 'hdf.f90'
+    !   include 'dffunc.f90'
+    use netcdf
+
+    implicit none
+
+    integer, dimension(:), intent(in)       ::  start, edge, stride
+    character(len=255), intent(in)          ::  sds_name
+    integer, intent(in)                     ::  grp_id
+    real, dimension(:,:,:,:), intent(inout) ::  outref
+
+    ! HDF vars
+    character(len=255)    ::  dset_name
+
+    integer               ::  nc_id
+    integer               ::  dim_id
+    integer               ::  dset_id
+    integer               ::  sds_index, sds_id
+    integer, dimension(5) ::  tmpedge, tmpstart
+    real, dimension(:,:,:,:), allocatable ::  tmpout
+    character(len=255)    ::  tmp_name
+    integer               ::  rank, ntype, nattrs
+    integer, dimension(5) ::  dims
+
+    status = -1
+
+    tmpstart(:) = start(:)
+    if (tmpstart(1) == 0) tmpstart(1) = 1
+    if (tmpstart(2) == 0) tmpstart(2) = 1
+
+    dset_name = sds_name
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+       return
+    end if
+
+    if (dateline .eq. 0) then
+
+       status = nf90_get_var(grp_id, dset_id, outref, start=tmpstart, &
+          stride=stride, count=edge)
+       if (status /= NF90_NOERR) then
+          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+          return
+       end if
+    else
+       ! The granule straddles the dateline, so we need to make an accommodation
+       tmpedge(:) = edge(:)
+       tmpedge(1) = dateline
+       allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3), tmpedge(4)), stat=status)
+       if (status /= 0) then
+          print *, "ERROR: Unable to allocate tmpedge: ", status
+          return
+       end if
+       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
+          stride=stride, count=tmpedge)
+       if (status /= NF90_NOERR) then
+          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+          return
+       end if
+       outref(1:dateline, :, :, :) = tmpout(:,:,:,:)
+
+       deallocate(tmpout, stat=status)
+       if (status /= 0) then
+          print *, "Failed to deallocate tmpout: ", status
+          return
+       end if
+
+       tmpstart(1) = 1
+       tmpedge(1) = edge(1) - dateline
+       allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3), tmpedge(4)), stat=status)
+       if (status /= 0) then
+          print *, "ERROR: Unable to allocate tmpedge: ", status
+          return
+       end if
+       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
+          stride=stride, count=tmpedge)
+       if (status /= NF90_NOERR) then
+          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+          return
+       end if
+       outref(dateline+1:edge(1),:,:,:) = tmpout(:,:,:,:)
+
+       deallocate(tmpout, stat=status)
+       if (status /= 0) then
+          print *, "Failed to deallocate tmpout: ", status
+          return
+       end if
+
+    end if
+    status = 0
+    return
+
+ end function readLER5_t
+
+ ! Read in 2.2 um surface database
+ integer function readSWIR2_t(start, edge, stride, sds_name, grp_id, outref) RESULT(status)
+
+    !   include 'hdf.f90'
+    !   include 'dffunc.f90'
+    use netcdf
+
+    implicit none
+
+    integer, dimension(3), intent(in)   ::  start, edge, stride
+    integer, intent(in)                 ::  grp_id
+    real, intent(out)                   ::  outref(edge(1),edge(2))
+
+    ! HDF vars
+    character(len=255)    ::  sds_name
+    character(len=255)    ::  dset_name
+    character(len=255)    ::  attr_name
+    character(len=255)    ::  group_name
+
+    integer               ::  nc_id
+    integer               ::  dim_id
+    integer               ::  dset_id
+    integer                           ::  sds_index, sds_id
+    integer, dimension(3)             ::  tmpedge, tmpstart
+    real, dimension(:,:), allocatable ::  tmpout
+
+    tmpstart(:) = start(:)
+    if (tmpstart(1) == 0) tmpstart(1) = 1
+    if (tmpstart(2) == 0) tmpstart(2) = 1
+
+    dset_name = sds_name
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+       return
+    end if
+
+    if (dateline6 .eq. 0) then
+       status = nf90_get_var(grp_id, dset_id, outref, start=tmpstart, &
+          stride=stride, count=edge)
+       if (status /= NF90_NOERR) then
+          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+          return
+       end if
+    else
+       ! The granule straddles the dateline6, so we need to make an accommodation
+       tmpedge(:) = edge(:)
+       tmpedge(1) = dateline6
+       allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
+       if (status /= 0) then
+          print *, "ERROR: Unable to allocate tmpedge: ", status
+          return
+       end if
+       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
+          stride=stride, count=tmpedge)
+       if (status /= NF90_NOERR) then
+          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+          return
+       end if
+       outref(1:dateline6, :) = tmpout
+
+       deallocate(tmpout, stat=status)
+       if (status /= 0) then
+          print *, "Failed to deallocate tmpout: ", status
+          return
+       end if
+
+       tmpstart(1) = 1
+       tmpedge(1) = edge(1) - dateline6
+       allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
+       if (status /= 0) then
+          print *, "ERROR: Unable to allocate tmpedge: ", status
+          return
+       end if
+       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
+          stride=stride, count=tmpedge)
+       if (status /= NF90_NOERR) then
+          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+          return
+       end if
+       outref(dateline6+1:edge(1),:) = tmpout
+
+       deallocate(tmpout, stat=status)
+       if (status /= 0) then
+          print *, "Failed to deallocate tmpout: ", status
+          return
+       end if
+    end if
+    return
+
+ end function readSWIR2_t
+
+ ! Read in 2.2 um surface database
+ integer function readSWIR3_t(start3, edges3, stride3, sds_name, grp_id, outref) RESULT(status)
+
+    !   include 'hdf.f90'
+    !   include 'dffunc.f90'
+    use netcdf
+
+    implicit none
+
+    integer, dimension(4), intent(in)     ::  start3, edges3, stride3
+    integer, intent(in)                   ::  grp_id
+    real, dimension(:,:,:), intent(inout) ::  outref
+    ! HDF vars
+    character(len=255)    ::  sds_name
+    character(len=255)    ::  dset_name
+    character(len=255)    ::  attr_name
+    character(len=255)    ::  group_name
+
+    integer               ::  nc_id
+    integer               ::  dim_id
+    integer               ::  dset_id
+    integer               ::  sds_index, sds_id
+    integer, dimension(4) ::  tmpedge, tmpstart
+    real, dimension(:,:,:), allocatable ::  tmpout
+    character(len=255)    ::  tmp_name
+    integer               ::  rank, ntype, nattrs
+    integer, dimension(4) ::  dims
+
+    status = -1
+
+    tmpstart(:) = start3(:)
+    if (tmpstart(1) == 0) tmpstart(1) = 1
+    if (tmpstart(2) == 0) tmpstart(2) = 1
+
+    dset_name = sds_name
+    status = nf90_inq_varid(grp_id, dset_name, dset_id)
+    if (status /= NF90_NOERR) then
+       print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+       return
+    end if
+
+    if (dateline6 .eq. 0) then
+       status = nf90_get_var(grp_id, dset_id, outref, start=tmpstart, &
+          stride=stride3, count=edges3)
+       if (status /= NF90_NOERR) then
+          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+          return
+       end if
+    else
+       ! The granule straddles the dateline6, so we need to make an accommodation
+       tmpedge(:) = edges3(:)
+       tmpedge(1) = dateline6
+       allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3)), stat=status)
+       if (status /= 0) then
+          print *, "ERROR: Unable to allocate tmpedge: ", status
+          return
+       end if
+       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
+          stride=stride3, count=tmpedge)
+       if (status /= NF90_NOERR) then
+          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+          return
+       end if
+       outref(1:dateline6, :, :) = tmpout
+
+       deallocate(tmpout, stat=status)
+       if (status /= 0) then
+          print *, "Failed to deallocate tmpout: ", status
+          return
+       end if
+
+       tmpstart(1) = 1
+       tmpedge(1) = edges3(1) - dateline6
+       allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3)), stat=status)
+       if (status /= 0) then
+          print *, "ERROR: Unable to allocate tmpedge: ", status
+          return
+       end if
+       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
+          stride=stride3, count=tmpedge)
+       if (status /= NF90_NOERR) then
+          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+          return
+       end if
+       outref(dateline6+1:edges3(1),:,:) = tmpout
+
+       deallocate(tmpout, stat=status)
+       if (status /= 0) then
+          print *, "Failed to deallocate tmpout: ", status
+          return
+       end if
+    end if
+    return
+
+ end function readSWIR3_t
 end module modis_surface

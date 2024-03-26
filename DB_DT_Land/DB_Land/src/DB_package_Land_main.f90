@@ -397,7 +397,7 @@ contains
   end if
   
 ! -- dbdt table landcover 
-  status = load_dbdt_region_table(config%dbdt_file, config%month)
+  status = load_dbdt_region_table(config%dbdt_file, viirs_data%mo)
   if (status /= 0) then
     print *, "Error loading DBDT region input file.", status
   end if  

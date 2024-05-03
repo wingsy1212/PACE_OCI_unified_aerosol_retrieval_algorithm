@@ -4689,31 +4689,9 @@ module modis_surface
     eastedge = -999.0
     westedge =  999.0
     dateline = 0
-    if (minval(long, long > -900.0) < -175.0 .and. maxval(long, long > -900.0) > 175.0) then
-       eastedge = 180.0
-       westedge = -180.0
-       do i=1, locedge(1)
-          do j=1, locedge(2)
-             if (long(i,j) < -900.0) cycle    ! skip undefined 
-             if (long(i,j) > 0.0 .and. long(i,j) < eastedge) eastedge = long(i,j)
-             if (long(i,j) < 0.0 .and. long(i,j) > westedge) westedge = long(i,j)
-          enddo
-       enddo
-       LERstart(1) = 10*(180+floor(eastedge)-1)
-       if (LERstart(1) <= 0) LERstart(1) = 0
-       dateline = 3600 - LERstart(1)
-       LERedge(1) = 10*(180+(floor(westedge)+2)) + dateline
-    else
-       LERstart(1) = 10*(180+(floor(minval(long, long > -900.0))-1))
-       if (LERstart(1) <= 0) LERstart(1) = 0
-        LERedge(1) = 10*(180+(floor(maxval(long, long > -900.0))+2)) - LERstart(1)
-       if (LERedge(1)+LERstart(1) > 3600) LERedge(1) = 3600 - LERstart(1)
-    endif
-    
-    LERstart(2) = 10*(90+(floor(minval(lat, lat > -900.0))-1))
-    if (LERstart(2) <= 0) LERstart(2) = 0
-    LERedge(2) = 10*(90+(floor(maxval(lat, lat > -900.0))+2)) - LERstart(2)
-    if (LERedge(2)+LERstart(2) > 1800) LERedge(2) = 1800 - LERstart(2)
+    LERstart  = (/1,1/)
+    LERedge  = (/3600,1800/)
+
         
     if (allocated(gref412_all)) deallocate(gref412_all)
     allocate (gref412_all(LERedge(1),LERedge(2)), stat = checkvariable)
@@ -4860,31 +4838,8 @@ module modis_surface
     eastedge = -999.0
     westedge =  999.0
     dateline6 = 0
-    if (minval(long, long > -900.0) < -175.0 .and. maxval(long, long > -900.0) > 175.0) then
-       eastedge = 180.0
-       westedge = -180.0
-       do i=1, locedge(1)
-          do j=1, locedge(2)
-             if (long(i,j) < -900.0) cycle    ! skip undefined
-             if (long(i,j) > 0.0 .and. long(i,j) < eastedge) eastedge = long(i,j)
-             if (long(i,j) < 0.0 .and. long(i,j) > westedge) westedge = long(i,j)
-          enddo
-       enddo
-       LERstart6(1) = (180+(floor(eastedge)-1))/0.06
-       if (LERstart6(1) <= 0) LERstart6(1) = 0
-       dateline6 = 6000 - LERstart6(1)
-       LERedge6(1) = (180+(floor(westedge)+2))/0.06 + dateline6
-    else
-       LERstart6(1) = (180+(floor(minval(long, long > -900.0))-1))/0.06
-       if (LERstart6(1) <= 0) LERstart6(1) = 0
-       LERedge6(1) = (180+(floor(maxval(long, long > -900.0))+2))/0.06 - LERstart6(1)
-       if (LERedge6(1)+LERstart6(1) > 6000) LERedge6(1) = 6000 - LERstart6(1)
-    endif
-
-    LERstart6(2) = (90+(floor(minval(lat, lat > -900.0))-1))/0.06
-    if (LERstart6(2) <= 0) LERstart6(2) = 0
-    LERedge6(2) = (90+(floor(maxval(lat, lat > -900.0))+2))/0.06 - LERstart6(2)
-    if (LERedge6(2)+LERstart6(2) > 3000) LERedge6(2) = 3000 - LERstart6(2)
+    LERstart6  = (/1,1/)
+    LERedge6  = (/6000,3000/)
 
     if (allocated(swir_coeffs412)) deallocate(swir_coeffs412)
     allocate (swir_coeffs412(LERedge6(1),LERedge6(2),3), stat = checkvariable)
@@ -5181,12 +5136,8 @@ module modis_surface
     integer :: i,j
     real    :: get_swir_coeffs412(3)
 
-    if (dateline6 .eq. 0 .OR. lonidx .gt. LERstart6(1)) then
-      i = lonidx - LERstart6(1)
-    else
-      i = lonidx + dateline6
-    end if
-    j = latidx - LERstart6(2)
+    i = lonidx
+    j = latidx
 
     get_swir_coeffs412 = swir_coeffs412(i,j,:)
 
@@ -5198,12 +5149,8 @@ module modis_surface
     integer :: i,j
     real    :: get_swir_coeffs470(3)
 
-    if (dateline6 .eq. 0 .OR. lonidx .gt. LERstart6(1)) then
-      i = lonidx - LERstart6(1)
-    else
-      i = lonidx + dateline6
-    end if
-    j = latidx - LERstart6(2)
+    i = lonidx
+    j = latidx
 
     get_swir_coeffs470 = swir_coeffs470(i,j,:)
 
@@ -5214,12 +5161,8 @@ module modis_surface
     integer, intent(in) :: latidx, lonidx
     integer :: i,j
 
-    if (dateline6 .eq. 0 .OR. lonidx .gt. LERstart6(1)) then
-      i = lonidx - LERstart6(1)
-    else
-      i = lonidx + dateline6
-    end if
-    j = latidx - LERstart6(2)
+    i = lonidx
+    j = latidx
 
     stderr = swir_stderr412(i,j)
 
@@ -5230,12 +5173,8 @@ module modis_surface
     integer, intent(in) :: latidx, lonidx
     integer :: i,j
 
-    if (dateline6 .eq. 0 .OR. lonidx .gt. LERstart6(1)) then
-      i = lonidx - LERstart6(1)
-    else
-      i = lonidx + dateline6
-    end if
-    j = latidx - LERstart6(2)
+    i = lonidx
+    j = latidx
 
     stderr = swir_stderr470(i,j)
 
@@ -5247,12 +5186,8 @@ module modis_surface
     integer :: i,j
     real    :: get_swir_range(2)
 
-    if (dateline6 .eq. 0 .OR. lonidx .gt. LERstart6(1)) then
-      i = lonidx - LERstart6(1)
-    else
-      i = lonidx + dateline6
-    end if
-    j = latidx - LERstart6(2)
+    i = lonidx
+    j = latidx
 
     get_swir_range = (/swir_min(i,j),swir_max(i,j)/)
 
@@ -5264,12 +5199,8 @@ module modis_surface
 
     integer :: i,j
 
-    if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
-    else
-      i = lonidx + dateline
-    end if
-    j = latidx - LERstart(2)
+    i = lonidx
+    j = latidx
 
     LER = gref865_all(i,j)
 
@@ -5286,12 +5217,8 @@ module modis_surface
     real    :: coefs(4), acoefs(4), ncoefs(4), mcoefs(4), tLER
 
     LER = -999.0
-    if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
-    else
-      i = lonidx + dateline
-    end if
-    j = latidx - LERstart(2)
+    i = lonidx
+    j = latidx
 
 !    print *,"in get_LER412"
 !    print *,"latidx, lonidx = ",latidx, lonidx
@@ -5369,12 +5296,8 @@ module modis_surface
     real    :: coefs(4), acoefs(4), ncoefs(4), mcoefs(4), tLER
 
     LER = -999.0
-    if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
-    else
-      i = lonidx + dateline
-    end if
-    j = latidx - LERstart(2)
+    i = lonidx
+    j = latidx
 
     !print *,"in get_LER470"
     !print *,"latidx, lonidx = ",latidx, lonidx
@@ -5455,12 +5378,8 @@ module modis_surface
     real    :: coefs(4), acoefs(4), ncoefs(4), mcoefs(4), tLER
 
     LER = -999.0
-    if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
-    else
-      i = lonidx + dateline
-    end if
-    j = latidx - LERstart(2)
+    i = lonidx
+    j = latidx
 
 !    print *,"in get_LER650"
 !    print *,"latidx, lonidx = ",latidx, lonidx
@@ -5561,60 +5480,11 @@ module modis_surface
        return
     end if
 
-    tmpstart(:) = start(:)
-    if (tmpstart(1) == 0) tmpstart(1) = 1
-    if (tmpstart(2) == 0) tmpstart(2) = 1
-
-    if (dateline .eq. 0) then
-       status = nf90_get_var(grp_id, dset_id, outref, start=tmpstart, &
-          stride=stride, count=edge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
-    else
-       ! The granule straddles the dateline, so we need to make an accommodation
-       tmpedge(:) = edge(:)
-       tmpedge(1) = dateline
-       allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
-       if (status /= 0) then
-          print *, "ERROR: Unable to allocate tmpedge: ", status
-          return
-       end if
-       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
-          stride=stride, count=tmpedge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
-       outref(1:dateline, :) = tmpout
-
-       deallocate(tmpout, stat=status)
-       if (status /= 0) then
-          print *, "Failed to deallocate tmpout: ", status
-          return
-       end if
-
-       tmpstart(1) = 1
-       tmpedge(1) = edge(1) - dateline
-       allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
-       if (status /= 0) then
-          print *, "ERROR: Unable to allocate tmpedge: ", status
-          return
-       end if
-       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
-          stride=stride, count=tmpedge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
-       outref(dateline+1:edge(1),:) = tmpout
-      
-       deallocate(tmpout, stat=status)
-       if (status /= 0) then
-          print *, "Failed to deallocate tmpout: ", status
-          return
-       end if
+    status = nf90_get_var(grp_id, dset_id, outref, start=start, &
+       stride=stride, count=edge)
+    if (status /= NF90_NOERR) then
+       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+       return
     end if
     
     return
@@ -5656,61 +5526,11 @@ module modis_surface
        return
     end if
     
-    tmpstart(:) = start(:)
-    if (tmpstart(1) == 0) tmpstart(1) = 1
-    if (tmpstart(2) == 0) tmpstart(2) = 1
-
-    if (dateline .eq. 0) then
-       status = nf90_get_var(grp_id, dset_id, outref, start=tmpstart, &
-          stride=stride, count=edge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
-    else
-       ! The granule straddles the dateline, so we need to make an accommodation
-       tmpedge(:) = edge(:)
-       tmpedge(1) = dateline
-       allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3), tmpedge(4)), stat=status)
-       if (status /= 0) then
-          print *, "ERROR: Unable to allocate tmpedge: ", status
-          return
-       end if
-       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
-          stride=stride, count=tmpedge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
-       outref(1:dateline, :, :, :) = tmpout(:,:,:,:)
-
-       deallocate(tmpout, stat=status)
-       if (status /= 0) then
-          print *, "Failed to deallocate tmpout: ", status
-          return
-       end if
-
-       tmpstart(1) = 1
-       tmpedge(1) = edge(1) - dateline
-       allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3), tmpedge(4)), stat=status)
-       if (status /= 0) then
-          print *, "ERROR: Unable to allocate tmpedge: ", status
-          return
-       end if
-       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
-          stride=stride, count=tmpedge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
-       outref(dateline+1:edge(1),:,:,:) = tmpout(:,:,:,:)
-
-       deallocate(tmpout, stat=status)
-       if (status /= 0) then
-          print *, "Failed to deallocate tmpout: ", status
-          return
-       end if
-      
+    status = nf90_get_var(grp_id, dset_id, outref, start=start, &
+       stride=stride, count=edge)
+    if (status /= NF90_NOERR) then
+       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+       return
     end if
     status = 0
     return
@@ -5750,61 +5570,13 @@ module modis_surface
        return
     end if
 
-    tmpstart(:) = start(:)
-    if (tmpstart(1) == 0) tmpstart(1) = 1
-    if (tmpstart(2) == 0) tmpstart(2) = 1
-
-    if (dateline6 .eq. 0) then
-       status = nf90_get_var(grp_id, dset_id, outref, start=tmpstart, &
-          stride=stride, count=edge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
-    else
-       ! The granule straddles the dateline6, so we need to make an accommodation
-       tmpedge(:) = edge(:)
-       tmpedge(1) = dateline6
-       allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
-       if (status /= 0) then
-          print *, "ERROR: Unable to allocate tmpedge: ", status
-          return
-       end if
-       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
-          stride=stride, count=tmpedge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
-       outref(1:dateline6, :) = tmpout
-
-       deallocate(tmpout, stat=status)
-       if (status /= 0) then
-          print *, "Failed to deallocate tmpout: ", status
-          return
-       end if
-
-       tmpstart(1) = 1
-       tmpedge(1) = edge(1) - dateline6
-       allocate(tmpout(tmpedge(1), tmpedge(2)), stat=status)
-       if (status /= 0) then
-          print *, "ERROR: Unable to allocate tmpedge: ", status
-          return
-       end if
-       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
-          stride=stride, count=tmpedge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
-       outref(dateline6+1:edge(1),:) = tmpout
-
-       deallocate(tmpout, stat=status)
-       if (status /= 0) then
-          print *, "Failed to deallocate tmpout: ", status
-          return
-       end if
+    status = nf90_get_var(grp_id, dset_id, outref, start=start, &
+       stride=stride, count=edge)
+    if (status /= NF90_NOERR) then
+       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+       return
     end if
+
     return
 
  end function readSWIR2
@@ -5846,60 +5618,11 @@ module modis_surface
        return
     end if
 
-    tmpstart(:) = start3(:)
-    if (tmpstart(1) == 0) tmpstart(1) = 1
-    if (tmpstart(2) == 0) tmpstart(2) = 1
-
-    if (dateline6 .eq. 0) then
-       status = nf90_get_var(grp_id, dset_id, outref, start=tmpstart, &
-          stride=stride3, count=edges3)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
-    else
-       ! The granule straddles the dateline6, so we need to make an accommodation
-       tmpedge(:) = edges3(:)
-       tmpedge(1) = dateline6
-       allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3)), stat=status)
-       if (status /= 0) then
-          print *, "ERROR: Unable to allocate tmpedge: ", status
-          return
-       end if
-       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
-          stride=stride3, count=tmpedge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
-       outref(1:dateline6, :, :) = tmpout
-
-       deallocate(tmpout, stat=status)
-       if (status /= 0) then
-          print *, "Failed to deallocate tmpout: ", status
-          return
-       end if
-
-       tmpstart(1) = 1
-       tmpedge(1) = edges3(1) - dateline6
-       allocate(tmpout(tmpedge(1), tmpedge(2), tmpedge(3)), stat=status)
-       if (status /= 0) then
-          print *, "ERROR: Unable to allocate tmpedge: ", status
-          return
-       end if
-       status = nf90_get_var(grp_id, dset_id, tmpout, start=tmpstart, &
-          stride=stride3, count=tmpedge)
-       if (status /= NF90_NOERR) then
-          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
-          return
-       end if
-       outref(dateline6+1:edges3(1),:,:) = tmpout
-
-       deallocate(tmpout, stat=status)
-       if (status /= 0) then
-          print *, "Failed to deallocate tmpout: ", status
-          return
-       end if
+    status = nf90_get_var(grp_id, dset_id, outref, start=start3, &
+       stride=stride3, count=edges3)
+    if (status /= NF90_NOERR) then
+       print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+       return
     end if
 
     status = 0
@@ -5947,12 +5670,8 @@ module modis_surface
 
     integer               ::  i, j
     
-    if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
-    else
-      i = lonidx + dateline
-    end if
-    j = latidx - LERstart(2)
+    i = lonidx
+    j = latidx
     
     ref = vgref412_all(i,j)
     return
@@ -5967,12 +5686,8 @@ module modis_surface
 
     integer               ::  i, j
     
-    if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
-    else
-      i = lonidx + dateline
-    end if
-    j = latidx - LERstart(2)
+    i = lonidx
+    j = latidx
     
     ref = vgref488_all(i,j)
     return
@@ -5987,12 +5702,8 @@ module modis_surface
 
     integer               ::  i, j
     
-    if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
-    else
-      i = lonidx + dateline
-    end if
-    j = latidx - LERstart(2)
+    i = lonidx
+    j = latidx
     
     ref = vgref670_all(i,j)
     return
@@ -6007,12 +5718,8 @@ module modis_surface
     
     integer               ::  i, j
 
-    if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
-    else
-      i = lonidx + dateline
-    end if
-    j = latidx - LERstart(2)
+    i = lonidx
+    j = latidx
     
     ref = gref412_all(i,j)
     return
@@ -6027,12 +5734,8 @@ module modis_surface
     
     integer               ::  i, j
     
-    if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
-    else
-      i = lonidx + dateline
-    end if
-    j = latidx - LERstart(2)
+    i = lonidx
+    j = latidx
     
     ref = gref470_all(i,j)
     return
@@ -6047,12 +5750,8 @@ module modis_surface
 
     integer               ::  i, j
 
-    if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
-    else
-      i = lonidx + dateline
-    end if
-    j = latidx - LERstart(2)
+    i = lonidx
+    j = latidx
     
     ref = gref650_all(i,j)
     return
@@ -6067,12 +5766,8 @@ module modis_surface
     
     integer               ::  i, j
 
-    if (dateline .eq. 0 .OR. lonidx .gt. LERstart(1)) then
-      i = lonidx - LERstart(1)
-    else
-      i = lonidx + dateline
-    end if
-    j = latidx - LERstart(2)
+    i = lonidx
+    j = latidx
     
     ref = gref865_all(i,j)
     return

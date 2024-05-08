@@ -285,7 +285,7 @@ CALL h5open_f(hdferr)
 !
 !******  *********  ML  Land( 0.354.0.388 0.55)
          block
-         call execute_command_line("python " // cfg%read_nc_landonly // " interm_file")
+         call execute_command_line("python3 " // cfg%read_nc_landonly // " interm_file")
          endblock
          call read_Output_forUVtau(Ret_Xtrack,Ret_Lines,uvdbdtaod,interm_file)
 

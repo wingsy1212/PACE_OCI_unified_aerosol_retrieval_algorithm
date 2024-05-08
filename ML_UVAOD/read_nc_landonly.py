@@ -1,6 +1,5 @@
 #import argparse
-#from sklearn.ensemble import RandomForestRegressor
-
+from sklearn.ensemble import RandomForestRegressor
 import pandas as pd
 import os
 from datetime import datetime
@@ -12,27 +11,34 @@ import pickle
 import glob
 import netCDF4 as nc4
 import h5py 
-import sys 
-#import matplotlib.pyplot as plt
 
-modelpath='../ML_UVAOD/data/'
+configfile='../uaa_lite.par'
+with open(configfile) as f:
+    for line in f:
+        if 'ml_model=' in line:
+            modelpath=line[10:-1]
+
+#print (modelpath)
+#modelpath='../../ML_UVAOD/data/'
 #landmodel=['landmodel_340.pkl']
 #oceanmodel=['oceanmodel_340.pkl']
 modelname='landmodel_both_nogeo_'
 
 path='./'
 
-ncfiles=glob.glob(sys.argv[1])
+ncfiles=glob.glob(path+'Interm_file.nc')
 #ncfiles=glob.glob(path+'Interm_L2*.nc')
 
 
 
 def loadModel(path):
+
     if os.path.exists(path):
         with open(path, 'rb') as f:
             rf = pickle.load(f)
             return rf
-
+    else:
+        print ('cannot find ML model: '+path)
     return None
 
 for ncfile in ncfiles:
@@ -44,7 +50,7 @@ for ncfile in ncfiles:
     month=geo.variables['month'][:]
     month=float(month[0])
 #    print (month)
-	 
+     
     slats = geo.variables['latitude'][:]
     slons = geo.variables['longitude'][:]
     slats = slats[:,:].astype(float).flatten()
@@ -52,17 +58,25 @@ for ncfile in ncfiles:
   #  print (slats.max(),slats.min())
     dimhdf=slats.shape
   #  print (slats.shape)
-	 
+     
     gph=ifile['geophysical_data']
     landaod=gph.variables['Optical_Depth_Land'][:]
 #    print (landaod.shape)
     dim1name=(ifile.dimensions['number_of_lines_8x8'].name)
     dim2name=(ifile.dimensions['number_of_pixels_8x8'].name)
-
+    for iw,wavelength in enumerate([340,380]):
+        gph=ifile['geophysical_data']
+        gph['Optical_Depth_Land'][:,:,iw]=-9999.
+	
     ifile.close()
+
+
+
+
     landaod=landaod[:,:,:].astype(float)
     dimhdf3=landaod.shape
 #    print (dimhdf3)#5, 340,380,470,550,670 only take last 3wav
+	
     dfland=pd.DataFrame()
     for i in range(0,dimhdf3[2]-2):
 #        print ('AOD'+str(i))
@@ -88,7 +102,7 @@ for ncfile in ncfiles:
 #    print (x)
     out=x.copy(deep=True)
     for wavelength in [340,380]:
-#        print (modelpath+modelname + str(wavelength) + ".pkl")
+        print (modelpath+modelname + str(wavelength) + ".pkl")
         regr = loadModel(modelpath+modelname + str(wavelength) + ".pkl")
         out['predicted_land_'+str(wavelength)] = regr.predict(x)
     out=out.reindex(list(range(0,dfland.index.max()+1)),fill_value=-9999.)

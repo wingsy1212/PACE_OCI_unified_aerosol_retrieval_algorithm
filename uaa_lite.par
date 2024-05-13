@@ -2,4 +2,6 @@ dt_nc4 = /home/sam/winhome/nasa/uaa/cp_test/lut_nc4/nclut_dt3.nc
 db_nc4 = /home/sam/winhome/nasa/uaa/cp_test/lut_nc4/nclut_db3.nc
 uv_nc4 = /home/sam/winhome/nasa/uaa/cp_test/lut_nc4/nclut_uv2.nc
 landwater_mask = /home/sam/winhome/nasa/uaa/luts/ancillary/landmask_GMT15ARC.nc 
-read_nc_landonly= /home/sam/git/PACE_OCI_unified_aerosol_retrieval_algorithm/ML_UVAOD/read_nc_landonly.py
+read_nc_landonly= /home/sam/git/PACE_OCI_unified_aerosol_retrieval_algorithm/ML_UVAOD/read_nc_landonly_new.py
+ml_340 = /home/sam/winhome/nasa/uaa/luts/ML_UVAOD/data/landmodel_both_nogeo_340.pkl
+ml_380 = /home/sam/winhome/nasa/uaa/luts/ML_UVAOD/data/landmodel_both_nogeo_380.pkl

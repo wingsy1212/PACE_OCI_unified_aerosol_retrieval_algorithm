@@ -63,6 +63,7 @@ real :: lat_min,lat_max,lon_max,lon_min
   INTEGER :: num_args
   CHARACTER(255) :: par_file, l1b_file, met1_file, met2_file, out_file, interm_file
   CHARACTER(255) :: metdt_file
+  CHARACTER(2048) :: pycommand
 
   num_args = command_argument_count()
   IF (num_args == 6) THEN
@@ -285,7 +286,10 @@ CALL h5open_f(hdferr)
 !
 !******  *********  ML  Land( 0.354.0.388 0.55)
          block
-         call execute_command_line("python " // cfg%read_nc_landonly // " interm_file")
+
+         pycommand = "python " // trim(cfg%read_nc_landonly) // " " // trim(cfg%ml_340) // " " // trim(cfg%ml_380)
+         pycommand = pycommand // " " // interm_file
+         call execute_command_line( pycommand )
          endblock
          call read_Output_forUVtau(Ret_Xtrack,Ret_Lines,uvdbdtaod,interm_file)
 

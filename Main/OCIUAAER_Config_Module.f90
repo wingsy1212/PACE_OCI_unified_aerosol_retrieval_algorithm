@@ -9,7 +9,8 @@ TYPE, PUBLIC  :: ociuaaer_config_type
   CHARACTER(LEN=255)      ::  dt_nc4 = 'NULL'
   CHARACTER(LEN=255)      ::  db_nc4 = 'NULL'
   CHARACTER(LEN=255)      ::  uv_nc4 = 'NULL'
-
+  CHARACTER(LEN=255)      ::  ml_340 = 'NULL'
+  CHARACTER(LEN=255)      ::  ml_380 = 'NULL'
   CHARACTER(LEN=255)      ::  read_nc_landonly = 'NULL'
   CHARACTER(LEN=255)      ::  input_l1file = 'NULL'
   CHARACTER(LEN=255)      ::  proxy_l1file = 'NULL'
@@ -118,6 +119,10 @@ nline = 0
             cfg%db_nc4 = trim(val)
         case ('uv_nc4')
             cfg%uv_nc4 = trim(val)
+        case ('ml_340')
+            cfg%ml_340 = trim(val)
+        case ('ml_380')
+            cfg%ml_380 = trim(val)
 
     ! baseline
         case ('read_nc_landonly')

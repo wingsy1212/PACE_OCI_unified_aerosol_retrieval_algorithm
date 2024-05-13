@@ -29,5 +29,7 @@ VIIRS_land   =   /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DT_Land/tbls/VIIRS_L
 ! DEEP-BLUE(s) LUTs
 db_aero_lut_land = /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DB_Land/tbls/VIIRS_LUT/land_aerosol_luts_20151105.hdf
 db_aero_lut_dust = /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DB_Land/tbls/VIIRS_LUT/land_aerosol_luts_dust_0628.hdf
-db_config= /home/sam/git/PACE_OCI_unified_aerosol_retrieval_algorithm/uaa_db_home.par
-read_nc_landonly= /home/sam/git/PACE_OCI_unified_aerosol_retrieval_algorithm/ML_UVAOD/read_nc_landonly.py
+db_config = /home/sam/git/PACE_OCI_unified_aerosol_retrieval_algorithm/uaa_db_home.par
+read_nc_landonly = /home/sam/git/PACE_OCI_unified_aerosol_retrieval_algorithm/ML_UVAOD/read_nc_landonly_new.py
+ml_340 = /home/sam/winhome/nasa/uaa/luts/ML_UVAOD/data/landmodel_both_nogeo_340.pkl
+ml_380 = /home/sam/winhome/nasa/uaa/luts/ML_UVAOD/data/landmodel_both_nogeo_380.pkl

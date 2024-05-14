@@ -191,7 +191,7 @@ add_executable(oci_ua_aer
     
   DT_Common_src/src/nc4/dt_nc4.f90 
   DT_Common_src/src/nc4/UV_processing_nc4.f90
-  DT_Common_src/src/nc4/Process_ocean_V2_nc4.f90
+  DT_Common_src/src/nc4/Process_ocean_V2_diag.f90
   DT_Common_src/src/nc4/DT_package_Ocean_main_nc4.f90
   DT_Common_src/src/nc4/DT_package_Land_main_nc4.f90
   DT_Common_src/src/nc4/Process_land_V6_nc4.f90 

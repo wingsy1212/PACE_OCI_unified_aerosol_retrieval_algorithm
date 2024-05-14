@@ -339,9 +339,9 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
    REAL ALBEDO_R_BIG(Lut_indx,NTH0,NTAU,NWAV,NUMCASEB)
    REAL ALBEDO_T_SMALL(Lut_indx,NTH0,NTAU,NWAV,NUMCASES)
    REAL ALBEDO_T_BIG(Lut_indx,NTH0,NTAU,NWAV,NUMCASEB)
-   REAL ALBEDO_R_RAY(NWAV,NTH0)
-   REAL ALBEDO_T_RAY(NWAV,NTH0)
-   INTEGER ICASE,IFILE,IPHI,ITAU,ITH,ITH0,IWAV,IJ
+   REAL ALBEDO_R_RAY(Lut_indx,NWAV,NTH0)
+   REAL ALBEDO_T_RAY(Lut_indx,NWAV,NTH0)
+   INTEGER ICASE,IFILE,IPHI,ITAU,ITH,ITH0,IWAV,IJ,IWS
    INTEGER JPHI(NPHI),Num_lut,HANDLE_Ext_554_O,Nfile
    REAL  PHC(NPHI),THET(NTHET),THET0(NTH0),WAVE(NWAV)
    REAL  AINTS(Lut_indx, NPHI, NTHET, NTH0, NTAU, NWAV, NUMCASES)
@@ -723,6 +723,38 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       return
    end if
 
+   dset_name = 'ALBEDO_R_RAY'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   start3  = (/ 1,1,1 /)
+   edge3   = (/ LUT_INDX,NWAV,NTH0 /)
+   stride3 = (/ 1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, ALBEDO_R_RAY, start=start3, &
+      stride=stride3, count=edge3)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+
+   dset_name = 'ALBEDO_T_RAY'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   start3  = (/ 1,1,1 /)
+   edge3   = (/ LUT_INDX,NWAV,NTH0 /)
+   stride3 = (/ 1,1,1 /)
+   status = nf90_get_var(grp_id, dset_id, ALBEDO_T_RAY, start=start3, &
+      stride=stride3, count=edge3)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+
    dset_name = 'ALBEDO_R'
    status = nf90_inq_varid(grp_id, dset_name, dset_id)
    if (status /= NF90_NOERR) then
@@ -819,6 +851,21 @@ SUBROUTINE READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
       print *, "ERROR: Failed to close lut_nc4 file: ", status
       return
    end if
+
+   DO IWS=1,4
+      DO IJ=1,NTH0
+         DO IWAV=1,NWAV
+            DO ICASE=1,NUMCASES
+               ALBEDO_R_SMALL(IWS,IJ,1,IWAV,ICASE)=ALBEDO_R_RAY(IWS,IWAV,IJ)
+               ALBEDO_T_SMALL(IWS,IJ,1,IWAV,ICASE)=ALBEDO_T_RAY(IWS,IWAV,IJ)
+            ENDDO
+            DO ICASE=1,NUMCASEB
+               ALBEDO_R_BIG(IWS,IJ,1,IWAV,ICASE)=ALBEDO_R_RAY(IWS,IWAV,IJ)
+               ALBEDO_T_BIG(IWS,IJ,1,IWAV,ICASE)=ALBEDO_T_RAY(IWS,IWAV,IJ)
+            ENDDO
+         ENDDO
+      ENDDO
+   ENDDO
 
    RETURN
 END

@@ -370,7 +370,7 @@
          endif
         ENDIF
 
-        print *, "error id: ", errid
+!        print *, "error id: ", errid
 
 !
 !   Followig If statements checks if measured modis angles are

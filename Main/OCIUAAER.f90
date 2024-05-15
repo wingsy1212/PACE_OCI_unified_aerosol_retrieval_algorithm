@@ -288,7 +288,7 @@ CALL h5open_f(hdferr)
          block
 
          pycommand = "python " // trim(cfg%read_nc_landonly) // " " // trim(cfg%ml_340) // " " // trim(cfg%ml_380)
-         pycommand = pycommand // " " // interm_file
+         pycommand = trim(pycommand) // " " // trim(interm_file)
          call execute_command_line( pycommand )
          endblock
          call read_Output_forUVtau(Ret_Xtrack,Ret_Lines,uvdbdtaod,interm_file)

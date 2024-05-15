@@ -16,10 +16,10 @@ import sys
 #import matplotlib.pyplot as plt
 
 path='./'
-
+ncfiles = []
 ml_340 = sys.argv[1]
 ml_380 = sys.argv[2]
-ncfiles=glob.glob(sys.argv[3])
+ncfiles.append(sys.argv[3])
 
 
 def loadModel(path):
@@ -129,6 +129,6 @@ for ncfile in ncfiles:
     fid.close()
     print ('Interm_file changed')
 #    exit(1)
-    os.rename(ncfile,path+'Interm_file.nc')
+#    os.rename(ncfile,path+'Interm_file.nc')
 
 

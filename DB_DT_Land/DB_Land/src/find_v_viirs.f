@@ -161,8 +161,7 @@ C     if (abs(xlat-20.) < 0.1 .AND. abs(xlong-(11.)) < 0.1) then
 C      debug = .true.
 C      lprint = 1
 C     end if
-!      if (abs(xlat-12.75) > 0.05 .OR. abs(xlong-23.92) > 0.07) go to 10
-      
+!      if (abs(xlat-12.75) > 0.05 .OR. abs(xlong-23.92) > 0.07) go to 10 
       if (xphi.gt.179.99) go to 10
       if (xphi.lt.6.0) xphi = 6.
  

@@ -101,6 +101,7 @@ module viirs_config
        
     character(len=255)      ::  output_l2
     character(len=255)      ::  dbdt_file
+    character(len=255)      ::  pace_dir
     
   end type viirs_config_type
 
@@ -336,7 +337,7 @@ module viirs_config
 			if (status /= 0) then
 				if (status < 0) then	
 				  status = 0	
-					return
+					goto 90
 				else if (status > 0) then
 					print *, "ERROR: Failed to read configuration file: ", status
 					status = -1
@@ -506,7 +507,8 @@ module viirs_config
 				  vcfg%goes_15 = trim(val)    
 				case ('dbdt')  
 				  vcfg%dbdt_file = trim(val)   
-									  		  		  
+				case ('pace_dir')  
+				  vcfg%pace_dir = trim(val) 									  		  		  
 				case default
 					cycle
 				end select
@@ -516,7 +518,26 @@ module viirs_config
 		  
 	
 		end do
-		
+90  vcfg%aerosol_land_file = trim(vcfg%pace_dir)//vcfg%aerosol_land_file 
+    vcfg%aerosol_dust_file = trim(vcfg%pace_dir)//vcfg%aerosol_dust_file
+    vcfg%aerosol_ocean_dust_file = trim(vcfg%pace_dir)//vcfg%aerosol_ocean_dust_file
+    vcfg%aerosol_ocean_fine_file = trim(vcfg%pace_dir)//vcfg%aerosol_ocean_fine_file
+    vcfg%aerosol_ocean_mari_file = trim(vcfg%pace_dir)//vcfg%aerosol_ocean_mari_file
+    vcfg%aerosol_ocean_mix_file = trim(vcfg%pace_dir)//vcfg%aerosol_ocean_mix_file
+    vcfg%bathymetry_lut_file = trim(vcfg%pace_dir)//vcfg%bathymetry_lut_file
+    vcfg%chl_lut_file = trim(vcfg%pace_dir)//vcfg%chl_lut_file
+    vcfg%ler_lut_file = trim(vcfg%pace_dir)//vcfg%ler_lut_file
+
+    vcfg%landcover_file = trim(vcfg%pace_dir)//vcfg%landcover_file
+    vcfg%surfpressure_file = trim(vcfg%pace_dir)//vcfg%surfpressure_file	  
+    vcfg%geozone_file = trim(vcfg%pace_dir)//vcfg%geozone_file 
+    vcfg%seasonal_deserts_file = trim(vcfg%pace_dir)//vcfg%seasonal_deserts_file
+    vcfg%brdfbase_file = trim(vcfg%pace_dir)//vcfg%brdfbase_file
+    vcfg%veg_landcover_file = trim(vcfg%pace_dir)//vcfg%veg_landcover_file 
+    vcfg%veg_sfc21_file = trim(vcfg%pace_dir)//vcfg%veg_sfc21_file
+    vcfg%xcal412_file = trim(vcfg%pace_dir)//vcfg%xcal412_file
+    vcfg%xcal488_file = trim(vcfg%pace_dir)//vcfg%xcal488_file
+    vcfg%dbdt_file = trim(vcfg%pace_dir)//vcfg%dbdt_file		
 		return
 		
 	end function load_viirs_config

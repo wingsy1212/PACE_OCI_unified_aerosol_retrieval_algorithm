@@ -1,6 +1,6 @@
       subroutine modis(cbdoy, xscan, scan, cxscan, cscan, time, lat, lon, sza, vza, raa,                    &
       &   sca, m01_newgc, m03_newgc, m04_newgc, m05_newgc, m07_newgc, m08_newgc, m10_newgc, m11_newgc,      &
-      &   m01_nogc, m03_nogc, m05_nogc, m11_oldgc, ls_mask, dstar, ndvi, elev, ps,                          &
+      &   m01_nogc, m03_nogc, m05_nogc, m11_oldgc, ls_mask, ndvi, elev, ps,                          &
       &   lbp_mask, obp_mask, smoke_mask, smoke_ae_mask,pyrocb_mask, high_alt_smoke_mask, n_total_pixels,   &
       &   output_file, windsp, winddir, oz, wv, ler412, ler488, ler670, qdf412, qdf488, qdf670, bathy, chl, &
       &   vcc, bt11, btd11, hires, cell_resolution,nrt,platform,dtlat, dtlon,DBDTaot,dtaod, dt_cldmsk,dt_qa,&
@@ -178,7 +178,7 @@
       real(kind=4) :: lat_sav(cxscan,cscan), lon_sav(cxscan,cscan)
       real(kind=4) :: sza_sav(cxscan,cscan), vza_sav(cxscan,cscan)
       real(kind=4) :: raa_sav(cxscan,cscan), sca_sav(cxscan,cscan)
-      real(kind=4) :: dstar_avg(cxscan,cscan)
+!       real(kind=4) :: dstar_avg(cxscan,cscan)
       real(kind=4) :: btd11_avg(cxscan,cscan)
       real(kind=4) :: ratio_avg(cxscan,cscan)
       real(kind=4) :: ndvi_avg(cxscan,cscan) 
@@ -254,7 +254,7 @@
       vza_sav(:,:) = 0.0
       raa_sav(:,:) = 0.0
       sca_sav(:,:) = 0.0
-      dstar_avg(:,:) = 0.0  
+!       dstar_avg(:,:) = 0.0  
       btd11_avg(:,:) = 0.0
       ratio_avg(:,:) = 0.0
       ndvi_avg(:,:) = 0.0
@@ -592,7 +592,7 @@
               veg_cnt2(iidx,jidx) = veg_cnt2(iidx,jidx) + 1  
             case (-999)   ! no retrieval
             case default
-              print *, "ERROR: Invalid algorithm flag: ", outbuf(18)
+!               print *, "ERROR: Invalid algorithm flag: ", outbuf(18)
               cycle
           end select
         endif
@@ -605,7 +605,7 @@
               veg_cnt_old(iidx,jidx) = veg_cnt_old(iidx,jidx) + 1
             case (-999)   ! no retrieval
             case default
-              print *, "ERROR: Invalid algorithm flag: ", outbuf(22)
+!               print *, "ERROR: Invalid algorithm flag: ", outbuf(22)
               cycle
           end select
         endif      
@@ -929,12 +929,12 @@
     end where
        
     where (naot550_avg > nagg) 
-      dstar_avg = dstar_avg / naot550_avg
+!       dstar_avg = dstar_avg / naot550_avg
       btd11_avg = btd11_avg / naot550_avg
       ratio_avg = ratio_avg / naot550_avg
       ndvi_avg = ndvi_avg / naot550_avg 
     elsewhere
-      dstar_avg = -999.0
+!       dstar_avg = -999.0
       btd11_avg = -999.0
       ratio_avg = -999.0
       ndvi_avg = -999.0 
@@ -1133,7 +1133,8 @@
             end if
             
 !           -- D* says dust. Set AE to dust. Only over N.Africa and Arabia.
-            if ((alpha > -900.0 .AND. dstar_avg(i,j) > 1.02) .AND. &
+!             if ((alpha > -900.0 .AND. dstar_avg(i,j) > 1.02) .AND. &
+            if ((alpha > -900.0 ) .AND. &
             &   ((gzone(i,j) >= 1 .AND. gzone(i,j) <= 5) .OR. (gzone(i,j) == 26 .OR. gzone(i,j) == 27))) then
               alpha = 0.0
             end if
@@ -1141,9 +1142,9 @@
 !           -- if AOT is maxed out for all channels, AE will be 0.0. But what if
 !           -- it's smoke? Use D* to detect smoke (D* < 1.06) and set AE accordingly.
 !           -- also reset depending on smoke_count.
-            if (aot412_avg(i,j) .gt. 3.47 .AND. dstar_avg(i,j) .lt. 1.06) then
-              alpha = 1.8
-            endif
+!             if (aot412_avg(i,j) .gt. 3.47 .AND. dstar_avg(i,j) .lt. 1.06) then
+!               alpha = 1.8
+!             endif
             if (aot550_avg(i,j) .ge. 0.7) then
               if (smoke_count(i,j) .gt. 1 .OR. high_alt_smoke_count(i,j) .gt. 1) alpha = 1.8			
             else 
@@ -1215,11 +1216,11 @@
 
             end if
 
-            if (gzone(i,j) >= 1 .AND. gzone(i,j) <= 11) then
-              if (dstar_avg(i,j) .gt. 1.06) cycle
-            else
-              if (dstar_avg(i,j) .gt. 1.1) cycle
-            end if
+!             if (gzone(i,j) >= 1 .AND. gzone(i,j) <= 11) then
+!               if (dstar_avg(i,j) .gt. 1.06) cycle
+!             else
+!               if (dstar_avg(i,j) .gt. 1.1) cycle
+!             end if
             
             if (k == 1) then
               if (aot412_avg(i,j) .gt. 1.2 .and. &
@@ -1309,11 +1310,11 @@
             if (gzone(i,j) == 12 .and. smoke_count(i,j) > 1 .and. naot550_avg(i,j) > 20) cycle    !  Australia
           end if
           
-          if (gzone(i,j) >= 1 .AND. gzone(i,j) <= 11) then
-            if (dstar_avg(i,j) .gt. 1.06) cycle
-          else
-            if (dstar_avg(i,j) .gt. 1.1) cycle
-          end if  
+!           if (gzone(i,j) >= 1 .AND. gzone(i,j) <= 11) then
+!             if (dstar_avg(i,j) .gt. 1.06) cycle
+!           else
+!             if (dstar_avg(i,j) .gt. 1.1) cycle
+!           end if  
             
           if (aot550_avg(i,j) .gt. 1.2 .and. &
               abs(aot550_avg(i-1,j)-aot550_avg(i,j)) .gt. 0.8 .and. &
@@ -1384,7 +1385,7 @@
 							ae_avg(i,j) = -999.0
 							sd550(i,j)  = -999.0
 							
-							dstar_avg(i,j) = -999.0
+! 							dstar_avg(i,j) = -999.0
               btd11_avg(i,j) = -999.0
               ndvi_avg(i,j) = -999.0 !jlee added
 							aot550_avg(i,j) = -999.0
@@ -1474,7 +1475,7 @@
             flags(2) = 2
             call set_qa_land(cxscan,naot550_avg(i,j),sd550(i,j), &
                       aot550_avg(i,j),edgecnt(i,j),0, &
-                      smoke_count(i,j), high_alt_smoke_count(i,j), gzone(i,j),dstar_avg(i,j),flags(2), platform)
+                      smoke_count(i,j), high_alt_smoke_count(i,j), gzone(i,j),flags(2), platform)
             if (ae_avg(i,j).le.0.5) flags(3)= 1
             if (ae_avg(i,j).gt.1.2) flags(3)= 2
             if (r412_count(i,j) .gt. 20) flags(4) = 1
@@ -1520,11 +1521,11 @@
 
 !        -- skip cells over N.Africa with Dstar > 1.2 -- indicate dust. Don't reset.
 !        -- Otherwise, use 1.06 threshold elsewhere.
-        if ((gzone(i,j) >= 1 .AND. gzone(i,j) <= 5) .OR. (gzone(i,j) == 26 .OR. gzone(i,j) == 27)) then
-          if (dstar_avg(i,j) > 1.2) cycle
-        else
-          if (dstar_avg(i,j) >= 1.06) cycle
-        endif
+!         if ((gzone(i,j) >= 1 .AND. gzone(i,j) <= 5) .OR. (gzone(i,j) == 26 .OR. gzone(i,j) == 27)) then
+!           if (dstar_avg(i,j) > 1.2) cycle
+!         else
+!           if (dstar_avg(i,j) >= 1.06) cycle
+!         endif
 
 !       -- do not reset QA to 1 if smoke pixels are present in zones 13, 18 (ConUS)
         if (gzone(i,j) == 13 .OR. gzone(i,j) == 18 .OR. gzone(i,j) == 29) then 
@@ -1658,7 +1659,7 @@
       where (high_alt_smoke_count > 0 .and. aot550_avg > -900)  aerosol_type = 2 ! high altitude smoke
       where (pyrocb_count > 0 .and. aot550_avg > -900)          aerosol_type = 3 ! pyrocumulonimbus clouds
       where (aot550_avg > -900 .and. aot550_avg < 0.2)          aerosol_type = 6 ! background
-      where (dstar_avg > 1.1 .and. aot550_avg > -900)           aerosol_type = 0 ! dust
+!       where (dstar_avg > 1.1 .and. aot550_avg > -900)           aerosol_type = 0 ! dust
       where (ae_avg < 0.1 .and. ratio_avg < 0.78 .and. aot550_avg > 0.4) aerosol_type = 0    ! dust
       where (ae_avg < 0.5 .and. gzone > 0 .and. gzone < 12 .and. aot550_avg > 0.2)     aerosol_type = 0    ! dust
       where (gzone == 15 .and. ae_avg <= 1.2 .and. aerosol_type == 1)      aerosol_type = 5 ! reset to mix type

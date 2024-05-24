@@ -80,14 +80,14 @@ set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-find_package(HDF4 REQUIRED)
-include_directories(${HDF4_INCLUDE_DIRS})
+#find_package(HDF4 REQUIRED)
+#include_directories(${HDF4_INCLUDE_DIRS})
 #find_package(HDFEOS REQUIRED)
 #include_directories(${HDFEOS_INCLUDE_DIRS})
-set(LIBS ${CMAKE_CURRENT_SOURCE_DIR}/opt/lib/libxdr.a ${HDF4_LIBRARIES})
+#set(LIBS ${CMAKE_CURRENT_SOURCE_DIR}/opt/lib/libxdr.a ${HDF4_LIBRARIES})
 #set(LIBS ${HDF4_LIBRARIES})
 #list(APPEND LIBS ${HDFEOS_LIBRARIES})
-message("HDF4 libraries " ${HDF4_DIR})
+#message("HDF4 libraries " ${HDF4_DIR})
 
 find_package(HDF5 REQUIRED COMPONENTS C HL Fortran Fortran_HL)
 include_directories(${HDF5_INCLUDE_DIRS})
@@ -179,7 +179,7 @@ add_executable(oci_ua_aer
   DT_Ocean/src/compute_indx_wspeed_forLUT.f90
   DT_Ocean/src/compute_wspeed_spatial.f90
   DT_Ocean/src/Fill_Output_SDS_Ocean.f90
-  DT_Ocean/src/make_ocean_cloudmask.f90
+  DT_Ocean/src/make_ocean_cloudmask.f90 
   DT_Ocean/src/Fill_Output_SDS_UV.f90
   DT_Ocean/src/Compute_Sd_for_Dust.f90
   

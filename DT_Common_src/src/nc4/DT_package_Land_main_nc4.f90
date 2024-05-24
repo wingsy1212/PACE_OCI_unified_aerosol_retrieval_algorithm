@@ -219,6 +219,9 @@ contains
        CALL  Trans_Two_way(START_1KM,END_1KM,W659_SYN,&
              W865_SYN,W470_SYN,W550_SYN,W124_SYN,W164_SYN,W213_SYN,W412_SYN,&
              Multi_factor) 
+         
+           
+             
              
 !-----------------------------------------------------------------------------------------------------------------         
 !   Compute Temperature for Channels 8.5 and 11.00 microns

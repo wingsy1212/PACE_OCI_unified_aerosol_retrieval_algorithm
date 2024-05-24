@@ -1,4 +1,4 @@
-input_l1file = /data4/smattoo/PACE_algorithm_Dev/Pace_Aer_Testing_Operations/L1_data/PACE_OCI_SIM.20220321T102344.L1B.V9.1.nc
+input_l1file = /tis/atmosphere/scratch/Dark_Target/smattoo/Projects_from_data4/PACE_github/PACE_OCI_unified_aerosol_retrieval_algorithm/L1_data/PACE_OCI_SIM.20240310T1056*.L1B.V9.1.nc
 output_dir   =    ../L2_data/ 
 ! ANCILLARY DATASETS FROM PACE TEAM
 landwater_mask = ../ancillary/landmask_GMT15ARC.nc 

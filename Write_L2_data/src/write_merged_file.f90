@@ -26,18 +26,26 @@ contains
 
                   
 Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
-          Ret_View_phi,Ret_solar_phi,Ret_Xtrack,Ret_Lines,Ret_Small_weighting,&
-	  Land_sea_flag,Ret_ref_LandOcean,Ret_Tau_LandOcean,&
-          Ret_average_Omega_Ocean_UV,Ret_Index_Height,Cloud_Frac_LandOcean,&
-	  Ret_Quality_LandOcean,Ret_Quality_LandOcean_W0,&
-          NUV_AI, NUV_COD, NUV_CldFrac, NUV_SSA, NUV_ALH, NUV_ACAOD, NUV_AerCorrCOD,& 
-	  NUV_FinalAlgorithmFlagsACA, NUV_UncertaintyACAODToSSA, NUV_UncertaintyCODToSSA, out_file)
+              Ret_View_phi,Ret_solar_phi,Ret_Xtrack,Ret_Lines,Ret_Small_weighting,&
+	      Land_sea_flag,Ret_ref_LandOceanwOutUV,&
+              Ret_ref_LandOcean_UV,Ret_Tau_LandOcean,&
+              Ret_average_Omega_Ocean_UV,Ret_Index_Height,Cloud_Frac_LandOcean,&
+	      Ret_Quality_LandOcean,Ret_Quality_LandOcean_W0,&
+	      l1b_nXTrack, l1b_nLines, Latitude, Longitude, &
+	      UVAI, Residue_1km, Reflectivity_1km, &
+              NUV_AI, NUV_COD, NUV_CldFrac, UVReflectivity, UVResidue, &
+	      NUV_SSA, NUV_ALH, NUV_ACAOD, NUV_AerCorrCOD,& 
+	      NUV_ACAODVsHeight, NUV_AerCorrCODVsHeight, &
+	      NUV_FinalAlgorithmFlagsACA, NUV_UncertaintyACAODToSSA, NUV_UncertaintyCODToSSA,&
+	      out_file)
 
-            
+	   
+	       
 !     Define input variable dimensions, etc.
 !     Define parameters from Main_Driver.f90
-
+      Include 'common_l1b_var.inc'
       include 'output_Variables.inc' 
+
 !     Declare input variables
       CHARACTER(255) :: out_file
 
@@ -50,7 +58,8 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
       real nc_solazi(Ret_Xtrack,Ret_Lines),nc_senazi(Ret_Xtrack,Ret_Lines)
       real nc_aod_ocean_land(Ret_Xtrack,Ret_Lines,9)  
       real nc_sm_weight(Ret_Xtrack,Ret_Lines)
-      real nc_ref_allwav_uv(Ret_Xtrack,Ret_Lines,9)
+      real nc_ref_allwav(Ret_Xtrack,Ret_Lines,7)
+      real nc_ref_allwav_UV(Ret_Xtrack,Ret_Lines,2)
       real nc_ls_flag(Ret_Xtrack,Ret_Lines) 
       real nc_W0_Ocean_UV(Ret_Xtrack,Ret_Lines,3)
       real nc_Height_indx(Ret_Xtrack,Ret_Lines) 
@@ -60,13 +69,22 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
       integer  ixp, IYp,A_Num_part,iscan,idata,ik,ij 
 
 !     Declare variables for netCDF processing
+      real nc_lat_1km(l1b_nXTrack, l1b_nLines)
+      real nc_lon_1km(l1b_nXTrack, l1b_nLines)
+      real nc_uvai_1km(l1b_nXTrack, l1b_nLines)
+      real nc_reflectivity_1km(l1b_nXTrack, l1b_nLines,2)
+      real nc_residue_1km(l1b_nXTrack, l1b_nLines)
       real nc_uvai(Ret_Xtrack,Ret_Lines)
+      real nc_reflectivity(Ret_Xtrack,Ret_Lines,2)
+      real nc_residue(Ret_Xtrack,Ret_Lines)
       real nc_cod(Ret_Xtrack,Ret_Lines)
       real nc_cldfrac(Ret_Xtrack,Ret_Lines)
       real nc_nuvalh(Ret_Xtrack,Ret_Lines)
       real nc_nuvssa(Ret_Xtrack,Ret_Lines,5)
       real nc_nuvacaod(Ret_Xtrack,Ret_Lines,3)
       real nc_nuvaercorrcod(Ret_Xtrack,Ret_Lines)
+      real nc_nuvacaodvshgt(Ret_Xtrack,Ret_Lines,3,5)
+      real nc_nuvaercorrcodvshgt(Ret_Xtrack,Ret_Lines,5)
       real nc_nuvacqf(Ret_Xtrack,Ret_Lines)
       real nc_nuvacuncer1(Ret_Xtrack,Ret_Lines,2)
       real nc_nuvacuncer2(Ret_Xtrack,Ret_Lines,2)
@@ -75,13 +93,14 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
       integer XL,YL,ZL,li,lj, YY1_new, YY2_new,ZL1,ZL2,ZL3,ZL4,ZLS
       integer IL,IX,IY
       integer ncid,grpid
-!      character (len=*), parameter :: nc_name = out_file
+!      character (len=*), parameter :: nc_name = 'PACE_output.nc'
       real fv3,fv4
 
 !     Open the netCDF file already created via ncgen
        
                     
-      call check( nf90_open(trim(out_file),NF90_WRITE, ncid) )
+!       call check( nf90_open(nc_name,NF90_WRITE, ncid) )
+       call check( nf90_open(trim(out_file),NF90_WRITE, ncid) )
        ipart =1
     
       XL = Ret_Xtrack
@@ -90,9 +109,9 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
       ZL2 = 2
       ZL3 = 5
       ZL4 = 9
-      fv3 = -990.
-      fv4 = -9990. 
-    
+      fv3 = -9999
+      fv4 = -9999 
+ 
 !     Fill output variables with data
 !     Apply scale factors and offsets, excluding fill values
 ! Adapted from a previous written subroutine that used to write in chunks
@@ -102,9 +121,34 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
                  YY1=1
                  YY2=YL 
            
-!           print*,'XL,YL', XL,YL,ipart 
-                
-!           
+           print*,'XX1,YY2', XX1,YY2
+              
+
+! Native 1km resolution variables   
+        
+      nc_lat_1km(1:l1b_nXTrack, 1:l1b_nLines) = Latitude(1:l1b_nXTrack, 1:l1b_nLines) 
+      nc_lat_1km = scale_offset(nc_lat_1km, l1b_nXTrack,SCALE1,OFFSET1,fv3,l1b_nXTrack, l1b_nLines) 
+
+      nc_lon_1km(1:l1b_nXTrack, 1:l1b_nLines) = Longitude(1:l1b_nXTrack, 1:l1b_nLines)
+      nc_lon_1km = scale_offset(nc_lon_1km, l1b_nXTrack,SCALE1,OFFSET1,fv3,l1b_nXTrack, l1b_nLines)  
+      
+      nc_uvai_1km(1:l1b_nXTrack, 1:l1b_nLines) = UVAI(1:l1b_nXTrack, 1:l1b_nLines)
+      nc_uvai_1km = scale_offset(nc_uvai_1km, l1b_nXTrack,SCALE3,OFFSET3,fv4,l1b_nXTrack, l1b_nLines)  
+
+      nc_residue_1km(1:l1b_nXTrack, 1:l1b_nLines) = Residue_1km(1:l1b_nXTrack, 1:l1b_nLines)
+      nc_residue_1km = scale_offset(nc_residue_1km, l1b_nXTrack,SCALE3,OFFSET3,fv4,l1b_nXTrack, l1b_nLines)  
+
+      nc_reflectivity_1km(1:l1b_nXTrack, 1:l1b_nLines, 1) = Reflectivity_1km(1, 1:l1b_nXTrack, 1:l1b_nLines)
+      nc_reflectivity_1km(1:l1b_nXTrack, 1:l1b_nLines, 2) = Reflectivity_1km(2, 1:l1b_nXTrack, 1:l1b_nLines)
+      do li=1,2
+      nc_reflectivity_1km(1:l1b_nXTrack, 1:l1b_nLines, li) = &
+          scale_offset(nc_reflectivity_1km(1:l1b_nXTrack, 1:l1b_nLines, li), &
+                    l1b_nXTrack,SCALE3,OFFSET3,fv4,l1b_nXTrack, l1b_nLines)  
+      enddo
+      
+
+! Aggregate resolution variables
+
       nc_lat(1:XL,1:YL) = Ret_Lat(1:XL,1:YL) 
       nc_lat = scale_offset(nc_lat, XX1,SCALE1,OFFSET1,fv3,XL,YL) 
 
@@ -148,55 +192,88 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
          XX1,SCALE3,OFFSET3,fv4,XL,YL)
       enddo
        
-      nc_ref_allwav_uv(1:XL,1:YL,1:ZL4)= Ret_ref_LandOcean(1:XL,1:YL,1:ZL4) 
-      do li=1,ZL4 
+!  Saperated Reflectance into gas corrected /not corrected
+     
+      nc_ref_allwav(1:XL,1:YL,1:ZL4-2)= Ret_ref_LandOceanwOutUV(1:XL,1:YL,1:ZL4-2)  
+    
+      do li=1,ZL4-2
+      nc_ref_allwav(1:XL,1:YL,li) = scale_offset(nc_ref_allwav(1:XL,1:YL,li),&
+         XX1,SCALE4,OFFSET4,fv4,XL,YL)
+      enddo  
+ !  UV channels are not gas corrected corrected 
+       nc_ref_allwav_UV(1:XL,1:YL,1:ZL2)= Ret_ref_LandOcean_UV(1:XL,1:YL,1:ZL2) 
+    
+      do li=1,ZL2 
       nc_ref_allwav_uv(1:XL,1:YL,li) = scale_offset(nc_ref_allwav_uv(1:XL,1:YL,li),&
          XX1,SCALE4,OFFSET4,fv4,XL,YL)
       enddo  
       
-      nc_ls_flag(1:XL,1:YL) =  Land_sea_flag(1:XL,1:YL) 
-      !nc_ls_flag = scale_offset(nc_ls_flag, XX1,SCALE1,OFFSET1,fv4,XL,YL)  
-        
+       
+      nc_ls_flag(1:XL,1:YL) =  Land_sea_flag(1:XL,1:YL)  
       nc_aod_ocean_land(1:XL,1:YL,1:ZL4) = Ret_Tau_LandOcean(1:XL,1:YL,1:ZL4) 
       do li=1,ZL4
       nc_aod_ocean_land(1:XL,1:YL,li) = scale_offset(nc_aod_ocean_land(1:XL,1:YL,li),&
-                                XX1,SCALE3,OFFSET3,fv4,XL,YL)  
+                                XX1,SCALE3,OFFSET3,fv4,XL,YL)   
       enddo
          
+
 !  NUV Variables  
+
         nc_uvai(1:XL,1:YL)= NUV_AI(1:XL,1:YL)
         nc_uvai = scale_offset(nc_uvai,XX1,SCALE3,OFFSET3,fv4,XL,YL) 
 
         nc_cod(1:XL,1:YL) = NUV_COD(1:XL,1:YL)
         nc_cod = scale_offset(nc_cod, XX1,SCALE3,OFFSET3,fv4,XL,YL)  
 
+        nc_residue(1:XL,1:YL) = UVResidue(1:XL,1:YL)
+        nc_residue = scale_offset(nc_residue, XX1,SCALE3,OFFSET3,fv4,XL,YL)  
+
+        nc_reflectivity(1:XL,1:YL,1:2) = UVReflectivity(1:XL,1:YL,1:2)
+	do li=1,2
+        nc_reflectivity(1:XL,1:YL,li) = scale_offset(nc_reflectivity(1:XL,1:YL,li), &
+	                              XX1,SCALE3,OFFSET3,fv4,XL,YL)  
+        enddo
+
         nc_cldfrac(1:XL,1:YL) = NUV_CldFrac(1:XL,1:YL)
         nc_cldfrac = scale_offset(nc_cldfrac, XX1,SCALE3,OFFSET3,fv4,XL,YL)  
 
         nc_nuvalh(1:XL,1:YL) = NUV_ALH(1:XL,1:YL)
         nc_nuvalh = scale_offset(nc_nuvalh, XX1,SCALE3,OFFSET3,fv4,XL,YL)  
-     
+         
         nc_nuvssa(1:XL,1:YL,1:5)= NUV_SSA(1:XL,1:YL,1:5) 
         do li=1,5
         nc_nuvssa(1:XL,1:YL,li) = scale_offset(nc_nuvssa(1:XL,1:YL,li),&
                                 XX1,SCALE3,OFFSET3,fv4,XL,YL)  				
         enddo  
-          
-! NUV  Above-cloud variables
-        nc_nuvaercorrcod(1:XL,1:YL) = NUV_AerCorrCOD(1:XL,1:YL)
-!PRINT *, ' WRITE NCDF-4 ==> NUV_AerCorrCOD(161, 1:2)', NUV_AerCorrCOD(161, 1:2)
-!PRINT *, ' WRITE NCDF-4 ==> nc_nuvaercorrcod(161, 1:2)', nc_nuvaercorrcod(161, 1:2)  ! 9.3668, 6.4224
-        nc_nuvaercorrcod = scale_offset(nc_nuvaercorrcod, XX1,SCALE_10,OFFSET_10,fv4,XL,YL)  
-!PRINT *, ' WRITE NCDF-4 ==> nc_nuvaercorrcod(161, 1:2)', nc_nuvaercorrcod(161, 1:2)
 
-        nc_nuvacqf(1:XL,1:YL) =  NUV_FinalAlgorithmFlagsACA(1:XL,1:YL) 
-        nc_nuvacqf = scale_offset(nc_nuvacqf, XX1,SCALE3,OFFSET3,fv4,XL,YL)  
+          
+! NUV  Above-cloud variables   
+  
+        nc_nuvaercorrcod(1:XL,1:YL) = NUV_AerCorrCOD(1:XL,1:YL)
+        nc_nuvaercorrcod = scale_offset(nc_nuvaercorrcod, XX1,SCALE_10,OFFSET_10,fv4,XL,YL)  
 
         nc_nuvacaod(1:XL,1:YL,1:3)= NUV_ACAOD(1:XL,1:YL,1:3) 
         do li=1,3
         nc_nuvacaod(1:XL,1:YL,li) = scale_offset(nc_nuvacaod(1:XL,1:YL,li),&
                                 XX1,SCALE3,OFFSET3,fv4,XL,YL)  				
         enddo  
+
+        nc_nuvaercorrcodvshgt(1:XL,1:YL,1:5) = NUV_AerCorrCODVsHeight(1:XL,1:YL,1:5)
+	do li=1,5
+        nc_nuvaercorrcodvshgt(1:XL,1:YL,li) = scale_offset(nc_nuvaercorrcodvshgt(1:XL,1:YL,li), &
+						XX1,SCALE_10,OFFSET_10,fv4,XL,YL)  
+	enddo
+	
+        nc_nuvacaodvshgt(1:XL,1:YL,1:3,1:5)= NUV_ACAODVsHeight(1:XL,1:YL,1:3,1:5) 
+        do li=1,3
+	do lj=1,5
+        nc_nuvacaodvshgt(1:XL,1:YL,li,lj) = scale_offset(nc_nuvacaodvshgt(1:XL,1:YL,li,lj),&
+                                XX1,SCALE3,OFFSET3,fv4,XL,YL)  				
+        enddo  
+        enddo
+	
+        nc_nuvacqf(1:XL,1:YL) =  NUV_FinalAlgorithmFlagsACA(1:XL,1:YL) 
+        nc_nuvacqf = scale_offset(nc_nuvacqf, XX1,SCALE3,OFFSET3,fv4,XL,YL)  
 
         nc_nuvacuncer1(1:XL,1:YL,1:2)= NUV_UncertaintyACAODToSSA(1:XL,1:YL,1:2) 
         do li=1,2
@@ -212,18 +289,20 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
 
          
 !     Open netCDF file group geolocation_data
-1000    continue
+
       call check( nf90_inq_ncid(ncid, 'geolocation_data', grpid) )
 
 !     Write variables to netCDF group geolocation_data
-         
+
       call write_nc_2d(nc_lat,'latitude', XX1,YY1,YY2,grpid,0,A_Num_part) 
       call write_nc_2d(nc_lon,'longitude',XX1,YY1,YY2,grpid,0,A_Num_part) 
       call write_nc_2d(nc_solzen,'solar_zenith_angle',XX1,YY1,YY2,grpid,1,A_Num_part)  
       call write_nc_2d(nc_senzen,'sensor_zenith_angle',XX1,YY1,YY2,grpid,1,A_Num_part)
       call write_nc_2d(nc_senazi,'sensor_azimuth_angle',XX1,YY1,YY2,grpid,1,A_Num_part)
       call write_nc_2d(nc_solazi,'solar_azimuth_angle',XX1,YY1,YY2,grpid,1,A_Num_part)
-       
+      call write_nc_2d(nc_lat_1km,'Latitude_1km',l1b_nXTrack,1,l1b_nLines,grpid,0,l1b_nLines)  
+      call write_nc_2d(nc_lon_1km,'Longitude_1km',l1b_nXTrack,1,l1b_nLines,grpid,0,l1b_nLines) 
+      
         
 !     Open netCDF file group geophysical_data
 
@@ -238,15 +317,18 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
       call write_nc_3d(nc_aod_ocean_land,'Aerosol_Optical_Depth',&
            XX1,YY1,YY2,ZL4,grpid,1,A_Num_part) 
             
-      call write_nc_3d(nc_ref_allwav_uv,'Mean_Reflectance',&
-           XX1,YY1,YY2,ZL4,grpid,1,A_Num_part) 
+      call write_nc_3d(nc_ref_allwav,'Mean_Gas_Corrected_Reflectance',&
+           XX1,YY1,YY2,ZL4-2,grpid,1,A_Num_part) 
+      call write_nc_3d(nc_ref_allwav_uv,'Mean_Reflectance',& 
+           XX1,YY1,YY2,ZL2,grpid,1,A_Num_part) 
+                  
             
       call write_nc_3d(nc_W0_Ocean_UV,'DT_AerosolSingleScattAlbedo',&
             XX1,YY1,YY2,ZL1,grpid,1,A_Num_part)  
 
             
 ! Diagonostic for DT>>>>>>>>>          
-                  
+
       call write_nc_2d(nc_Height_indx,'DT_AerosolLayerHeight',&
             XX1,YY1,YY2,grpid,1,A_Num_part) 
               
@@ -261,9 +343,25 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
 
 
 !  NUV variables    
+
+      call write_nc_2d(nc_uvai_1km,'NUV_AerosolIndex_1km',&
+           l1b_nXTrack,1,l1b_nLines,grpid,1,l1b_nLines)  
+
+      call write_nc_2d(nc_residue_1km,'NUV_Residue_1km',&
+           l1b_nXTrack,1,l1b_nLines,grpid,1,l1b_nLines)  
+
+      call write_nc_3d(nc_reflectivity_1km,'NUV_Reflectivity_1km',&
+           l1b_nXTrack,1,l1b_nLines,ZL2,grpid,1,l1b_nLines)  
+
       call write_nc_2d(nc_uvai,'NUV_AerosolIndex',&
            XX1,YY1,YY2,grpid,1,A_Num_part)  
             
+      call write_nc_2d(nc_residue,'NUV_Residue',&
+           XX1,YY1,YY2,grpid,1,A_Num_part)  
+
+      call write_nc_3d(nc_reflectivity,'NUV_Reflectivity',&
+            XX1,YY1,YY2,ZL2,grpid,1,A_Num_part)  
+
       call write_nc_2d(nc_cod,'NUV_CloudOpticalDepth',&
            XX1,YY1,YY2,grpid,1,A_Num_part) 
             
@@ -271,19 +369,26 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
           XX1,YY1,YY2,grpid,1,A_Num_part) 
              
       call write_nc_2d(nc_nuvalh,'NUV_AerosolLayerHeight',&
-          XX1,YY1,YY2,grpid,1,A_Num_part) 
-           
+          XX1,YY1,YY2,grpid,1,A_Num_part)                   
+     
       call write_nc_3d(nc_nuvssa,'NUV_AerosolSingleScattAlbedo',&
             XX1,YY1,YY2,ZL3,grpid,1,A_Num_part)  
 
 
 ! NUV  Above-cloud variables
+
       call write_nc_2d(nc_nuvaercorrcod,'NUV_AerosolCorrCloudOpticalDepth',&
            XX1,YY1,YY2,grpid,1,A_Num_part)  
 	   	   
       call write_nc_3d(nc_nuvacaod,'NUV_AerosolOpticalDepthOverCloud',&
             XX1,YY1,YY2,ZL1,grpid,1,A_Num_part)  
 	    
+      call write_nc_3d(nc_nuvaercorrcodvshgt,'NUV_AerosolCorrCloudOpticalDepthVsHeight',&
+           XX1,YY1,YY2,ZL3,grpid,1,A_Num_part)  
+	   	   
+      call write_nc_4d(nc_nuvacaodvshgt,'NUV_AerosolOpticalDepthOverCloudVsHeight',&
+            XX1,YY1,YY2,ZL1,ZL3,grpid,1,A_Num_part)  
+
       call write_nc_3d(nc_nuvacuncer1,'NUV_UncertaintyACAODToSSA',&
             XX1,YY1,YY2,ZL2,grpid,0,A_Num_part)  
 	    
@@ -294,7 +399,6 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
            XX1,YY1,YY2,grpid,1,A_Num_part) 
 	                
 !  Close the netCDF file
-3000   continue
 if( ipart .eq.1)call check( nf90_close(ncid) )
 print *, 'Wrote variables to ', out_file
 
@@ -322,14 +426,16 @@ end subroutine write_Output_merged
         
        do i=1,sox
          do j=1,yy
-               if (var(i,j) .gt. fv) then
-                  if (ex .lt. -10) then
-                    var(i,j) = 0.
-                  endif 
+            if (var(i,j) .gt. fv) then
+               ex = exponent(var(i,j))
+               if (ex .lt. -10) then
+                  var(i,j) = 0. 
+               endif 
                var(i,j) = var(i,j)*scl + ofs 
             end if
          enddo
       enddo
+
 
       scale_offset = var
 
@@ -385,7 +491,8 @@ end subroutine write_Output_merged
       
            do ii=1,nx 
             do ij=1,A_Num_part
-             var_int(ii,ij) = nint(var_real(ii,ij))
+             var_int(ii,ij) = nint(var_real(ii,ij)) 
+   	     if(var_int(ii,ij) .lt. -9999) var_int(ii,ij)= -9999
             enddo
          enddo 
         call check(nf90_put_var(grpid,varid,var_int,start=(/1,ny0/),&
@@ -397,7 +504,7 @@ end subroutine write_Output_merged
 
       end if
        
-!      Print *, 'Written NETCDF-4 variable = ', var_name
+      Print *, 'Written NETCDF-4 variable = ', var_name
       return
       end subroutine write_nc_2d
       ! ---------------------------------------------------------------------
@@ -435,6 +542,7 @@ end subroutine write_Output_merged
          do ij=1,A_Num_part
              do ik=1,nz  
                var_int(ik,ii,ij) = nint(var_real(ii,ij,ik))
+              if(var_int(ik,ii,ij) .lt. -9999) var_int(ik,ii,ij)= -9999
             enddo
          enddo
       enddo 
@@ -444,7 +552,7 @@ end subroutine write_Output_merged
            do ii=1,nx 
            do ij=1,A_Num_part
              do ik=1,nz  
-             dummy_real(ik,ii,ij) = (var_real(ii,ij,ik))
+             dummy_real(ik,ii,ij) = (var_real(ii,ij,ik)) 
             enddo
          enddo
       enddo                          
@@ -453,10 +561,61 @@ end subroutine write_Output_merged
 !
     end if
     
-!    Print *, 'Written NETCDF-4 variable = ', var_name
+    Print *, 'Written NETCDF-4 variable = ', var_name
     
     return
     end subroutine write_nc_3d
+
+
+      subroutine write_nc_4d(var_real,var_name,nx,ny0,ny,nz,nl,grpid,dty,A_Num_part)
+       include 'output_Variables.inc' 
+      character(len=*),intent(in) :: var_name
+      integer ncid,grpid,varid,nx,ny,nz, nl, ny0,A_Num_part
+      real, dimension(nx,A_Num_part,nz,nl) :: var_real 
+      integer*2, dimension(nl,nz,nx,A_Num_part) :: var_int 
+      real, dimension(nl,nz,nx,A_Num_part) :: dummy_real
+      integer ii,ij,ik,il,iz,ikk,xx,yy,dty
+      integer st(3),ct(3)
+
+ 
+         
+!     Get the variable ID within the group ID passed from make_nc
+      call check( nf90_inq_varid(grpid, var_name, varid) )
+        
+ 
+     if (dty .gt. 0) then 
+      do ii=1,nx 
+         do ij=1,A_Num_part
+             do ik=1,nz  
+	       do il=1,nl
+               var_int(il,ik,ii,ij) = nint(var_real(ii,ij,ik,il))
+              if(var_int(il,ik,ii,ij) .lt. -9999) var_int(il,ik,ii,ij)= -9999
+	      enddo
+            enddo
+         enddo
+      enddo 
+       call check( nf90_put_var(grpid,varid,var_int,start=(/1,1,1,ny0/),&
+                             count = (/nl,nz,nx,A_Num_part/)))
+    Else  
+           do ii=1,nx 
+           do ij=1,A_Num_part
+             do ik=1,nz  
+	     do il=1,nl
+             dummy_real(il,ik,ii,ij) = (var_real(ii,ij,ik,il)) 
+	     enddo
+            enddo
+         enddo
+      enddo                          
+        call check( nf90_put_var(grpid,varid,dummy_real,start=(/1,1,1,ny0/),&
+                             count = (/nl,nz,nx,A_Num_part/)))                           
+!
+    end if
+    
+    Print *, 'Written NETCDF-4 variable = ', var_name
+    
+    return
+    end subroutine write_nc_4d
+
       
 end module write_Pace_merged
 

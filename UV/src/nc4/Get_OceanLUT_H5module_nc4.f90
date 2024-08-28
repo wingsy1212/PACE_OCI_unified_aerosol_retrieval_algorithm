@@ -1,4 +1,4 @@
-MODULE Get_OceanLUT_H5module
+MODULE Get_OceanLUT_H5module_nc4
    !==============================================================================
    !
    ! FILENAME:
@@ -138,4 +138,4 @@ CONTAINS
    !
    END SUBROUTINE Read_OceanLUTparams
 
-END MODULE Get_OceanLUT_H5module 
+END MODULE Get_OceanLUT_H5module_nc4

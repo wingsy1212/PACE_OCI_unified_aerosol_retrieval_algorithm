@@ -5,24 +5,24 @@ USE MyConstants
 USE H5Util_class
 USE H5write_module
 
-USE LookupTableModule                  
+USE LookupTableModule_nc4                  
 USE InterpolationModule
 USE OCIUAAER_Config_Module
 USE OCIUAAER_L1BModule
-USE GetSurfAlbLUT_H5module
-USE GetLUT_LER_AI_H5module
-USE GetLUT_Miecloud_AI_H5module 
-USE Get_SnowIce_module
-USE Get_OceanLUT_H5module 
-USE Get_TerrainPressure_H5module
-USE GetLUT_H5module
+USE GetSurfAlbLUT_H5module_nc4
+USE GetLUT_LER_AI_H5module_nc4
+USE GetLUT_Miecloud_AI_H5module_nc4 
+USE Get_SnowIce_module_nc4
+USE Get_OceanLUT_H5module_nc4 
+USE Get_TerrainPressure_H5module_nc4
+USE GetLUT_H5module_nc4
 USE OCI_UVAI_MieCloudModule 
-USE OCI_UVOutput_DataModule
+!USE OCI_UVOutput_DataModule
 USE Nearuv_alhssa_Module
 USE NUV_AerosolModule
 
-USE Get_ssaclimLUT2_H5module
-USE Get_omacaLUT7dim_H5module 
+USE Get_ssaclimLUT2_H5module_nc4
+USE Get_omacaLUT7dim_H5module_nc4 
 USE NUV_ACAerosolModule
 
 
@@ -32,8 +32,8 @@ IMPLICIT NONE
   INTEGER(KIND=2), DIMENSION(:,:), ALLOCATABLE :: SurfaceType
   INTEGER(KIND=2), DIMENSION(:,:), ALLOCATABLE :: AerosolType
   REAL(KIND=4), DIMENSION(:,:)  ,  ALLOCATABLE :: RelAzAng, TerPress, Dstsmk_Index
-  REAL(KIND=4), DIMENSION(:,:,:),  ALLOCATABLE :: UVSurfaceAlbedo, UVIR_AllRef, NUV_Reflectivity
-  REAL(KIND=4), DIMENSION(:,:)  ,  ALLOCATABLE :: NUV_Residue, SnowIce_frac
+  REAL(KIND=4), DIMENSION(:,:,:),  ALLOCATABLE :: UVSurfaceAlbedo, UVIR_AllRef
+  REAL(KIND=4), DIMENSION(:,:)  ,  ALLOCATABLE :: SnowIce_frac
 
 ! -- ACA data fields --------------------
   REAL (KIND=4),   DIMENSION(:,:,:),   ALLOCATABLE :: InputAerosolSingleScattAlbACA
@@ -50,8 +50,8 @@ SUBROUTINE NUV_package_main(cfg, Year, Month, Day, UVtoSWIR_wavelengths, UVtoSWI
           Ret_View_phi,Ret_solar_phi,Ret_Xtrack,Ret_Lines,& 
           Ret_Small_weighting,Land_sea_flag,Ret_ref_LandOcean,Ret_Tau_LandOcean,&
 	  Ret_average_Omega_Ocean_UV,Ret_Index_Height,Cloud_Frac_LandOcean,&
-	  NUV_AI, NUV_COD, NUV_CldFrac, NUV_SSA, NUV_ALH, &
-	  NUV_ACAOD, NUV_AerCorrCOD, &
+	  NUV_AI, NUV_COD, NUV_CldFrac, UVReflectivity, UVResidue, NUV_SSA, NUV_ALH, &
+	  NUV_ACAOD, NUV_AerCorrCOD, NUV_ACAODVsHeight, NUV_AerCorrCODVsHeight, &
 	  NUV_FinalAlgorithmFlagsACA, NUV_UncertaintyACAODToSSA, NUV_UncertaintyCODToSSA)
 
  
@@ -60,10 +60,10 @@ IMPLICIT NONE
 
 Include 'output_Variables.inc'
 
-TYPE(ociuaaer_config_type),    INTENT(IN)  :: cfg
-INTEGER(KIND=4),               INTENT(IN)  :: Day, Month, Year
-REAL(KIND=4),DIMENSION(:),     INTENT(IN)  :: UVtoSWIR_wavelengths
-REAL(KIND=4),DIMENSION(:,:,:), INTENT(IN)  :: UVtoSWIR_Reflectances
+ TYPE(ociuaaer_config_type),    INTENT(IN)  :: cfg
+ INTEGER(KIND=4),               INTENT(IN)  :: Day, Month, Year
+ REAL(KIND=4),DIMENSION(:),     INTENT(IN)  :: UVtoSWIR_wavelengths
+ REAL(KIND=4),DIMENSION(:,:,:), INTENT(IN)  :: UVtoSWIR_Reflectances
 
   
  INTEGER(KIND=4) :: iPix, jPix, STATUS, SkipProcess, l1b_XDim, l1b_YDim
@@ -89,88 +89,43 @@ REAL(KIND=4),DIMENSION(:,:,:), INTENT(IN)  :: UVtoSWIR_Reflectances
 ! GetLUT_Miecloud_AI_H5module 
 ! nplev_mie, nsalb_mie, ncod_mie, nsza_mie, nvza_mie, nraa_mie
 ! rad354, rad388, rad_lin354_ai, rad_lin388_ai
-  CALL ReadLUTAIparams(cfg%uv_ai_mielut)
-
-
+!  CALL ReadLUTAIparams(cfg%uv_ai_mielut)
+!
+!
 !------------------------------------------------------------------------------
 ! Read HE4 AI LER-Atmosphere look-up tables
 ! GetLUT_LER_AI_H5module 
 ! nsalb_ler, nplev_ler, nsza_ler, SURFALBSET_ler, PRESSURESET_ler
 ! rad354_ler, rad388_ler, rad_lin354_ai_ler, rad_lin388_ai_ler
-  CALL ReadLUT_LER_AIparams(cfg%uv_ai_lerlut)
-
+!  CALL ReadLUT_LER_AIparams(cfg%uv_ai_lerlut)
+!
+!
 !------------------------------------------------------------------------------
 ! Read OCI Surface AlbeDO HE4 look-up tables (Version 5 : ocean-corrected LER)
-  CALL ReadSurfAlbLUTparams(cfg%uv_surfalbfile,SRFLER354, SRFLER388, GRDLAT, GRDLON)
-
-
+!  CALL ReadSurfAlbLUTparams(cfg%uv_surfalbfile,SRFLER354, SRFLER388, GRDLAT, GRDLON)
+!
+!
+!------------------------------------------------------------------------------
+!  CALL Read_OceanLUTparams(cfg%uv_ocncorr_lut, oceanler, nwave_ocean, &
+!                           nsza_ocean, nvza_ocean, nraa_ocean,&
+!                       sza_oceanset, vza_oceanset, raa_oceanset) !Fresnel_OceanLUT_v1.he4
+!
 !------------------------------------------------------------------------------
 ! Read Terrain pressureH5 database [3600 longitude x 1800 latitude] bins
-  CALL ReadTerrainPressparams(cfg%uv_surfprsfile,tpres, terrain_Longitude, terrain_Latitude)
-
-
+!  CALL ReadTerrainPressparams(cfg%uv_surfprsfile,tpres, terrain_Longitude, terrain_Latitude)
+!
+!
 !------------------------------------------------------------------------------
 ! Read Snow_Ice database [360 longitude x 180 latitude x 12 month] bins
-  CALL snowice_Reader(cfg%uv_snowicefile,snowice, swice_Longitude, swice_Latitude)
+!  CALL snowice_Reader(cfg%uv_snowicefile,snowice, swice_Longitude, swice_Latitude)
+!
 
 
+! All the above LUTs are loaded in OCI_UVAI module while computing at native resolution.
 !------------------------------------------------------------------------------
-  CALL Read_OceanLUTparams(cfg%uv_ocncorr_lut, oceanler, nwave_ocean, &
-                           nsza_ocean, nvza_ocean, nraa_ocean,&
-                       sza_oceanset, vza_oceanset, raa_oceanset) !Fresnel_OceanLUT_v1.he4
-
-!==============================================================================
-! Read OMI Single Scattering Albedo Climatology HE4 look-up tables
-!==============================================================================
-  CALL Read_ssaclimLUTparams(cfg%uv_ssa388_clim_file, ssa388_smk,ssa388_dst, &
-                   ssa388_clim_smk,ssa388_clim_dst,ssalon_table,ssalat_table)
-
-
-!==============================================================================
-! Read Aerosol Above Clouds HE4 look-up tables
-!==============================================================================
-  CALL Read_aac_LUTparams(cfg%uv_omacalut_file, &
-  			  rad388_smokelin1013zhgt3_aac,rad388_smokelin1013zhgt4_aac,&
-                          rad388_smokelin1013zhgt5_aac,rad388_smokelin1013zhgt6_aac,&
-                          rad388_smokelin800zhgt5_aac,rad388_smokelin800zhgt6_aac,&
-                          rad388_smokelin800zhgt7_aac,rad388_smokelin800zhgt8_aac,&
-                          uvaimie_smokelin1013zhgt3_aac,uvaimie_smokelin1013zhgt4_aac,&
-                          uvaimie_smokelin1013zhgt5_aac,uvaimie_smokelin1013zhgt6_aac,&
-                          uvaimie_smokelin800zhgt5_aac,uvaimie_smokelin800zhgt6_aac,&
-                          uvaimie_smokelin800zhgt7_aac,uvaimie_smokelin800zhgt8_aac,&
-
-!                        ;DUST LUT Parameters...
-                          rad388_dustlin1013zhgt3_aac,rad388_dustlin1013zhgt4_aac,&
-                          rad388_dustlin1013zhgt5_aac,rad388_dustlin1013zhgt6_aac,&
-                          rad388_dustlin800zhgt5_aac,rad388_dustlin800zhgt6_aac,&
-                          rad388_dustlin800zhgt7_aac,rad388_dustlin800zhgt8_aac,&
-                          uvaimie_dustlin1013zhgt3_aac,uvaimie_dustlin1013zhgt4_aac,&
-                          uvaimie_dustlin1013zhgt5_aac,uvaimie_dustlin1013zhgt6_aac,&
-                          uvaimie_dustlin800zhgt5_aac,uvaimie_dustlin800zhgt6_aac,&
-                          uvaimie_dustlin800zhgt7_aac,uvaimie_dustlin800zhgt8_aac,&
-
-!                         DUST OVER-OCEAN LUT Parameters...
-                          rad388_dustolin1013zhgt3_aac,rad388_dustolin1013zhgt4_aac,&
-                          rad388_dustolin1013zhgt5_aac,rad388_dustolin1013zhgt6_aac,&
-                          rad388_dustolin800zhgt5_aac,rad388_dustolin800zhgt6_aac,&
-                          rad388_dustolin800zhgt7_aac,rad388_dustolin800zhgt8_aac,&
-                          uvaimie_dustolin1013zhgt3_aac,uvaimie_dustolin1013zhgt4_aac,&
-                          uvaimie_dustolin1013zhgt5_aac,uvaimie_dustolin1013zhgt6_aac,&
-                          uvaimie_dustolin800zhgt5_aac,uvaimie_dustolin800zhgt6_aac,&
-                          uvaimie_dustolin800zhgt7_aac,uvaimie_dustolin800zhgt8_aac,&
-                          wavetbl_aac, aodtbl_aac, codtbl_aac,szatbl_aac,vzatbl_aac,&
-                          raatbl_aac,ssatbl_aac, salbtbl_aac)
-
-!------------------------------------------------------------------------------
-!Read Aerosol and ancillary LUTs
-  status = allocateLUT()
-  	IF (STATUS < 0) THEN
-     	  PRINT *,"Error : Error allocating memory for Aerosol LUT params"
-     	  CALL EXIT(1)
-  	ENDIF 
-
-  CALL ReadLUTparams(cfg%uv_aer_lut) !LUT_v5_2wave.he4
-  CALL Read_ancillaryLUTs(cfg%uv_sfc_file, cfg%uv_AIRSCO_clm_file)
+!Read Aerosol LUTs
+  CALL ReadLUTparams(cfg%uv_aer_lut) 
+  
 
 !------------------------------------------------------------------------------
 ! Redefines radiance and transmittance lookup tables matrices as vectors 
@@ -209,6 +164,73 @@ REAL(KIND=4),DIMENSION(:,:,:), INTENT(IN)  :: UVtoSWIR_Reflectances
   tralin_p06(:) = RESHAPE(aux2,(/nwave*nzae*nw0model*ntau*nsza*ntheta/) )
 
 
+!==============================================================================
+! Read OMI Single Scattering Albedo Climatology HE4 look-up tables
+!==============================================================================
+  CALL Read_ssaclimLUTparams(cfg%uv_ssa388_clim_file, ssa388_smk,ssa388_dst, &
+                   ssa388_clim_smk,ssa388_clim_dst,ssalon_table,ssalat_table)
+
+
+!==============================================================================
+! Read Aerosol Above Clouds HE4 look-up tables
+!==============================================================================
+  CALL Read_aac_LUTparams(cfg%uv_omacalut_file, & 			       
+			       rad388_smokelin1013zhgt3_aac,rad388_smokelin1013zhgt4_aac,&
+                               rad388_smokelin1013zhgt5_aac,rad388_smokelin1013zhgt6_aac,&
+                               rad388_smokelin1013zhgt9_aac,rad388_smokelin1013zhgt12_aac,&
+			       rad388_smokelin1013zhgt15_aac,&
+                               rad388_smokelin800zhgt5_aac,rad388_smokelin800zhgt6_aac,&
+                               rad388_smokelin800zhgt7_aac,rad388_smokelin800zhgt8_aac,&
+                               rad388_smokelin800zhgt11_aac,rad388_smokelin800zhgt14_aac,&
+			       rad388_smokelin800zhgt17_aac,&
+                               uvaimie_smokelin1013zhgt3_aac,uvaimie_smokelin1013zhgt4_aac,&
+                               uvaimie_smokelin1013zhgt5_aac,uvaimie_smokelin1013zhgt6_aac,&
+                               uvaimie_smokelin1013zhgt9_aac,uvaimie_smokelin1013zhgt12_aac,&
+			       uvaimie_smokelin1013zhgt15_aac,&
+                               uvaimie_smokelin800zhgt5_aac,uvaimie_smokelin800zhgt6_aac,&
+                               uvaimie_smokelin800zhgt7_aac,uvaimie_smokelin800zhgt8_aac,&
+                               uvaimie_smokelin800zhgt11_aac,uvaimie_smokelin800zhgt14_aac,&
+			       uvaimie_smokelin800zhgt17_aac,&
+
+!                              ;DUST Over-land LUT Parameters...
+                               rad388_dustlin1013zhgt3_aac,rad388_dustlin1013zhgt4_aac,&
+                               rad388_dustlin1013zhgt5_aac,rad388_dustlin1013zhgt6_aac,&
+                               rad388_dustlin1013zhgt9_aac,rad388_dustlin1013zhgt12_aac,&
+			       rad388_dustlin1013zhgt15_aac,&
+                               rad388_dustlin800zhgt5_aac,rad388_dustlin800zhgt6_aac,&
+                               rad388_dustlin800zhgt7_aac,rad388_dustlin800zhgt8_aac,&
+                               rad388_dustlin800zhgt11_aac,rad388_dustlin800zhgt14_aac,&
+			       rad388_dustlin800zhgt17_aac,&
+                               uvaimie_dustlin1013zhgt3_aac,uvaimie_dustlin1013zhgt4_aac,&
+                               uvaimie_dustlin1013zhgt5_aac,uvaimie_dustlin1013zhgt6_aac,&
+                               uvaimie_dustlin1013zhgt9_aac,uvaimie_dustlin1013zhgt12_aac,&
+			       uvaimie_dustlin1013zhgt15_aac,&
+                               uvaimie_dustlin800zhgt5_aac,uvaimie_dustlin800zhgt6_aac,&
+                               uvaimie_dustlin800zhgt7_aac,uvaimie_dustlin800zhgt8_aac,&
+                               uvaimie_dustlin800zhgt11_aac,uvaimie_dustlin800zhgt14_aac,&
+			       uvaimie_dustlin800zhgt17_aac,&
+
+!                              ;DUST Over-ocean LUT Parameters...
+                               rad388_dustolin1013zhgt3_aac,rad388_dustolin1013zhgt4_aac,&
+                               rad388_dustolin1013zhgt5_aac,rad388_dustolin1013zhgt6_aac,&
+                               rad388_dustolin1013zhgt9_aac,rad388_dustolin1013zhgt12_aac,&
+			       rad388_dustolin1013zhgt15_aac,&
+                               rad388_dustolin800zhgt5_aac,rad388_dustolin800zhgt6_aac,&
+                               rad388_dustolin800zhgt7_aac,rad388_dustolin800zhgt8_aac,&
+                               rad388_dustolin800zhgt11_aac,rad388_dustolin800zhgt14_aac,&
+			       rad388_dustolin800zhgt17_aac,&
+                               uvaimie_dustolin1013zhgt3_aac,uvaimie_dustolin1013zhgt4_aac,&
+                               uvaimie_dustolin1013zhgt5_aac,uvaimie_dustolin1013zhgt6_aac,&
+                               uvaimie_dustolin1013zhgt9_aac,uvaimie_dustolin1013zhgt12_aac,&
+			       uvaimie_dustolin1013zhgt15_aac,&
+                               uvaimie_dustolin800zhgt5_aac,uvaimie_dustolin800zhgt6_aac,&
+                               uvaimie_dustolin800zhgt7_aac,uvaimie_dustolin800zhgt8_aac,&
+                               uvaimie_dustolin800zhgt11_aac,uvaimie_dustolin800zhgt14_aac,&
+			       uvaimie_dustolin800zhgt17_aac,&
+                               wavetbl_aac, aodtbl_aac, codtbl_aac, &
+			       szatbl_aac,vzatbl_aac,raatbl_aac,ssatbl_aac, salbtbl_aac)
+
+
 !------------------------------------------------------------------------------
 ! Allocate for variables to work with.
 	ALLOCATE( RelAzAng(Ret_Xtrack, Ret_Lines), &
@@ -216,8 +238,6 @@ REAL(KIND=4),DIMENSION(:,:,:), INTENT(IN)  :: UVtoSWIR_Reflectances
 	      SnowIce_frac(Ret_Xtrack, Ret_Lines), &
 	       SurfaceType(Ret_Xtrack, Ret_Lines), &
 	       AerosolType(Ret_Xtrack, Ret_Lines), &
-	       NUV_Residue(Ret_Xtrack, Ret_Lines), &
-          NUV_Reflectivity(Ret_Xtrack, Ret_Lines, 2), &	       
            UVSurfaceAlbedo(Ret_Xtrack, Ret_Lines, 2), &
 	       UVIR_AllRef(Ret_Xtrack, Ret_Lines, 3), &
 	      Dstsmk_Index(Ret_Xtrack, Ret_Lines) )
@@ -231,31 +251,31 @@ REAL(KIND=4),DIMENSION(:,:,:), INTENT(IN)  :: UVtoSWIR_Reflectances
 
 !------------------------------------------------------------------------------
 ! Intialize all variables
-NUV_AI(:,:) = -999.
-NUV_COD(:,:) = -999.
-NUV_CldFrac(:,:) = -999.
-NUV_ALH(:,:) = -999.
-NUV_SSA(:,:,:) = -999.
+NUV_AI(:,:) = -9999.
+NUV_COD(:,:) = -9999.
+NUV_CldFrac(:,:) = -9999.
+NUV_ALH(:,:) = -9999.
+NUV_SSA(:,:,:) = -9999.
 !
-RelAzAng(:,:) = -999.
-TerPress(:,:) = -999.
-SnowIce_frac(:,:) = -999.
+RelAzAng(:,:) = -9999.
+TerPress(:,:) = -9999.
+SnowIce_frac(:,:) = -9999.
 SurfaceType(:,:) = 255
 AerosolType(:,:) = 255
-NUV_Residue(:,:) = -999.
-NUV_Reflectivity(:,:,:) = -999.
-UVSurfaceAlbedo(:,:,:) = -999.
-UVIR_AllRef(:,:,:) = -999.
-Dstsmk_Index(:,:) = -999.
+UVResidue(:,:) = -9999.
+UVReflectivity(:,:,:) = -9999.
+UVSurfaceAlbedo(:,:,:) = -9999.
+UVIR_AllRef(:,:,:) = -9999.
+Dstsmk_Index(:,:) = -9999.
 
 ! ACA-fields
-NUV_ACAOD(:,:,:) = -999.
-NUV_AerCorrCOD(:,:) = -999.
-NUV_FinalAlgorithmFlagsACA(:,:) = -999.
-ApparentCloudOpticalDepth(:,:) = -999.
-InputAerosolSingleScattAlbACA(:,:,:) = -999.
-NUV_UncertaintyACAODToSSA(:,:,:) = -999.
-NUV_UncertaintyCODToSSA(:,:,:) = -999.
+NUV_ACAOD(:,:,:) = -9999.
+NUV_AerCorrCOD(:,:) = -9999.
+NUV_FinalAlgorithmFlagsACA(:,:) = -9999.
+ApparentCloudOpticalDepth(:,:) = -9999.
+InputAerosolSingleScattAlbACA(:,:,:) = -9999.
+NUV_UncertaintyACAODToSSA(:,:,:) = -9999.
+NUV_UncertaintyCODToSSA(:,:,:) = -9999.
 
 
 ! Makes average all reflectances at aggregate resolution for 354, 388, 2230 nm.
@@ -336,6 +356,7 @@ DO jPix = 1, Ret_Lines
   	ENDIF 
 
 
+      IF ( SurfaceType(iPix,jPix) .EQ. 17 ) THEN ! Only for Oceans
       STATUS = OCEAN_FRESNEL_CORRECTION(SurfaceType(iPix,jPix), Ret_SolZen(iPix,jPix), &
                                      Ret_View_angle(iPix,JPix),   RelAzAng(iPix,jPix), &
 				  			   UVSurfaceAlbedo(iPix,jPix,:)) 
@@ -343,6 +364,7 @@ DO jPix = 1, Ret_Lines
      	  PRINT *,"Error : Error getting Fresnel correction for UV Surface albedo"
      	  CALL EXIT(1)
   	ENDIF 
+      ENDIF
       
       
       cossza = COS(DTOR * Ret_SolZen(iPix,jPix))
@@ -382,8 +404,8 @@ DO jPix = 1, Ret_Lines
                                             NUV_AI(iPix,jPix), &
                                            NUV_COD(iPix,jPix), &
                                        NUV_CldFrac(iPix,jPix), &
-                                       NUV_Residue(iPix,jPix), &
-                                  NUV_Reflectivity(iPix,jPix,:) )
+                                         UVResidue(iPix,jPix), &
+                                  UVReflectivity(iPix,jPix,:) )
 
       ELSE
         SkipProcess = 0
@@ -412,14 +434,14 @@ DO jPix = 1, Ret_Lines
                                  UVSurfaceAlbedo(iPix,jPix,:), &
                                                  NormRad(1:2), & ! 354, 388
 				       AerosolType(iPix,jPix), &
-                                            NUV_AI(iPix,jPix), &
-                                      Dstsmk_Index(iPix,jPix), &					    
-                             Ret_Tau_LandOcean(iPix,jPix,1:2), & ! 354, 388
+                                            NUV_AI(iPix,jPix), &				    
+                              Ret_Tau_LandOcean(iPix,jPix, :), & ! 354, 388, 488, 550, 670, 860, 1250, 1615, 2260
                                Ret_Small_weighting(iPix,jPix), &
                                          NUV_SSA(iPix,jPix,:), &
                                            NUV_ALH(iPix,jPix) )
 
       ENDIF ! NormRad > 0 Aer-loop
+
 
       ! Above-cloud retrievals
       IF( AllNormRad(1) .GT. 0 .AND. AllNormRad(2) .GT. 0 .AND. &
@@ -440,14 +462,16 @@ DO jPix = 1, Ret_Lines
                                  UVSurfaceAlbedo(iPix,jPix,:), &
                                               AllNormRad(1:2), & ! 354, 388
                                             NUV_AI(iPix,jPix), &
-         			NUV_Reflectivity(iPix,jPix,:), &
+         			UVReflectivity(iPix,jPix,:), &
                         NUV_FinalAlgorithmFlagsACA(iPix,jPix), &
                     		       NUV_ACAOD(iPix,jPix,:), &
                       		    NUV_AerCorrCOD(iPix,jPix), &
                          ApparentCloudOpticalDepth(iPix,jPix), &
                    InputAerosolSingleScattAlbACA(iPix,jPix,:), &
                        NUV_UncertaintyACAODToSSA(iPix,jPix,:), &
-                         NUV_UncertaintyCODToSSA(iPix,jPix,:) )
+                         NUV_UncertaintyCODToSSA(iPix,jPix,:), &
+			     NUV_ACAODVsHeight(iPix,jPix,:,:), &
+                        NUV_AerCorrCODVsHeight(iPix,jPix,:) )
 
       ENDIF ! NormRad > 0 ACAer-loop
 
@@ -457,18 +481,20 @@ DO jPix = 1, Ret_Lines
 ENDDO    ! jPix = 1, YDim-1
 ! End Pixels and Scan line loop
 
-
+Print*, 'Completed NUV Processing..'
 
 ! Now write NUV output file.
    IF (cfg%input_l1file /= 'NULL') THEN
-     index1 = index(cfg%input_l1file, 'PACE_OCI_SIM')
-     l1b_date_time_str = cfg%input_l1file(index1+13:index1+13+14)
+     index1 = index(cfg%input_l1file, 'PACE_OCI.')
+     l1b_date_time_str = cfg%input_l1file(index1+9:index1+9+8)
    ELSE IF (cfg%proxy_l1file /= 'NULL') THEN
      index1 = index(cfg%proxy_l1file, 'TROP-in-Viirs_V4.1_A')
      l1b_date_time_str = cfg%proxy_l1file(index1+20:index1+20+11)
    ENDIF
-       go to 1000
- NUV_outfile = trim('../L2_data/NUV_') // trim(l1b_date_time_str) // trim('.h5')   
+ 
+ go to 1000
+ NUV_outfile = trim('../../../L2_data/NUV_') &
+            // trim(l1b_date_time_str) // trim('.Ocn0.30-0.70_Lnd0.40-1.50.h5')   
 
     CALL write_NUV_output(NUV_outfile, RelAzAng, TerPress, Dstsmk_Index, &
 	  Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&

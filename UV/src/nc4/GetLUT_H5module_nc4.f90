@@ -1,4 +1,4 @@
-MODULE GetLUT_H5module
+MODULE GetLUT_H5module_nc4
    !==============================================================================
    !
    ! FILENAME:
@@ -160,4 +160,4 @@ CONTAINS
 
    END SUBROUTINE ReadLUTparams
 
-END MODULE GetLUT_H5module 
+END MODULE GetLUT_H5module_nc4

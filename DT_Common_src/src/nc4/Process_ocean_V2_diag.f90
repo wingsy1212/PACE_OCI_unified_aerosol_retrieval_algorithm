@@ -199,6 +199,9 @@
       REAL ALBEDO_T_SMALL(Lut_indx,NTH0,NTAU,NWAV,NUMCASES)
       REAL ALBEDO_T_BIG(Lut_indx,NTH0,NTAU,NWAV,NUMCASEB)
 
+      REAL RGSS_nc4(NUMCASES),SIGMAS_nc4(NUMCASES),RGSB_nc4(NUMCASEB)
+      REAL SIGMAB_nc4(NUMCASEB)
+      REAL EXTNORSMALL_nc4(NUMCASES,NWAV),EXTNORBIG_nc4(NUMCASEB,NWAV)
       REAL  AINTS_nc4(Lut_indx, NPHI, NTHET, NTH0, NTAU, NWAV, NUMCASES)
       REAL  AINTB_nc4(Lut_indx, NPHI, NTHET, NTH0, NTAU, NWAV, NUMCASEB)
       REAL ref_rayall_nc4(Lut_indx,NPHI,NTHET,NTH0,NWAV)
@@ -214,6 +217,7 @@
       REAL BACKSCTTSMALL_nc4(Lut_indx,NUMCASES,NWAV),BACKSCTTBIG_nc4(Lut_indx,NUMCASEB,NWAV)
       REAL ASSYMSMALL_nc4(Lut_indx,NUMCASES,NWAV),ASSYMBIG_nc4(Lut_indx,NUMCASEB,NWAV)
       REAL ALBEDOSMALL_nc4(Lut_indx,NUMCASES,NWAV),ALBEDOBIG_nc4(Lut_indx,NUMCASEB,NWAV)
+      REAL Ext_554_small_nc4(Lut_indx,NUMCASES),Ext_554_large_nc4(Lut_indx,NUMCASEB)
 
       REAL ALBEDO_R_SMALL_tau(NTAU,NWAV,NUMCASES)
       REAL ALBEDO_R_BIG_tau(NTAU,NWAV,NUMCASEB)
@@ -247,7 +251,7 @@
        INTEGER Save_index(NUMCELLS_B,MaxPixels_left),iist
        Integer Indx_wspped1,Indx_wspped2, New_qcontrol_special
        Real   GLINT_ANGLE,Optical_depth
-       integer IYY,IXX,Iblue,JBlue,Iy,IX,HANDLE_Ext_554_O
+       integer IYY,IXX,Iblue,JBlue,Iy,IX,HANDLE_Ext_554_O, errid
        character(len=10):: Sat_Flag
        Real Ext_554_small(Lut_indx,NUMCASES),Ext_554_large(Lut_indx,NUMCASEB)   
        SDS_CLDFRC_ocean (IDATA)=-99
@@ -263,7 +267,16 @@
 !          Read look-up table
          
 
-       CALL READ_LOOK_NC4(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
+       CALL READ_LOOK_NC4(RGSS_nc4,SIGMAS_nc4,EXTSMALL_nc4,MOMENTSSMALL_nc4,&
+                  CCNSMALL_nc4,EXTNORSMALL_nc4,BACKSCTTSMALL_nc4,ASSYMSMALL_nc4,&
+                  RGSB_nc4,SIGMAB_nc4,EXTBIG_nc4,MOMENTSBIG_nc4,EXTNORBIG_nc4,BACKSCTTBIG_nc4,&
+                  ASSYMBIG_nc4,ALBEDOSMALL_nc4,ALBEDOBIG_nc4,&
+                  ALBEDO_R_SMALL_nc4,ALBEDO_R_BIG_nc4,ALBEDO_T_SMALL_nc4,ALBEDO_T_BIG_nc4,&
+                  PHC,THET,THET0,AINTS_nc4,TAUAS_nc4,WAVE,&
+                  AINTB_nc4,TAUAB_nc4,JPHI,ref_rayall_nc4,HANDLE_S,HANDLE_L,&
+                  HANDLE_Ext_554_O,Ext_554_small_nc4,Ext_554_large_nc4)
+
+       CALL READ_LOOK(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL,&
                   CCNSMALL,EXTNORSMALL,BACKSCTTSMALL,ASSYMSMALL,&
                   RGSB,SIGMAB,EXTBIG,MOMENTSBIG,EXTNORBIG,BACKSCTTBIG,&
                   ASSYMBIG,ALBEDOSMALL,ALBEDOBIG,&
@@ -272,75 +285,93 @@
                   AINTB,TAUAB,JPHI,ref_rayall,HANDLE_S,HANDLE_L,&
                   HANDLE_Ext_554_O,Ext_554_small,Ext_554_large)
 
-       CALL READ_LOOK(RGSS,SIGMAS,EXTSMALL,MOMENTSSMALL_nc4,&
-                  CCNSMALL_nc4,EXTNORSMALL,BACKSCTTSMALL_nc4,ASSYMSMALL_nc4,&
-                  RGSB,SIGMAB,EXTBIG_nc4,MOMENTSBIG_nc4,EXTNORBIG,BACKSCTTBIG_nc4,&
-                  ASSYMBIG_nc4,ALBEDOSMALL_nc4,ALBEDOBIG_nc4,&
-                  ALBEDO_R_SMALL_nc4,ALBEDO_R_BIG_nc4,ALBEDO_T_SMALL_nc4,ALBEDO_T_BIG_nc4,&
-                  PHC,THET,THET0,AINTS_nc4,TAUAS_nc4,WAVE,&
-                  AINTB_nc4,TAUAB_nc4,JPHI,ref_rayall_nc4,HANDLE_S,HANDLE_L,&
-                  HANDLE_Ext_554_O,Ext_554_small,Ext_554_large)
+        errid = 0
 
         if (1 == 1) then
-         continue
+         errid = 0
          endif
         if (sum(abs(aints-aints_nc4)) > 0) then
-         continue
+         errid = 1
          endif
         if (sum(abs(ref_rayall-ref_rayall_nc4)) > 0) then
-         continue
+         errid = 2
          endif
         if (sum(abs(ALBEDO_R_SMALL-ALBEDO_R_SMALL_nc4)) > 0) then
-         continue
+         errid = 3
          endif
         if (sum(abs(ALBEDO_R_BIG-ALBEDO_R_BIG_nc4)) > 0) then
-         continue
+         errid = 4
          endif
         if (sum(abs(ALBEDO_T_SMALL-ALBEDO_T_SMALL_nc4)) > 0) then
-         continue
+         errid = 5
          endif
         if (sum(abs(ALBEDO_T_BIG-ALBEDO_T_BIG_nc4)) > 0) then
-         continue
+         errid = 6
          endif
         if (sum(abs(TAUAB-TAUAB_nc4)) > 0) then
-         continue
+         errid = 7
          endif
         if (sum(abs(TAUAS-TAUAS_nc4)) > 0) then
-         continue
+         errid = 8
          endif
         if (sum(abs(EXTSMALL-EXTSMALL_nc4)) > 0) then
-         continue
+         errid = 9
          endif
         if (sum(abs(EXTbig-EXTbig_nc4)) > 0) then
-         continue
+         errid = 10
          endif
         if (sum(abs(BACKSCTTSMALL-BACKSCTTSMALL_nc4)) > 0) then
-         BACKSCTTSMALL=BACKSCTTSMALL_nc4
+         errid = 11
          endif
         if (sum(abs(BACKSCTTbig-BACKSCTTbig_nc4)) > 0) then
-         continue
+         errid = 12
          endif
         if (sum(abs(ASSYMSMALL-ASSYMSMALL_nc4)) > 0) then
-         continue
+         errid = 13
          endif
         if (sum(abs(ASSYMbig-ASSYMbig_nc4)) > 0) then
-         continue
+         errid = 14
          endif
         if (sum(abs(MOMENTSSMALL-MOMENTSSMALL_nc4)) > 0) then
-         continue
+         errid = 15
          endif
         if (sum(abs(MOMENTSbig-MOMENTSbig_nc4)) > 0) then
-         continue
+         errid = 16
          endif
         if (sum(abs(ALBEDOSMALL-ALBEDOSMALL_nc4)) > 0) then
-         continue
+         errid = 17
          endif
         if (sum(abs(ALBEDObig-ALBEDObig_nc4)) > 0) then
-         continue
+         errid = 18
+         endif
+        if (sum(abs(Ext_554_small-Ext_554_small_nc4)) > 0) then
+         errid = 19
+         endif
+        if (sum(abs(Ext_554_large-Ext_554_large_nc4)) > 0) then
+         errid = 20
+         endif
+        if (sum(abs(RGSS-RGSS_nc4)) > 0) then
+         errid = 21
+         endif
+        if (sum(abs(SIGMAS-SIGMAS_nc4)) > 0) then
+         errid = 22
+         endif
+        if (sum(abs(RGSB-RGSB_nc4)) > 0) then
+         errid = 23
+         endif
+        if (sum(abs(SIGMAB-SIGMAB_nc4)) > 0) then
+         errid = 24
+         endif
+        if (sum(abs(EXTNORSMALL-EXTNORSMALL_nc4)) > 0) then
+         errid = 25
+         endif
+        if (sum(abs(EXTNORBIG-EXTNORBIG_nc4)) > 0) then
+         errid = 26
          endif
         ENDIF
 
-        
+!        print *, "error id: ", errid
+
 !
 !   Followig If statements checks if measured modis angles are
 !   out of bounds from lookup table.
@@ -807,8 +838,8 @@
       REAL ALBEDO_R_BIG(Lut_indx,NTH0,NTAU,NWAV,NUMCASEB)
       REAL ALBEDO_T_SMALL(Lut_indx,NTH0,NTAU,NWAV,NUMCASES)
       REAL ALBEDO_T_BIG(Lut_indx,NTH0,NTAU,NWAV,NUMCASEB)
-      REAL ALBEDO_R_RAY(NWAV,NTH0)
-      REAL ALBEDO_T_RAY(NWAV,NTH0)
+      REAL ALBEDO_R_RAY(Lut_indx,NWAV,NTH0)
+      REAL ALBEDO_T_RAY(Lut_indx,NWAV,NTH0)
       INTEGER ICASE,IFILE,IPHI,ITAU,ITH,ITH0,IWAV,IJ
       INTEGER JPHI(NPHI),Num_lut,HANDLE_Ext_554_O,Nfile
       REAL  PHC(NPHI),THET(NTHET),THET0(NTH0),WAVE(NWAV)
@@ -882,8 +913,8 @@
                   READ(IFILE,530)(DUMMY(IJ),IJ=1,NTH0)
                   READ(IFILE,530)(DUMMY(IJ),IJ=1,NTH0)
                   READ(IFILE,530)(DUMMY(IJ),IJ=1,NTH0)
-                  READ(IFILE,530)(ALBEDO_R_RAY(IWAV,IJ),IJ=1,NTH0)
-                  READ(IFILE,530)(ALBEDO_T_RAY(IWAV,IJ),IJ=1,NTH0)
+                  READ(IFILE,530)(ALBEDO_R_RAY(Num_lut,IWAV,IJ),IJ=1,NTH0)
+                  READ(IFILE,530)(ALBEDO_T_RAY(Num_lut,IWAV,IJ),IJ=1,NTH0)
  
                   READ(IFILE,500)LINE
 
@@ -981,8 +1012,8 @@
 ! Fill the array for albedo and transmission for all cases tau=0
       TAUAS(ICASE,IWAV,1)=TAUAS(1,IWAV,1)
       DO IJ=1,NTH0
-      ALBEDO_R_SMALL(Num_lut,IJ,1,IWAV,ICASE)=ALBEDO_R_RAY(IWAV,IJ)
-      ALBEDO_T_SMALL(Num_lut,IJ,1,IWAV,ICASE)=ALBEDO_T_RAY(IWAV,IJ)
+      ALBEDO_R_SMALL(Num_lut,IJ,1,IWAV,ICASE)=ALBEDO_R_RAY(Num_lut,IWAV,IJ)
+      ALBEDO_T_SMALL(Num_lut,IJ,1,IWAV,ICASE)=ALBEDO_T_RAY(Num_lut,IWAV,IJ)
       ENDDO
 
    20       CONTINUE
@@ -1021,7 +1052,7 @@
        READ(IFILE,520)MOMENTSBIG(Num_lut,ICASE,1),MOMENTSBIG(Num_lut,ICASE,2)
        READ(IFILE,520)MOMENTSBIG(Num_lut,ICASE,3),MOMENTSBIG(Num_lut,ICASE,4)
        READ(IFILE,515)ALBEDOBIG(Num_lut,ICASE,IWAV),ASSYMBIG(Num_lut,ICASE,IWAV)
-       READ(IFILE,515)CCNdummy,BACKSCTTBIG(num_lut,ICASE,IWAV)
+       READ(IFILE,516)CCNdummy,BACKSCTTBIG(num_lut,ICASE,IWAV)
        READ(IFILE,520)QSCT,EXTBIG(Num_lut,ICASE,IWAV)
 
 ! Read ocean information
@@ -1077,8 +1108,8 @@
 ! Fill the array for albedo and transmission for all cases tau=0
       TAUAB(ICASE,IWAV,1)=TAUAS(1,IWAV,1)
       DO IJ=1,NTH0
-      ALBEDO_R_BIG(Num_lut,IJ,1,IWAV,ICASE)=ALBEDO_R_RAY(IWAV,IJ)
-      ALBEDO_T_BIG(Num_lut,IJ,1,IWAV,ICASE)=ALBEDO_T_RAY(IWAV,IJ)
+      ALBEDO_R_BIG(Num_lut,IJ,1,IWAV,ICASE)=ALBEDO_R_RAY(Num_lut,IWAV,IJ)
+      ALBEDO_T_BIG(Num_lut,IJ,1,IWAV,ICASE)=ALBEDO_T_RAY(Num_lut,IWAV,IJ)
       ENDDO
   70      CONTINUE
 !    enddo for num of size distribution for large
@@ -1094,6 +1125,7 @@
 505               format(t32,f6.4)
 510               format(t32,f6.4,t65,e11.4)
 515               format(t32,f6.4,t70,f6.4)
+516               format(t30,f6.4,t68,f8.4)
 520               format(t26,e12.4,t64,e12.4)
 525               format(t12,f6.1,3x,6(2x,f5.1,3x)/&
                    t12,f6.1,3x,6(2x,f5.1,3x))

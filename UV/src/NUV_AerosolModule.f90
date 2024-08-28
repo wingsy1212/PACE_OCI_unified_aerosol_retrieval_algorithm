@@ -2,80 +2,6 @@ MODULE NUV_AerosolModule
 
  IMPLICIT NONE
            
-!==============================================================================
-! Types and Profiles for Aerosol model *** Typemodel ***
-!==============================================================================
-  CHARACTER(LEN=4), DIMENSION(7)  :: Typesel
-  CHARACTER(LEN=4), DIMENSION(21) :: Typemodel
-  DATA Typemodel/'dst5','dsT4','DST3','DST1','DST2','DST6','DST7', &
-                 'BE2 ','BX2 ','BI2 ','BH2 ','BL2 ','BS2 ','BZ2 ', &
-                 'ISE2','ISW2','ISV2','ISL2','IS2 ','ISS2','ISZ2'/ 
-                 
-!==============================================================================
-! Profiles of w0 at 500 *** w0model ***
-!==============================================================================
-  REAL(KIND=4), DIMENSION(7)  :: w0sel
-  REAL(KIND=4), DIMENSION(21) :: w0model   ! <------changed to 21 from 14-model!
-
-! -- Newest nodal values for sulfate at 500 nm provided by Hiren on Sept 21, 2016 --
-  DATA w0model/0.86268, 0.91046, 0.93640, 0.95430, 0.97805, 0.98620, 1.0000, & !Dust
-               0.8265, 0.8486, 0.8785, 0.9117, 0.9603, 0.9789, 1.000,& ! Smoke
-               0.8531, 0.8723, 0.8926, 0.9182, 0.9422, 0.9689, 1.0000/ ! Sulfate
-
-!==============================================================================
-! Profiles of w0 at 388 *** w0388model ***
-!==============================================================================
-  REAL(KIND=4), DIMENSION(7)  :: w0388sel
-  REAL(KIND=4), DIMENSION(21) :: w0388model
-
-  DATA w0388model/0.766,0.829,0.871,0.903,0.949,0.972,1.000, &
-                  0.781,0.808,0.846,0.888,0.944,0.970,1.000, &
-                  0.913,0.925,0.938,0.952,0.966,0.982,1.000/
-                  
-!==============================================================================
-! Profiles of KrefractiveIndex (Kr500) at 500 *** Kr500model ***
-!==============================================================================
-  REAL(KIND=4), DIMENSION(7)  :: Kr500sel
-  REAL(KIND=4), DIMENSION(21) :: Kr500model
-                  
-! -- Newest nodal values for sulfate at 500 nm provided by Hiren on Sept 21, 2016 --
-  DATA Kr500model/0.00720, 0.00400, 0.00260, 0.00176, 0.00080, 0.00040, 0.00000,&
-                  0.0288, 0.0240, 0.0180, 0.0120, 0.0060, 0.0030, 0.0000, &
-                  0.0185, 0.0155, 0.0125, 0.0090, 0.0060, 0.0030, 0.0000/
-
-!==============================================================================
-! Profiles of KrefractiveIndex (Kr388) at 388 *** Kr388model ***
-!============================================================================== 
-  REAL(KIND=4), DIMENSION(7) :: Kr388sel
-  REAL(KIND=4), DIMENSION(21) :: Kr388model
-
-   DATA Kr388model/0.01662,0.00923,0.00600,0.00405,0.00185,0.00092,0.00000, &
-                  0.04800,0.04000,0.03000,0.02000,0.01000,0.00500,0.00000, &
-                  0.01200,0.01000,0.00800,0.00600,0.00400,0.00200,0.00000/
-!==============================================================================
-! Ratio of optical depth at 388 to 500 *** tauRatiomodel ***
-!==============================================================================
-  REAL(KIND=4), DIMENSION(7)  :: tauRatiosel
-  REAL(KIND=4), DIMENSION(21) :: tauRatiomodel
-  DATA tauRatiomodel/1.166,1.166,1.166,1.166,1.166,1.166,1.166, &
-                     1.501,1.517,1.538,1.560,1.483,1.492,1.502, &
-                     1.507,1.576,1.582,1.588,1.595,1.601,1.608/ 
-                     
-!==============================================================================
-! Aerosol types: indexds -- dust (ainuv: +, aivis: +) 
-!                indexcs -- carbonaeous(smoke) (ainuv: +, aivis: -) 
-!               indexind -- industrial pollutants (ainuv: -, aivis: -) 
-!==============================================================================
-  INTEGER(KIND=4), DIMENSION(7) :: indexds, indexcs, indexind, indexmd
-  DATA indexds/1,2,3,4,5,6,7/
-  DATA indexcs/8,9,10,11,12,13,14/
-  DATA indexind/15,16,17,18,19,20,21/
-
-  REAL(KIND=4) :: UVAIThreshold(1), VisAIThreshold(3)
-  DATA UVAIThreshold/1.0/
-  DATA VisAIThreshold/2.5,0.5,1.5/
-  
-  PUBLIC :: ChoseAerosolModel
   PUBLIC :: SetAerosolModel
   PUBLIC :: Get_3DModelRad_using_fmf
   PUBLIC :: OCI_NUV_Aer_Process
@@ -85,13 +11,17 @@ MODULE NUV_AerosolModule
   
  CONTAINS
 
+!==============================================================================
+!==============================================================================
 
  FUNCTION OCI_NUV_Aer_Process(Month, nWavel, wavelen, plat, plon, sun_za, sat_za, phi, pterrp, gpQF, &
-                    salb, rad_obs, atype, uvai, dsindex, aod, fmf, retssa, rethgt) RESULT(status)
+                    salb, rad_obs, atype, uvai, aod, fmf, retssa, rethgt) RESULT(status)
 
-  USE LookupTableModule 
+  USE LookupTableModule_nc4 
   USE InterpolationModule
   USE Nearuv_alhssa_Module
+  USE regpolymonial_predict_ssa
+  
 
   IMPLICIT NONE  
 
@@ -102,17 +32,19 @@ MODULE NUV_AerosolModule
   REAL(KIND=4),   DIMENSION(:),INTENT(IN)  :: wavelen(nWavel)
   REAL(KIND=4),   DIMENSION(:),INTENT(IN)  ::    salb(nWavel)
   REAL(KIND=4),   DIMENSION(:),INTENT(IN)  :: rad_obs(nWavel)
-  REAL(KIND=4),   DIMENSION(:),INTENT(IN)  ::     aod(nWavel)		      
-  REAL(KIND=4),                INTENT(IN)  :: uvai, dsindex, fmf	
+  REAL(KIND=4),   DIMENSION(:),INTENT(IN)  :: AOD(9)		      
+  REAL(KIND=4),                INTENT(IN)  :: uvai, fmf	
   REAL(KIND=4),                INTENT(OUT) :: retssa(5), rethgt      
   INTEGER(KIND=2),             INTENT(OUT) :: AType
   
   REAL(KIND=4), DIMENSION(nzae,nw0sel)     :: rad2d_354mod, rad2d_388mod
-  REAL(KIND=4), DIMENSION(nzae,nw0sel,ntau):: rad3d_354mod,rad3d_388mod
+  REAL(KIND=4), DIMENSION(nzae,nw0sel,ntau):: rad3d_354mod, rad3d_388mod
   
-  REAL(KIND=4)    :: FMF1, fmode_retssa(5), cmode_retssa(5)
+  REAL(KIND=4)    :: FMF1, fmode_retssa(5), cmode_retssa(5), EAE, tmp_fmf
   REAL(KIND=4), PARAMETER :: uvai_thresh=0.8, dsi_thresh = 0
-  INTEGER(KIND=4) :: status
+  REAL(KIND=4), PARAMETER :: fmf_thresh1 = 0.30, fmf_thresh2=0.70
+  REAL(KIND=4), PARAMETER :: EAE_thresh1 = 0.40, EAE_thresh2=1.40
+  INTEGER(KIND=4) :: status, indexmd(7)
   INTEGER(KIND=2) :: AType1
 
 STATUS = -1
@@ -123,71 +55,123 @@ STATUS = -1
 IF ( AOD(1) .GT. 0 .AND. AOD(2) .GT. 0 .AND. &
         FMF .GE. 0 .AND.    FMF .LE. 1 .AND. gpQF .EQ. 17) THEN 
 
-Atype1 = 12
+ if (fmf .le. fmf_thresh1) then 
+   Atype1 = 2
+   tmp_fmf = 0.0
+ endif
+ 
+ if (fmf .ge. fmf_thresh2) then 
+   Atype1 = 1
+   tmp_fmf = 1.0
+ endif
+ 
+ if (fmf .gt. fmf_thresh1 .AND. fmf .lt. fmf_thresh2) then 
+   Atype1 = 12
+   tmp_fmf = (fmf-fmf_thresh1)/(fmf_thresh2-fmf_thresh1)
+ endif
+
+!Atype1 = 2
+!tmp_fmf = 0.0 
 status = Get_3DModelRad_using_fmf(nWavel, wavelen, sun_za, sat_za, phi, pterrp, &
-                                  salb, fmf, radiance_toa)
+                                  salb, tmp_fmf, radiance_toa)
 rad3d_354mod = radiance_toa(1,:,:,:)
 rad3d_388mod = radiance_toa(2,:,:,:)
-status = accountforAOD_to_get_2Drad(atype1, indexmd, rad3d_354mod, rad3d_388mod, &
-                                           AOD, fmf, rad2d_354mod, rad2d_388mod)
-status = nearuv_alhssa(atype1,w0sel,rad2d_354mod,rad2d_388mod,rad_obs(1),rad_obs(2), &
-                             fmf, retssa, rethgt)
+status = accountforAOD_to_get_2Drad(atype1, rad3d_354mod, rad3d_388mod, &
+                         AOD(1:2), tmp_fmf, rad2d_354mod, rad2d_388mod)
+status = nearuv_alhssa(atype1,rad2d_354mod,rad2d_388mod,rad_obs(1),rad_obs(2), &
+                             tmp_fmf, retssa, rethgt)
 
- if (uvai .le. uvai_thresh) Atype1 = 3
+IF (retssa(2) .LT. 0) THEN 
+status = nearuv_alhssa_alhloop(atype1,rad2d_354mod,rad2d_388mod,rad_obs(1),rad_obs(2), &
+                             tmp_fmf, retssa, rethgt)
+ENDIF
+
+
 ENDIF
 
 
 !=======================================================================================================
-! IF Valid AOD exists Over Land ==> Begin the retrieval process by selecting atype based on (UVAI & DSI).
+! IF Valid AOD exists Over Land ==> Begin the retrieval process by selecting atype based on (EAE 488-670).
 !=======================================================================================================
 IF ( AOD(1) .GT. 0 .AND. AOD(2) .GT. 0 .AND. gpQF .NE. 17) THEN 
 
+ EAE = -1.0 * alog(AOD(3)/AOD(5)) / alog(488.0/670.0)
  if (uvai .le. uvai_thresh) Atype1 = 3
  if (uvai .gt. uvai_thresh .AND. &
-     dsindex .gt. dsi_thresh) Atype1 = 2
+     EAE .LE. EAE_thresh1) Atype1 = 2
  if (uvai .gt. uvai_thresh .AND. &
-     dsindex .le. dsi_thresh) Atype1 = 1
+     EAE .GE. EAE_thresh2) Atype1 = 1
+ if (uvai .gt. uvai_thresh .AND. &
+     EAE .GT. EAE_thresh1  .AND. & 
+     EAE .LT. EAE_thresh2) Atype1 = 12
+  
+  tmp_fmf = (EAE-EAE_thresh1)/(EAE_thresh2 - EAE_thresh1)
+!  Atype1 = 2
+!  tmp_fmf = 0.0
+  if (Atype1 .EQ. 12) then 
+     status = Get_3DModelRad_using_fmf(nWavel, wavelen, sun_za, sat_za, phi, pterrp, &
+                                  salb, tmp_fmf, radiance_toa)
+  else
+     status = Get_3DModelRad_using_atyp(nWavel, wavelen, sun_za, sat_za, phi, pterrp, &
+                                  salb, atype1, radiance_toa) 				    
+  endif
+  
 
-status = Get_3DModelRad_using_atyp(nWavel, wavelen, sun_za, sat_za, phi, pterrp, &
-                                  salb, atype1, radiance_toa) 				  
 rad3d_354mod = radiance_toa(1,:,:,:)
 rad3d_388mod = radiance_toa(2,:,:,:)
-status = SetAerosolModel(AType1, indexmd)
-status = accountforAOD_to_get_2Drad(atype1, indexmd, rad3d_354mod, rad3d_388mod, &
-                                           AOD, fmf, rad2d_354mod, rad2d_388mod)
-status = nearuv_alhssa(atype1,w0sel,rad2d_354mod,rad2d_388mod,rad_obs(1),rad_obs(2), &
-                             fmf, retssa, rethgt)
+status = accountforAOD_to_get_2Drad(atype1, rad3d_354mod, rad3d_388mod, &
+                         AOD(1:2), tmp_fmf, rad2d_354mod, rad2d_388mod)
+status = nearuv_alhssa(atype1,rad2d_354mod,rad2d_388mod,rad_obs(1),rad_obs(2), &
+                             tmp_fmf, retssa, rethgt)
+IF (retssa(2) .LT. 0) THEN 
+status = nearuv_alhssa_alhloop(atype1,rad2d_354mod,rad2d_388mod,rad_obs(1),rad_obs(2), &
+                             tmp_fmf, retssa, rethgt)
+ENDIF
+
+
 ENDIF
 
 
 !=======================================================================================================
 ! IF UVAI is less than threshold, the aerosols are assumed at surface level (ALH=0) and retrieve SSA.
 !=======================================================================================================
- IF (Atype1 .eq. 3 .AND. retssa(2) .LT. 0) THEN
- status = nearuv_getssa_surfacealh(w0sel,rad2d_354mod,rad2d_388mod,rad_obs(1),rad_obs(2), &
+ IF (uvai .le. uvai_thresh .AND. retssa(2) .LT. 0) THEN
+ status = nearuv_getssa_surfacealh(rad2d_354mod,rad2d_388mod,rad_obs(1),rad_obs(2), &
                                    retssa, rethgt)
  ENDIF
 
 
 !=======================================================================================================
-! Use polynomial coefficients derived for global seasonal absorption models (Kayetha et al 2022, AMT).
+! Use polynomial coefficients derived for regional seasonal absorption models (Kayetha et al 2022, AMT).
 !=======================================================================================================
  atype = Atype1
- if (retssa(2) .GT. 0 .AND. retssa(2) .LE. 1) then
-    if (atype1 .NE. 12) CALL predict_ssa_frompoly(month, atype1, retssa)
+ if (retssa(2) .GT. 0.00 .AND. retssa(2) .LE. 1.00) then
+    if (atype1 .NE. 12) then 
+       CALL predict_wavssa_from_ssa388(plat, plon, month, atype, retssa(2), 354.0, retssa(1))
+       CALL predict_wavssa_from_ssa388(plat, plon, month, atype, retssa(2), 480.0, retssa(3))
+       CALL predict_wavssa_from_ssa388(plat, plon, month, atype, retssa(2), 550.0, retssa(4))
+       CALL predict_wavssa_from_ssa388(plat, plon, month, atype, retssa(2), 670.0, retssa(5))
+    endif
+    
     if (atype1 .EQ. 12) then 
       atype = 1
       fmode_retssa(2) = retssa(2)
-      CALL predict_ssa_frompoly(month, atype, fmode_retssa)
+       CALL predict_wavssa_from_ssa388(plat, plon, month, atype, fmode_retssa(2), 354.0, fmode_retssa(1))
+       CALL predict_wavssa_from_ssa388(plat, plon, month, atype, fmode_retssa(2), 480.0, fmode_retssa(3))
+       CALL predict_wavssa_from_ssa388(plat, plon, month, atype, fmode_retssa(2), 550.0, fmode_retssa(4))
+       CALL predict_wavssa_from_ssa388(plat, plon, month, atype, fmode_retssa(2), 670.0, fmode_retssa(5))
+
       atype = 2
       cmode_retssa(2) = retssa(2)
-      CALL predict_ssa_frompoly(month, atype, cmode_retssa)
-      retssa = (fmode_retssa * fmf) + (cmode_retssa * (1.0-fmf))
-      retssa(2) = fmode_retssa(2)
+       CALL predict_wavssa_from_ssa388(plat, plon, month, atype, cmode_retssa(2), 354.0, cmode_retssa(1))
+       CALL predict_wavssa_from_ssa388(plat, plon, month, atype, cmode_retssa(2), 480.0, cmode_retssa(3))
+       CALL predict_wavssa_from_ssa388(plat, plon, month, atype, cmode_retssa(2), 550.0, cmode_retssa(4))
+       CALL predict_wavssa_from_ssa388(plat, plon, month, atype, cmode_retssa(2), 670.0, cmode_retssa(5))
+
+      retssa = (fmode_retssa * tmp_fmf) + (cmode_retssa * (1.0-tmp_fmf))
       atype = 12
     endif
  endif
-
 
 status = 1
 
@@ -203,8 +187,8 @@ FUNCTION Get_3DModelRad_using_fmf(nWavel, wavelen, sun_za, sat_za, phi, pterrp, 
                                   salb, fmf, wv_mod3Drad) RESULT(status)
 
 
-  USE GetLUT_H5module
-  USE LookupTableModule 
+  USE GetLUT_H5module_nc4
+  USE LookupTableModule_nc4 
   USE InterpolationModule
 
   IMPLICIT NONE  
@@ -365,9 +349,10 @@ FUNCTION Get_3DModelRad_using_atyp(nWavel, wavelen, sun_za, sat_za, phi, pterrp,
                                   salb, atyp, wv_mod3Drad) RESULT(status)
 
 
-  USE GetLUT_H5module
-  USE LookupTableModule 
+  USE GetLUT_H5module_nc4
+  USE LookupTableModule_nc4 
   USE InterpolationModule
+  USE Nearuv_alhssa_Module
 
   IMPLICIT NONE  
 
@@ -495,7 +480,7 @@ END FUNCTION Get_3DModelRad_using_atyp
 !	Written by Marcos Andrade based on f77 TOMS code (2007)
 !
 !==============================================================================
-  USE LookupTableModule 
+  USE LookupTableModule_nc4
 
   IMPLICIT NONE
 
@@ -571,7 +556,7 @@ ENDDO  ! DO izae = 1,nzae
 !	Written by Marcos Andrade based on f77 TOMS code (2007)
 !
 !==============================================================================
-  USE LookupTableModule 
+  USE LookupTableModule_nc4
 
   IMPLICIT NONE
 
@@ -634,6 +619,8 @@ ENDDO  ! DO izae = 1,nzae
   FUNCTION CalcAerosolModel(gpQF,coval,salb,AeroIndexNUV,AeroIndexVIS, AeroType,indexmd, &
                            mon,xlat,xlon,reflect2) RESULT(status)
 
+  USE Nearuv_alhssa_Module
+  
   IMPLICIT NONE  
 
 !==============================================================================
@@ -645,7 +632,7 @@ ENDDO  ! DO izae = 1,nzae
   REAL(KIND=4),                    INTENT(IN)  :: xlat
   REAL(KIND=4),                    INTENT(IN)  :: xlon
   REAL(KIND=4),                    INTENT(IN)  :: reflect2
-  INTEGER(KIND=4),                  INTENT(IN)  :: mon
+  INTEGER(KIND=4),                 INTENT(IN)  :: mon
   REAL(KIND=4),                    INTENT(IN)  :: salb
   INTEGER(KIND=2),                 INTENT(IN)  :: gpQF
 
@@ -806,6 +793,8 @@ END FUNCTION CalcAerosolModel
 !     AeroType      The Aerosol Type (smoke, dust, industrial)
 !     indexmd       The calcualted aerosol model
 
+  USE Nearuv_alhssa_Module
+  
   IMPLICIT NONE
 
 ! Function Inputs
@@ -818,7 +807,7 @@ END FUNCTION CalcAerosolModel
   REAL(KIND=4),                    INTENT(IN)  :: salb
 
 ! local variable
-  REAL(KIND=4)                                :: wfact, wai
+  REAL(KIND=4)                                 :: wfact, wai
 
 ! Function Outputs
   INTEGER(KIND=2), INTENT(OUT)                 :: AeroType
@@ -1066,6 +1055,9 @@ END FUNCTION ChoseAerosolModel
 ! INPUTS:
 !     atype         The Aerosol type
 !
+
+  USE Nearuv_alhssa_Module
+  
   IMPLICIT NONE  
 
 ! Function Inputs
@@ -1086,7 +1078,6 @@ END FUNCTION ChoseAerosolModel
    IF(atype .EQ. 1)THEN
       DO im = 1,nw0sel
             indexmd(im) = indexcs(im)
-            Typesel(im) = Typemodel(indexmd(im)) 
               w0sel(im) = w0model(indexmd(im)) 
            w0388sel(im) = w0388model(indexmd(im)) 
            Kr500sel(im) = Kr500model(indexmd(im)) 
@@ -1102,7 +1093,6 @@ END FUNCTION ChoseAerosolModel
    IF(atype .EQ. 2)THEN
      DO im = 1,nw0sel
             indexmd(im) = indexds(im)
-            Typesel(im) = Typemodel(indexmd(im)) 
               w0sel(im) = w0model(indexmd(im)) 
            w0388sel(im) = w0388model(indexmd(im)) 
            Kr500sel(im) = Kr500model(indexmd(im)) 
@@ -1118,7 +1108,6 @@ END FUNCTION ChoseAerosolModel
    IF(atype .EQ. 3)THEN
       DO im = 1,nw0sel
             indexmd(im) = indexind(im)
-            Typesel(im) = Typemodel(indexmd(im)) 
               w0sel(im) = w0model(indexmd(im)) 
            w0388sel(im) = w0388model(indexmd(im)) 
            Kr500sel(im) = Kr500model(indexmd(im)) 

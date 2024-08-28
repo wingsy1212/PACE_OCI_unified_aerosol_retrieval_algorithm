@@ -45,10 +45,16 @@
         Real     NUV_AI(IXRet_B,IYRet_B)  
         Real     NUV_COD(IXRet_B,IYRet_B) 
         Real     NUV_CldFrac(IXRet_B,IYRet_B)     
+	Real     UVResidue(IXRet_B,IYRet_B)
+	Real     UVReflectivity(IXRet_B,IYRet_B,2)
+	! Aerosol retreival output
         Real     NUV_ALH(IXRet_B,IYRet_B)  
         Real     NUV_SSA(IXRet_B,IYRet_B,5)   ! 354,388,480,550,670   
+	! Above-cloud output
 	Real     NUV_ACAOD(IXRet_B,IYRet_B,3) ! 354,388,550
+	Real     NUV_ACAODVsHeight(IXRet_B,IYRet_B,3,5) ! 354,388,550
 	Real     NUV_AerCorrCOD(IXRet_B,IYRet_B) ! 388
+	Real     NUV_AerCorrCODVsHeight(IXRet_B,IYRet_B,5) ! 388
 	Real 	 NUV_UncertaintyACAODToSSA(IXRet_B,IYRet_B,2)
 	Real	 NUV_UncertaintyCODToSSA(IXRet_B,IYRet_B,2)
 	Real     NUV_FinalAlgorithmFlagsACA(IXRet_B,IYRet_B)

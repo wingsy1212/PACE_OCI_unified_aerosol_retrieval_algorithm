@@ -9,7 +9,8 @@ TYPE, PUBLIC  :: ociuaaer_config_type
   CHARACTER(LEN=255)      ::  dt_nc4 = 'NULL'
   CHARACTER(LEN=255)      ::  db_nc4 = 'NULL'
   CHARACTER(LEN=255)      ::  uv_nc4 = 'NULL'
-
+  CHARACTER(LEN=255)      ::  ml_340 = 'NULL'
+  CHARACTER(LEN=255)      ::  ml_380 = 'NULL'
   CHARACTER(LEN=255)      ::  read_nc_landonly = 'NULL'
   CHARACTER(LEN=255)      ::  input_l1file = 'NULL'
   CHARACTER(LEN=255)      ::  proxy_l1file = 'NULL'
@@ -64,8 +65,8 @@ CHARACTER(255), INTENT(IN) :: par_file
 TYPE(ociuaaer_config_type), INTENT(INOUT) :: cfg
 CHARACTER(255), PARAMETER :: config_file = 'OCIUAAER_Config'
 CHARACTER*255 , Filename
-CHARACTER(255)  :: c_line, var, val
-INTEGER         :: STATUS, eq_index, nline
+CHARACTER(255)  :: c_line, var, val, edr, evr, dataroot, varroot
+INTEGER         :: STATUS, eq_index, nline, id, iv, ned, ndr, nev, nvr
 
 STATUS = 0
 nline = 0
@@ -76,7 +77,16 @@ nline = 0
       PRINT *, 'ERROR: failed to OPEN configuration file: ', STATUS
       RETURN
     ENDIF 
-	  	  
+
+    call get_environment_variable ("OCDATAROOT", dataroot)
+    edr = trim('$OCDATAROOT')
+    ned = len_trim(edr)
+    ndr = len_trim(dataroot)
+    call get_environment_variable ("OCVARROOT", varroot)
+    evr = trim('$OCVARROOT')
+    nev = len_trim(evr)
+    nvr = len_trim(varroot)
+
     DO 
     ! Read a line from the config file.  Die on error.
     READ(1101, fmt='(A)', iostat=STATUS) c_line
@@ -108,6 +118,15 @@ nline = 0
     IF (eq_index /= 0) THEN
 	var = c_line(1:eq_index-1)
 	val = c_line(eq_index+1:LEN(c_line))
+
+    id = INDEX(val, edr(:ned))
+    iv = INDEX(val, evr(:nev))
+    if (id > 0) then
+       val = val(:id-1) // dataroot(:ndr) // val(id+ned:)
+    else if (iv > 0) then
+       val = val(:iv-1) // dataroot(:nvr) // val(iv+nev:)
+    end if
+
 	!
 	!print *, trim(var), trim(val)
 	select case (trim(var))
@@ -118,6 +137,10 @@ nline = 0
             cfg%db_nc4 = trim(val)
         case ('uv_nc4')
             cfg%uv_nc4 = trim(val)
+        case ('ml_340')
+            cfg%ml_340 = trim(val)
+        case ('ml_380')
+            cfg%ml_380 = trim(val)
 
     ! baseline
         case ('read_nc_landonly')

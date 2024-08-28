@@ -143,10 +143,10 @@ add_executable(oci_ua_aer
   UV/src/nc4/Get_ssaclimLUT2_H5module_nc4.f90
   UV/src/nc4/Get_omacaLUT7dim_H5module_nc4.f90
 
-  UV/src/OCI_UVOutput_DataModule.f90
   DB_DT_Land/DB_Land/src/calendars.f95 
   UV/src/read_for_nuv_test.f90
   UV/src/Nearuv_alhssa_Module.f90
+  UV/src/regpolymonial_predict_ssa.f90
   UV/src/NUV_AerosolModule.f90
   Main/NUV_ACAerosolModule.f90
   UV/src/NUV_package_modules.f90 

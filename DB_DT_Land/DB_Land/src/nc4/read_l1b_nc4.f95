@@ -1502,24 +1502,24 @@ type (viirs_db_svm) function load_goes_data(goes_file,goes_f1,goes_f2,goes_f3,go
   latitude          = goes_seg%lat
   longitude         = goes_seg%lon
 
-!   print *,'================================================================='
-!   print *,'Temporarily reduce L1b size' 
-!   print *,'================================================================='
-! !   where (goes%lat > 61. .or. goes%lat < 59. .or. goes%lon > -89.0 .or. goes%lon < -91.)
-!   where (goes%lat > 80. .or. goes%lat < 0. .or. goes%lon > -60. .or. goes%lon < -150.)
-!         goes%m10_refl =-999.0
-!         goes%m11_refl =-999.0
-!         goes%m14_bt   =-999.0
-!         goes%m15_bt   =-999.0
-!         goes%m16_bt   =-999.0
-!         goes%m03_refl =-999.0
-!         goes%m05_refl =-999.0
-!         goes%m07_refl =-999.0
-!         goes%ndvi     =-999.0
-!         goes%btd8     =-999.0
-!         goes%btd11    =-999.0
-!         goes%dstar    =-999.0
-!   end where
+  print *,'================================================================='
+  print *,'Temporarily reduce L1b size' 
+  print *,'================================================================='
+!   where (goes%lat > 61. .or. goes%lat < 59. .or. goes%lon > -89.0 .or. goes%lon < -91.)
+  where (goes%lat > 21. .or. goes%lat < 19. .or. goes%lon >12. .or. goes%lon < 10.)
+        goes%m10_refl =-999.0
+        goes%m11_refl =-999.0
+        goes%m14_bt   =-999.0
+        goes%m15_bt   =-999.0
+        goes%m16_bt   =-999.0
+        goes%m03_refl =-999.0
+        goes%m05_refl =-999.0
+        goes%m07_refl =-999.0
+        goes%ndvi     =-999.0
+        goes%btd8     =-999.0
+        goes%btd11    =-999.0
+        goes%dstar    =-999.0
+  end where
   
   minsza  = goes_seg%sza
   where (minsza < -900.)

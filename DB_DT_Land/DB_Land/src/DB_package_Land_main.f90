@@ -14,9 +14,9 @@ contains
                      UVtoSWIR_Reflectances,Year,month_int,Day,doy,proxyfile, &
                      Land_Sea_Flag,IX1KM,IY1KM,nwave, config_file,dtspec_ori,dtaod_ori,dtlat, &
                      dtlon,dt_cldmsk,dt_qa,uvdbdtaod,dbdt_refl,input_l1file,dtfmf,&
-                     Ret_Xtrack,Ret_Lines,dbdtfmf,dbdt_cld,met1_file,met2_file)
+                     Ret_Xtrack,Ret_Lines,dbdtfmf,dbdt_cld,met1_file,met2_file, UVAI)
 
-   USE db_debug
+
    use landcover
    use calendars, only: season_from_doy
 
@@ -94,7 +94,7 @@ contains
    REAL, dimension(:,:,:):: UVtoSWIR_Reflectances!,UVtoSWIR_IRRadiances(nwave)
    real, dimension(:,:,:)               ::  dtspec_ori,dtaod_ori
    real, dimension(:,:)                 ::  dtlat, dtlon,dt_qa,dtfmf,dbdtfmf
-   real, dimension(:,:),allocatable     ::  dbdt_cld
+   real, dimension(:,:),allocatable     ::  dbdt_cld, UVAI
    integer, dimension(:,:)              ::  dt_cldmsk
    real, dimension(:,:,:),allocatable   ::   uvdbdtaod
    real, dimension(:,:,:), allocatable  ::   dbdtaod,uvaod,dbdt_refl
@@ -205,23 +205,6 @@ contains
     print *, "ERROR: Failed to allocate array for lon lat: ", status
     stop
   end if
-!-----------------------------------------------------------------------------------------
-! -- debug output, part 1
-!-----------------------------------------------------------------------------------------
-!-- setup our storage for the debug data output arrays.
- allocate(all_output_datasets(5), stat=status)
- if (status /= 0) then 
-  	print *, "ERROR: Failed to allocate output dataset array: ", status
-  	stop
- end if
- 
- do i = 1, size(all_output_datasets,1)  
-   allocate(all_output_datasets(i)%values(viirs_data%xscan, viirs_data%scan), stat=status)
-   if (status /= 0) then
-     print *, 'ERROR: Failed to allocate all_output_datasets(i)%values: ', i, status
-     stop
-   end if   
- end do
   
 !-----------------------------------------------------------------------------------------
 ! -- read all input data (reflectances, geolocation, geometry, land/sea, etc...
@@ -395,7 +378,25 @@ contains
     print *, "ERROR: Failed to read in landcover input for vegetated 2.1um sfc table: ", status
     stop
   end if
-  
+
+!-----------------------------------------------------------------------------------------
+! -- debug output, part 1
+!-----------------------------------------------------------------------------------------
+!-- setup our storage for the debug data output arrays.
+ allocate(all_output_datasets(5), stat=status)
+ if (status /= 0) then 
+  	print *, "ERROR: Failed to allocate output dataset array: ", status
+  	stop
+ end if
+ 
+ do i = 1, size(all_output_datasets,1)  
+   allocate(all_output_datasets(i)%values(viirs_data%xscan, viirs_data%scan), stat=status)
+   if (status /= 0) then
+     print *, 'ERROR: Failed to allocate all_output_datasets(i)%values: ', i, status
+     stop
+   end if   
+ end do
+   
 ! -- dbdt table landcover 
   status = load_dbdt_region_table(config%dbdt_file, viirs_data%mo)
   if (status /= 0) then
@@ -575,7 +576,13 @@ contains
      print *, "ERROR: cloud screening: ", status
      stop
    end if  
-  
+
+!calibration adjustment  
+!    where (viirs_data%m01_refl > -900.0) viirs_data%m01_refl = viirs_data%m01_refl!*0.93 !412    1.059*0.88=0.93   for press release
+!    where (viirs_data%m03_refl > -900.0) viirs_data%m03_refl = viirs_data%m03_refl!*0.95  !470    0.95 for press release
+!    where (viirs_data%m05_refl > -900.0) viirs_data%m05_refl = viirs_data%m05_refl!*0.9 !670
+!    where (viirs_data%m11_refl > -900.0) viirs_data%m11_refl = viirs_data%m11_refl!*1.1 !2.2
+      
 !-----------------------------------------------------------------------------------------
 ! -- convert reflectances to I/F
 !-----------------------------------------------------------------------------------------
@@ -660,30 +667,30 @@ contains
   m11_oldgc(:,:) = -999.0
 
   ! only for m11, function should be modified to include other bands
-!   gas_corr_full = calc_gas_correction_fullwv(viirs_data%sza, viirs_data%vza, oz, &
-!   &                              wv, viirs_data%ps/1013.25, status, mask=tmp_mask)
-!   if (status /= 0) then
-!     print *, "ERROR: Failed to calculate trace gas corrections: ", status
-!     stop
-!   end if
-!   print *, 'corrections calculated, applying...'
-!   if (platform .eq. 'VIIRS') then
-!     where (viirs_data%m11_refl > -900.0 .and. isnan(gas_corr_full%m11)) m11_oldgc = viirs_data%m11_refl*gas_corr_full%m11
-!   else
+  gas_corr_full = calc_gas_correction_fullwv(viirs_data%sza, viirs_data%vza, oz, &
+  &                              wv, viirs_data%ps/1013.25, status, mask=tmp_mask)
+  if (status /= 0) then
+    print *, "ERROR: Failed to calculate trace gas corrections: ", status
+    stop
+  end if
+  print *, 'corrections calculated, applying...'
+  if (platform .eq. 'VIIRS') then
+    where (viirs_data%m11_refl > -900.0) m11_oldgc = viirs_data%m11_refl*gas_corr_full%m11
+  else
     m11_oldgc = viirs_data%m11_refl
-!   end if
+  end if
 
-!   deallocate(gas_corr_full%m11, stat=status)
-!   if (status /= 0) then
-!     print *, "ERROR: Unable to deallocate gaseous transmittance arrays: ", status
-!     stop
-!   end if
-!   print *, 'finish full wv correction...' 
+  deallocate(gas_corr_full%m11, stat=status)
+  if (status /= 0) then
+    print *, "ERROR: Unable to deallocate gaseous transmittance arrays: ", status
+    stop
+  end if
+  print *, 'finish full wv correction...' 
   
 !-----------------------------------------------------------------------------------------
 ! -- new gas corrections (half wv)
 ! -----------------------------------------------------------------------------------------
-  IF (input_l1file == 'NULL') THEN
+!   IF (input_l1file == 'NULL') THEN
 !  print *, 'start half wv correction...'
   gas_corr = calc_gas_correction(viirs_data%sza, viirs_data%vza, oz, &
   &                   wv/2.0, platform, viirs_data%ps/1013.25, status, mask=tmp_mask)
@@ -736,7 +743,7 @@ contains
       &         (viirs_data%m07_refl + viirs_data%m05_refl)
     end where 
   end if 
-  end if  !IF (input_l1file == 'NULL') THEN
+!   end if  !IF (input_l1file == 'NULL') THEN
 !-----------------------------------------------------------------------------------------
 ! -- calculate LER
 !-----------------------------------------------------------------------------------------
@@ -964,7 +971,7 @@ contains
   &   viirs_data%raa, viirs_data%sca, viirs_data%m01_refl, viirs_data%m03_refl,             &
   &   viirs_data%m04_refl, viirs_data%m05_refl, viirs_data%m07_refl, viirs_data%m08_refl,   &
   &   viirs_data%m10_refl, viirs_data%m11_refl, m01_nogc, m03_nogc, m05_nogc, m11_oldgc,    &
-  &   viirs_data%land_mask, viirs_data%dstar, viirs_data%ndvi, viirs_data%elev, viirs_data%ps, &
+  &   viirs_data%land_mask, viirs_data%ndvi, viirs_data%elev, viirs_data%ps, &
   &   lskip_mask, oskip_mask, smoke_mask,  &
   &   smoke_ae_mask,pyrocb_mask, high_alt_smoke_mask,  n_total_pixels, config%output_l2,    &
   &   windsp, winddir, oz, wv, ler412, ler488, ler670, qdf412, qdf488, qdf670, bathy, chl, vcc, &
@@ -974,7 +981,8 @@ contains
 !  print *, 'back from modis...'
   
   !merge uv/db/dt AOD
-  uvdbdtaod(:,:,1:2)=uvaod(:,:,1:2)
+!   uvdbdtaod(:,:,1:2)=uvaod(:,:,1:2)
+  uvdbdtaod(:,:,1:2)=-999.
   uvdbdtaod(:,:,3:5)=dbdtaod(:,:,1:3)
   !merge DB/DT cloud mask
   allocate(dbdt_cld(viirs_data%xscan, viirs_data%scan), stat=status)

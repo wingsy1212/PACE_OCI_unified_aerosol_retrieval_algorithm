@@ -43,10 +43,13 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux" )
   if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
   # 64bit bits...
     set(EOS_ARCH linux64)
-    #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64")
-    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
-    set (CMAKE_SYSTEM_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
-    set (CMAKE_SYSTEM_INCLUDE_PATH "/usr/include/x86_64-linux-gnu")
+    if(DEFINED ENV{OCSSWROOT})
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
+    else()
+      set (CMAKE_SYSTEM_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
+      set (CMAKE_SYSTEM_INCLUDE_PATH "/usr/include/x86_64-linux-gnu")
+    endif()
   endif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 # Mac bits
@@ -74,8 +77,11 @@ set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/fortran_modules)
 message("FortanModule" ${CMAKE_Fortran_MODULE_DIRECTORY})
 
 # where we put the binaries
-set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR})
-
+if(DEFINED ENV{OCSSWROOT})
+  set(CMAKE_INSTALL_PREFIX $ENV{OCSSWROOT})
+else()
+  set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)

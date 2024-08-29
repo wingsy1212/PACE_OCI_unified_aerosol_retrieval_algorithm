@@ -3238,7 +3238,7 @@ type (viirs_db_svm) function load_viirs_db_data_nasa(geo_file, mband_file, statu
     print *, "ERROR: Failed to allocate L1B quality assurance array: ", status
     return
   end if
-  qa_mask(:,:) = b'00000000'
+  qa_mask(:,:) = 0
   qa(:,:) = 0
   
 !! -- read scan times first. HDF5 high-level API doesn't have a function to read

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 #import argparse
 #from sklearn.ensemble import RandomForestRegressor
 
@@ -9,9 +11,9 @@ from datetime import datetime
 #import stats.stats
 import numpy as np
 import pickle
-import glob
+#import glob
 import netCDF4 as nc4
-import h5py 
+#import h5py 
 import sys 
 #import matplotlib.pyplot as plt
 

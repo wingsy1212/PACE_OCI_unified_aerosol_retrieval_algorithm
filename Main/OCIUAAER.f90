@@ -305,7 +305,7 @@ CALL h5open_f(hdferr)
 !
 !******  *********  ML  Land( 0.354.0.388 0.55)
          block
-         pycommand = "python " // trim(cfg%read_nc_landonly) // " " // trim(cfg%ml_340) // " " // trim(cfg%ml_380)
+         pycommand = trim(cfg%read_nc_landonly) // " " // trim(cfg%ml_340) // " " // trim(cfg%ml_380)
          pycommand = trim(pycommand) // " " // trim(interm_file)
          call execute_command_line( pycommand ) 
          endblock 

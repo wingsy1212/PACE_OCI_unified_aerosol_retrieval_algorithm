@@ -1,0 +1,6 @@
+setuptools
+pandas
+numpy
+netCDF4
+h5py
+scikit-learn

@@ -1,0 +1,6 @@
+*~
+build
+venv
+wheel
+.vscode
+*egg-info

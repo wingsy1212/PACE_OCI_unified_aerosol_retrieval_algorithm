@@ -1,0 +1,7 @@
+from distutils.core import setup
+
+setup(name='uaa_ml',
+      version='${PACKAGE_VERSION}',
+      package_dir={ '': '${CMAKE_CURRENT_SOURCE_DIR}' },
+      scripts=['$ENV{HOME}/sat/unified_dtdb_aerosol/ML_UVAOD/read_nc_landonly_new.py']
+)

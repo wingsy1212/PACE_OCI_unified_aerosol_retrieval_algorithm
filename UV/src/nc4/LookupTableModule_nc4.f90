@@ -1,4 +1,4 @@
-MODULE LookupTableModule
+MODULE LookupTableModule_nc4
    !==============================================================================
    ! FILENAME:
    !     LookupTableModule.f90
@@ -122,12 +122,12 @@ CONTAINS
    !==============================================================================
    !==============================================================================
 
-   SUBROUTINE Read_ancillaryLUTs(sfc_file, AIRSCO_clm_file)
+   SUBROUTINE Read_ancillaryLUTs()
       use netcdf
       USE OCIUAAER_Config_Module
       implicit none
 
-      character(*),           intent (in)      :: sfc_file, AIRSCO_clm_file
+      !character(*),           intent (in)      :: sfc_file, AIRSCO_clm_file
       integer                                  :: status
       integer, dimension (2)                   :: start2, edge2, stride2
       integer, dimension (3)                   :: start3, edge3, stride3
@@ -143,7 +143,8 @@ CONTAINS
       integer               ::  dset_id
       integer               ::  grp_id
       integer               ::  unitnum, unitnum1
-
+      
+      Print*, 'Now reading...', cfg%uv_nc4
       status = nf90_open(cfg%uv_nc4, nf90_nowrite, nc_id)
       if (status /= NF90_NOERR) then
          print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
@@ -172,6 +173,7 @@ CONTAINS
          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
          return
       end if
+!	Print*, 'Success sfc'
 
       group_name = 'airsco_clm'
       status = nf90_inq_ncid(nc_id, group_name, grp_id)
@@ -188,14 +190,15 @@ CONTAINS
       end if
       start3  = (/ 1,1,1 /)
       edge3   = (/ nlon, nlat, nmonth /)
-      stride3 = (/ 1,1,1 /)
+      stride3 = (/ 1,1,1 /) 
       status = nf90_get_var(grp_id, dset_id, airsco_cm, start=start3, &
          stride=stride3, count=edge3)
       if (status /= NF90_NOERR) then
          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
          return
       end if
-      airsco_cm = 0
+!      airsco_cm = 0
+!    Print*, 'Success with airsco_clm', airsco_cm(10, 10, 10)
     
       group_name = 'zaer'
       status = nf90_inq_ncid(nc_id, group_name, grp_id)
@@ -219,8 +222,9 @@ CONTAINS
          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
          return
       end if
-      zaer_cm = 0
-
+!      zaer_cm = 0
+!	Print*, 'Success with zaer'
+	
       group_name = 'zaer2'
       status = nf90_inq_ncid(nc_id, group_name, grp_id)
       if (status /= NF90_NOERR) then
@@ -243,7 +247,8 @@ CONTAINS
          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
          return
       end if
-      zaer_cm2 = 0
+!      zaer_cm2 = 0
+!	Print*, 'Success with zaer_cm2'
 
       status = nf90_close(nc_id)
       if (status /= NF90_NOERR) then
@@ -467,7 +472,7 @@ CONTAINS
       ALLOCATE(radiance_geo_p10_cmode(nwave,nzae,nw0sel,ntau),stat=status)
 
       IF(status /= 0) THEN
-         WRITE(*,*) ' Unable to allocate for radiance_geo_p06'
+         WRITE(*,*) ' Unable to allocate for radiance_geo_p10'
          CALL EXIT(1)
       ENDIF
 
@@ -761,4 +766,4 @@ CONTAINS
 !==============================================================================
 !==============================================================================
 !
-END MODULE LookupTableModule
+END MODULE LookupTableModule_nc4

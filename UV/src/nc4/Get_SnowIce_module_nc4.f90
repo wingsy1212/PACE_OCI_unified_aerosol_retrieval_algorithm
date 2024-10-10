@@ -1,4 +1,4 @@
-MODULE Get_SnowIce_module
+MODULE Get_SnowIce_module_nc4
 
    IMPLICIT NONE
 
@@ -144,4 +144,4 @@ CONTAINS
 !==================================================================
 !==================================================================
 !
-END MODULE Get_SnowIce_module
+END MODULE Get_SnowIce_module_nc4

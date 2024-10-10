@@ -1,19 +1,19 @@
 
 [uv_h5]
-ai_mie = /home/sam/winhome/nasa/uaa/luts/UV/tbls/LUT_TROPOMI_AI_MieCloud_v2_700hPa.h5
-ai_ler = /home/sam/winhome/nasa/uaa/luts/UV/tbls/LUT_TROPOMI_AI_LER_v1.h5
-surfalb = /home/sam/winhome/nasa/uaa/luts/UV/tbls/OMIsurfalbPawan_v7.h5
-surfprs = /home/sam/winhome/nasa/uaa/luts/UV/tbls/TERRAIN_PRES.h5
-snowice = /home/sam/winhome/nasa/uaa/luts/UV/tbls/SNOW_ICE_CLIM.h5 
-ocncorr = /home/sam/winhome/nasa/uaa/luts/UV/tbls/Fresnel_OceanLUT_v1.h5
-aer = /home/sam/winhome/nasa/uaa/luts/UV/tbls/LUT_v5_2wave.h5
-omacalut = /home/sam/winhome/nasa/uaa/luts/UV/tbls/omacaLUT_v130.h5
-ssa388_clim = /home/sam/winhome/nasa/uaa/luts/UV/tbls/omaca_ssa388_v140.h5
+ai_mie = /data/1005/vkayetha/PACE-OCI/CODES/tsingtau_pkg/copy1/UV/tbls/LUT_TROPOMI_AI_MieCloud_v2_700hPa.h5
+ai_ler = /data/1005/vkayetha/PACE-OCI/CODES/tsingtau_pkg/copy1/UV/tbls/LUT_TROPOMI_AI_LER_v1.h5
+surfalb = /data/1005/vkayetha/PACE-OCI/CODES/tsingtau_pkg/copy1/UV/tbls/OMIsurfalbPawan_v7.h5
+surfprs = /data/1005/vkayetha/PACE-OCI/CODES/tsingtau_pkg/copy1/UV/tbls/TERRAIN_PRES.h5
+snowice = /data/1005/vkayetha/PACE-OCI/CODES/tsingtau_pkg/copy1/UV/tbls/SNOW_ICE_CLIM.h5 
+ocncorr = /data/1005/vkayetha/PACE-OCI/CODES/tsingtau_pkg/copy1/UV/tbls/Fresnel_OceanLUT_v1.h5
+aer = /data/1005/vkayetha/PACE-OCI/CODES/tsingtau_pkg/copy1/UV/tbls/LUT_v6_2wave.h5
+omacalut = /data/1005/vkayetha/PACE-OCI/CODES/tsingtau_pkg/copy1/UV/tbls/omacaLUT_v160.h5
+ssa388_clim = /data/1005/vkayetha/PACE-OCI/CODES/tsingtau_pkg/copy1/UV/tbls/omaca_ssa388_c4_row1to60_v150.h5
 
 [uv_binary]
-zaer2 = /home/sam/winhome/nasa/uaa/luts/UV/tbls/Zaer_caliopclm.dat
-zaer = /home/sam/winhome/nasa/uaa/luts/UV/tbls/Zaer_clm.dat
-AIRSCO_clm = /home/sam/winhome/nasa/uaa/luts/UV/tbls/AIRSCO_clm_v4.dat
+zaer2 = /data/1005/vkayetha/PACE-OCI/CODES/tsingtau_pkg/copy1/UV/tbls/Zaer_caliopclm.dat
+zaer = /data/1005/vkayetha/PACE-OCI/CODES/tsingtau_pkg/copy1/UV/tbls/Zaer_clm.dat
+AIRSCO_clm = /data/1005/vkayetha/PACE-OCI/CODES/tsingtau_pkg/copy1/UV/tbls/AIRSCO_clm_v4.dat
 
 [uv_text]
-sfc = /home/sam/winhome/nasa/uaa/luts/UV/tbls/sfctype_highRes.dat
+sfc = /data/1005/vkayetha/PACE-OCI/CODES/tsingtau_pkg/copy1/UV/tbls/sfctype_highRes.dat

@@ -171,7 +171,7 @@ SUBROUTINE read_nativeL1b_for_NUVtest(cfg, Year, Month, Day, &
 
 IMPLICIT NONE
 
-Include '../../Main/common_l1b_var.inc'
+Include 'common_l1b_var.inc'
  
 TYPE(ociuaaer_config_type),    INTENT(IN)  :: cfg
 INTEGER(KIND=4),               INTENT(OUT) :: Day, Month, Year

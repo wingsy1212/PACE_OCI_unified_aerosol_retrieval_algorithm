@@ -1,4 +1,4 @@
-input_l1file = /tis/atmosphere/scratch/Dark_Target/smattoo/Projects_from_data4/PACE_github/PACE_OCI_unified_aerosol_retrieval_algorithm/L1_data/PACE_OCI_SIM.20220321T1023*.L1B.V9.1.nc
+input_l1file = /tis/atmosphere/scratch/Dark_Target/smattoo/Projects_from_data4/PACE_github/PACE_OCI_unified_aerosol_retrieval_algorithm/L1_data/PACE_OCI_SIM.20240310T1056*.L1B.V9.1.nc
 output_dir   =    ../L2_data/ 
 ! ANCILLARY DATASETS FROM PACE TEAM
 landwater_mask = ../ancillary/landmask_GMT15ARC.nc 
@@ -28,5 +28,3 @@ db_aero_lut_land = DB/tbls/VIIRS_LUT/viirs_snpp_new_land_aerosol_luts_deep_blue_
 db_aero_lut_dust = DB/tbls/VIIRS_LUT/viirs_snpp_new_land_aerosol_luts_deep_blue_land_dust_3km_20201021.hdf
 db_config= ../DB_DT_Land/DB_Land/tmp/PACE.config
 
-! ML model
-ml_model= /tis/atmosphere/scratch/Dark_Target/smattoo/Projects_from_data4/PACE_unified_algorithm_from_paceteam/ML_UVAOD/data/

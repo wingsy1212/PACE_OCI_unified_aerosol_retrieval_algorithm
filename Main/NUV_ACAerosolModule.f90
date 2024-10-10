@@ -1,11 +1,11 @@
 MODULE NUV_ACAerosolModule       
 
-  USE GetLUT_H5module
-  USE LookupTableModule 
+  USE GetLUT_H5module_nc4
+  USE LookupTableModule_nc4 
   USE InterpolationModule
   USE NUV_AerosolModule
-  USE Get_omacaLUT7dim_H5module
-  USE Get_ssaclimLUT2_H5module
+  USE Get_omacaLUT7dim_H5module_nc4
+  USE Get_ssaclimLUT2_H5module_nc4
 
  IMPLICIT NONE
 
@@ -18,8 +18,8 @@ FUNCTION OCI_NUV_ACAer_Process(yr, mon, dy, nWavel,  &
                     wavelen, coval, plat, plon, sun_za, sat_za, phi, pterrp, gpQF, &
                     salb, rad_obs, ainuv, reflect,  & 
                     AlgQF, aodtau_aac, codtau_aac_wl3, appcodtau_aac_wl3, &
-                    inputssa_aca, uncaodtau_aac, unccodtau_aac) &
-                    RESULT(status)
+                    inputssa_aca, uncaodtau_aac, unccodtau_aac, &
+		    aodtau_aac_zhgt, codtau_aac_zhgt) RESULT(status)
 
   IMPLICIT NONE  
 
@@ -45,6 +45,8 @@ FUNCTION OCI_NUV_ACAer_Process(yr, mon, dy, nWavel,  &
   REAL(KIND=4), DIMENSION(3),  INTENT(OUT) :: inputssa_aca   !3-wavelengths (354, 388, 500)
   REAL(KIND=4), DIMENSION(2),  INTENT(OUT) :: uncaodtau_aac
   REAL(KIND=4), DIMENSION(2),  INTENT(OUT) :: unccodtau_aac
+  REAL(KIND=4), DIMENSION(3,5),INTENT(OUT) :: aodtau_aac_zhgt
+  REAL(KIND=4), DIMENSION(5),  INTENT(OUT) :: codtau_aac_zhgt
 
 !==============================================================================
 !  aerosol layer height
@@ -71,8 +73,8 @@ FUNCTION OCI_NUV_ACAer_Process(yr, mon, dy, nWavel,  &
   REAL(KIND=4)                 :: tau_nabs(nWavel,nzae)
   REAL(KIND=4)                 :: caluv, reflect471, tmpfrac
   REAL(KIND=4)                 :: ssa500_bottom_thshold
-  REAL(KIND=4)        :: deg2radconv, sun_ga, sca
-  REAL(KIND=4)        :: SZATmp, VZATmp, PHITmp
+  REAL(KIND=4)        	       :: deg2radconv, sun_ga, sca
+  REAL(KIND=4)                 :: SZATmp, VZATmp, PHITmp
 
 !==============================================================================
 ! Aerosol Height indices, model indices
@@ -107,10 +109,12 @@ FUNCTION OCI_NUV_ACAer_Process(yr, mon, dy, nWavel,  &
 
   REAL(KIND=4), DIMENSION(naod_aac,ncod_aac) :: toa388_aac, toa354_aac, ratrad
   REAL(KIND=4), DIMENSION(ncod_aac,naod_aac) :: ratrad2, toa388_aac2, fint_uvaimie_aac2
-  REAL(KIND=4)                   :: ratradval
+  REAL(KIND=4)                               :: ratradval
+  REAL(KIND=4), DIMENSION(ncod_aac)          :: toa388_aac2_array
 !
   REAL(KIND=4)                   :: aodtau_aac_wl3
-  REAL(KIND=4)                   :: codtau_aac_wl3_tmp
+  REAL(KIND=4)                   :: codtau_aac_wl3_tmp, codtau_aac_tmp
+  REAL(KIND=4)                   :: aodtaumax, codtaumax
 
 ! Uncertainty array
   REAL(KIND=4), DIMENSION(3)     :: aodtau_aac_tmp
@@ -118,11 +122,18 @@ FUNCTION OCI_NUV_ACAer_Process(yr, mon, dy, nWavel,  &
   REAL(KIND=4)                   :: tmplon, inzhgt
   INTEGER(KIND=4)                :: ilon, ilat
   INTEGER(KIND=4)                :: status, ierr
+
+  INTEGER(KIND=4)                :: nzhgt = 5
+  INTEGER(KIND=4)                :: izhgt
+  INTEGER(KIND=2)                :: atypeTmp
+  
+  REAL(KIND=4), DIMENSION(5)     :: zhgt_nodes
+  DATA zhgt_nodes/3.0, 6.0, 9.0, 12.0, 15.0/
   
 !==============================================================================
 ! Radiance rations for both model and observed Radiances
 !==============================================================================
-  REAL(KIND=4) :: ratio_mod,ratio_obs
+  REAL(KIND=4) :: ratio_mod, ratio_obs
 
 !==============================================================================
 ! Surface flux  (make local to L2OMACAModule)
@@ -195,9 +206,9 @@ FUNCTION OCI_NUV_ACAer_Process(yr, mon, dy, nWavel,  &
 !indicated by the cloud contamination thresholds
 !==============================================================================
 
-inzhgt = 0.0
-inssacval = 0.0
-ssacval388 = -999.
+inzhgt = -9999.
+inssacval = -9999.
+ssacval388 = -9999.
 aivis = -9999.
 
 !=============================
@@ -221,10 +232,16 @@ sca = ACOS(-COS(SZATmp)*COS(VZATmp) + SIN(SZATmp)*SIN(VZATmp)*COS(PHITmp))/deg2r
 
 
 !=================================
-aodtau_aac_wl3 = -999.
-codtau_aac_wl3 = -999.
-appcodtau_aac_wl3 = -999.
+aodtau_aac_wl3 = -9999.
+codtau_aac_wl3 = -9999.
+appcodtau_aac_wl3 = -9999.
 !=================================
+
+
+!500-nm AOD/COD Max LUT values...
+  aodtaumax = 6.0
+  codtaumax = 70.0
+
 
  aivis =  1.0
  status = CalcAerosolModel(gpQF,coval,salb(2),ainuv,aivis, atype_aerac, indexmd, &
@@ -252,15 +269,22 @@ IF( ( (gpQF.EQ.17 .AND. reflect(2) .GT. 0.20 .AND. reflect(2) .LE. 0.30 .AND. su
    IF( (reflect(2) .GE. 0.20 .AND. reflect(2) .LE. 0.25 .AND. ainuv .GE. ainuvTmp).OR. &
        (reflect(2) .GT. 0.25 .AND. ainuv.GT.-100.))THEN
 
-! Extract CALIOP aerosol layer height of pixel from climatological database
+! Extract aerosol layer height of pixel from climatological database (CALIOP OR MODEL)
 !==============================================================================
    status = GetAerosolLayer_CALIOPHeight(mon, plat, plon, zaer2)
-   
    IF(status /= 1) THEN
       WRITE( *,'(A)') "Error getting CALIOP Aerosol Layer Height"
       RETURN
    ENDIF
 
+   IF (zaer2 .LT. 0) THEN 
+   status = GetAerosolLayerHeight(mon, plat, plon, zaer2)
+     IF(status /= 1) THEN
+       WRITE( *,'(A)') "Error getting MODEL Aerosol Layer Height"
+       RETURN
+     ENDIF
+   ENDIF
+   
 !==============================================================================
 ! Extract single scattering albedo (388 nm) of pixel from climatological database
 !==============================================================================
@@ -278,7 +302,55 @@ IF( ( (gpQF.EQ.17 .AND. reflect(2) .GT. 0.20 .AND. reflect(2) .LE. 0.30 .AND. su
   inputssa_aca(3) = ssacval500
 
 
+
+! ==================================================================
+! First, ACAOD and COD retrievals as a function of ALH
+! ==================================================================
+!
+! Only for carbonaceous smoke aerosol type...
+IF(atypeTmp .EQ. 1 .AND. ainuv .GE. 0.8)THEN
+
+  DO izhgt = 1, nzhgt   !ALH Loop...
+
+  inzhgt = zhgt_nodes(izhgt)
+
+  CALL Interpol_aac_LUTparams(ocean, atypeTmp, pterrp, inzhgt, inssacval, salb(1), salb(2),  &
+                                    fint_rad388_aac, fint_uvaimie_aac)
+
+   ! -- Transpose of 'fint_uvaimie_aac' and 'fint_rad388_aac'
+   fint_uvaimie_aac2 = transpose(fint_uvaimie_aac)         ! [8 cod x 7 aod]
+   toa388_aac2 = transpose(fint_rad388_aac)
+   ratradval = rad_obs(1)/rad_obs(2)  ! ratio (354/388)
+
+       !=================================================
+       ! -- Retrieve AOD and COD @ 500nm over clouds-----
+       IF(ainuv .GE. 0.8)THEN
+          status = nearuv_aac2(ainuv, ainuv, fint_uvaimie_aac2, rad_obs(2), toa388_aac2, &
+                              aodtau_aac_wl3, codtau_aac_wl3)
+       ENDIF
+       !=================================================
+
+
+       IF(aodtau_aac_wl3 .GT. 0.0 .AND. aodtau_aac_wl3 .LE. aodtaumax .AND. &
+          codtau_aac_wl3 .GT. 0.0 .AND. codtau_aac_wl3 .LE. codtaumax)THEN
+         status = GetKRIndex(atypeTmp, aodtau_aac_wl3, inssacval, aodtau_aac_tmp)
+         codtau_aac_tmp = codtau_aac_wl3
+       ELSE
+         aodtau_aac_tmp(:) = -9999.
+         codtau_aac_tmp = -9999.
+       ENDIF
+
+       aodtau_aac_zhgt(:,izhgt) = aodtau_aac_tmp(:)
+       codtau_aac_zhgt(izhgt) = codtau_aac_tmp
+
+  ENDDO          !DO izhgt = 1, nzhgt loop ends here.
+  
+ENDIF            !Aerosol type selection IF condition.
+
+
+
 ! ============================================================================
+! Assigning aerosol layer height
       if (zaer2 .lt. 3.0) then
          inzhgt = 3.0   ! temporary default value
       else if (zaer2 .gt. 6.0) then
@@ -307,12 +379,24 @@ IF( ( (gpQF.EQ.17 .AND. reflect(2) .GT. 0.20 .AND. reflect(2) .LE. 0.30 .AND. su
        !***********************************************************
        ! -- First, Retrieve Apparent COD @ 500nm over clouds -----
        !
-       IF(ainuv.GE.-100.)THEN
-          status = nearuv_cld(ratradval, fint_uvaimie_aac2, rad_obs(2), toa388_aac2, &
-                              aodtau_aac_wl3, appcodtau_aac_wl3)
+       !IF(ainuv.GE.-100.)THEN
+       !   status = nearuv_cld(ratradval, fint_uvaimie_aac2, rad_obs(2), toa388_aac2, &
+       !                       aodtau_aac_wl3, appcodtau_aac_wl3)
+       !ENDIF
+       !***********************************************************
+       
+
+       !***********************************************************
+       ! Cubic Spline Interpolation for ApparentCloudOpticalDepth
+
+       IF(ainuv .GE. -100.)THEN
+        !toa388_aac2(:,1) contains radiances of clouds with ACAOD=0.0
+         toa388_aac2_array = toa388_aac2(:,1)
+
+         CALL SPLINE(toa388_aac2_array,codtbl_aac,ncod_aac,rad_obs(2),appcodtau_aac_wl3)
        ENDIF
        !***********************************************************
-
+       
 
        !***********************************************************
        ! -- Retrieve AOD and COD @ 500nm over clouds -----
@@ -327,12 +411,12 @@ IF( ( (gpQF.EQ.17 .AND. reflect(2) .GT. 0.20 .AND. reflect(2) .LE. 0.30 .AND. su
 
        ! -- Retrieve only COD @ 500nm over clouds -----
 
-         IF(aodtau_aac_wl3.GT.0.0 .AND. aodtau_aac_wl3.LE.6.0.AND. &
-            codtau_aac_wl3.GT.0.0 .AND. codtau_aac_wl3.LE.50.0)THEN
+         IF(aodtau_aac_wl3.GT.0.0 .AND. aodtau_aac_wl3.LE. aodtaumax .AND. &
+            codtau_aac_wl3.GT.0.0 .AND. codtau_aac_wl3.LE. codtaumax)THEN
          status = GetKRIndex(atype_aerac,aodtau_aac_wl3,inssacval,aodtau_aac)
          ELSE
-         aodtau_aac(:) = -999.
-         codtau_aac_wl3 = -999.
+         aodtau_aac(:) = -9999.
+         codtau_aac_wl3 = -9999.
          ENDIF
 
         IF(status /= 1) THEN
@@ -345,15 +429,15 @@ IF( ( (gpQF.EQ.17 .AND. reflect(2) .GT. 0.20 .AND. reflect(2) .LE. 0.30 .AND. su
           ! Modification History: 'AlgQF' value changed to '0' if 'aodtau_aac' and 'codtau_aac' are being retrieved within their valid limits
 
           IF( reflect(2).GE.0.25 .AND. ainuv.GE.1.3 .AND. &
-	     aodtau_aac_wl3 .GT. 0 .AND. aodtau_aac_wl3 .LE. 6 .AND. &
-	     codtau_aac_wl3 .GT. 0 .AND. codtau_aac_wl3 .LE. 50) THEN
+	     aodtau_aac_wl3 .GT. 0 .AND. aodtau_aac_wl3 .LE. aodtaumax .AND. &
+	     codtau_aac_wl3 .GT. 0 .AND. codtau_aac_wl3 .LE. codtaumax) THEN
             AlgQF = 0
           ENDIF
           
           ! AlgQF = 1
           IF( reflect(2) .GE. 0.20 .AND. reflect(2) .LT. 0.25 .AND. &
-	      aodtau_aac_wl3 .GT. 0 .AND. aodtau_aac_wl3 .LE. 6 .AND. &
-	      codtau_aac_wl3 .GT. 0 .AND. codtau_aac_wl3 .LE. 50) THEN
+	      aodtau_aac_wl3 .GT. 0 .AND. aodtau_aac_wl3 .LE. aodtaumax .AND. &
+	      codtau_aac_wl3 .GT. 0 .AND. codtau_aac_wl3 .LE. codtaumax) THEN
             AlgQF = 1
           ENDIF
 
@@ -361,17 +445,17 @@ IF( ( (gpQF.EQ.17 .AND. reflect(2) .GT. 0.20 .AND. reflect(2) .LE. 0.30 .AND. su
           !ainuv (mie) threshold changed to 0.8 and 1.3 (ainuv (ler) threshold 0.5 and 1.0)
           IF( reflect(2) .GE. 0.25 .AND. ainuv .GE. 0.8 .AND. &
 	      ainuv .LT. 1.3 .AND. aodtau_aac_wl3 .GT. 0 .AND. &
-	      aodtau_aac_wl3 .LE. 6 .AND. codtau_aac_wl3 .GT. 0 .AND. &
-	      codtau_aac_wl3 .LE. 50) THEN
+	      aodtau_aac_wl3 .LE. aodtaumax .AND. codtau_aac_wl3 .GT. 0 .AND. &
+	      codtau_aac_wl3 .LE. codtaumax) THEN
             AlgQF = 2
           ENDIF
 
           !AlgQF = 3
-          IF((sun_za.GT.55.AND.sca.LE.100.AND.ainuv.LE.2).OR. & 
-             (sat_za.GT.55.AND.sca.LE.100.AND.ainuv.LE.2).OR. & 
-             (sun_za.GT.60.AND.sca.LE.130.AND.ainuv.LE.2).AND. &
-             aodtau_aac_wl3.GT.0.AND. aodtau_aac_wl3.LE.6.AND. &
-             codtau_aac_wl3.GT.0.AND.codtau_aac_wl3.LE.50) THEN
+          IF((sun_za .GT. 55 .AND. sca .LE. 100 .AND. ainuv .LE. 2).OR. & 
+             (sat_za .GT. 55 .AND. sca .LE. 100 .AND. ainuv .LE. 2).OR. & 
+             (sun_za .GT. 60 .AND. sca .LE. 130 .AND. ainuv .LE. 2).AND. &
+             aodtau_aac_wl3 .GT. 0 .AND. aodtau_aac_wl3 .LE. aodtaumax.AND. &
+             codtau_aac_wl3 .GT. 0 .AND. codtau_aac_wl3 .LE. codtaumax) THEN
             AlgQF = 3
           ENDIF
 
@@ -379,7 +463,7 @@ IF( ( (gpQF.EQ.17 .AND. reflect(2) .GT. 0.20 .AND. reflect(2) .LE. 0.30 .AND. su
 
 
         !Uncertainty Calculations...
-        IF (aodtau_aac_wl3.GT.0) THEN
+        IF (aodtau_aac_wl3 .GT. 0) THEN
 
         !-------------
         DO iSSA = 1, 2
@@ -402,14 +486,14 @@ IF( ( (gpQF.EQ.17 .AND. reflect(2) .GT. 0.20 .AND. reflect(2) .LE. 0.30 .AND. su
        !***********************************************************
        ! -- Retrieve AOD and COD @ 500nm over clouds -----
        !
-       IF(ainuv.GE.0.8)THEN
+       IF(ainuv .GE. 0.8)THEN
           status = nearuv_aac2(ainuv,ainuv,fint_uvaimie_aac2, rad_obs(2), toa388_aac2, &
                               aodtau_aac_wl3, codtau_aac_wl3_tmp)
        ENDIF
        !***********************************************************
 
-        IF(aodtau_aac_wl3.GT.0.0.AND.aodtau_aac_wl3.LE.6.0.AND. &
-            codtau_aac_wl3_tmp.GT.0.0.AND.codtau_aac_wl3_tmp.LE.50.0)THEN
+        IF(aodtau_aac_wl3 .GT. 0.0 .AND. aodtau_aac_wl3 .LE. aodtaumax.AND. &
+           codtau_aac_wl3_tmp .GT. 0.0 .AND. codtau_aac_wl3_tmp .LE. codtaumax)THEN
          status = GetKRIndex(atype_aerac,aodtau_aac_wl3,inssacval_tmp,aodtau_aac_tmp)
 
          uncaodtau_aac(iSSA) = (aodtau_aac_tmp(2) - aodtau_aac(2))/aodtau_aac(2)*100.
@@ -551,46 +635,47 @@ END FUNCTION OCI_NUV_ACAer_Process
 
   tau(3)=tau_wl3
 
-  !Comment out the rest of the wavelength conversion scheme: July 15, 2015
-  ! Conversion of ssa500 to ssa388 and ssa342
-
-  !ssa(2) = coef_ssa_wl2(1)+coef_ssa_wl2(2)*ssa(3)+coef_ssa_wl2(3)*ssa(3)**2+ &
-           !coef_ssa_wl2(4)*ssa(3)**3+coef_ssa_wl2(5)*ssa(3)**4
-
-  !ssa(1) = coef_ssa_wl1(1)+coef_ssa_wl1(2)*ssa(3)+coef_ssa_wl1(3)*ssa(3)**2+ &
-           !coef_ssa_wl1(4)*ssa(3)**3+coef_ssa_wl1(5)*ssa(3)**4
-
-  ! Conversion of ssa500 to imaginary refractive index at 500nm (ima500)
-
-  !ima(3) = coef_ima500(1)+coef_ima500(2)*ssa(3)+coef_ima500(3)*ssa(3)**2+ &
-  !         coef_ima500(4)*ssa(3)**3+coef_ima500(5)*ssa(3)**4
-
-  !IF (atype_aerac .EQ. 2) THEN
-
-     ! Conversion of ssa500 to imaginary refractive index at 388nm and 342nm
-     ! Use fit only for dust
-
-      !ima(2) = coef_ima_wl2(1)+coef_ima_wl2(2)*ssa(3)+coef_ima_wl2(3)*ssa(3)**2+&
-      !         coef_ima_wl2(4)*ssa(3)**3+coef_ima_wl2(5)*ssa(3)**4
-
-      !ima(1) = coef_ima_wl1(1)+coef_ima_wl1(2)*ssa(3)+coef_ima_wl1(3)*ssa(3)**2+&
-      !         coef_ima_wl1(4)*ssa(3)**3+coef_ima_wl1(5)*ssa(3)**4
- 
-  !ELSE IF (atype_aerac .EQ. 1) THEN ! for smoke
-  !    ima(2) = ima(3)
-      !-- New imaginary at 354 nm from Hiren Jethva, Hampton University --------------------------------------------------
-      !ima(1) = coef_ima_wl1(1)+coef_ima_wl1(2)*ssa(3)+coef_ima_wl1(3)*ssa(3)**2+coef_ima_wl1(4)*ssa(3)**3+coef_ima_wl1(5)*ssa(3)**4 ! valid when wl1 = 354 nm
-  !ELSE ! for industrial:
-      !ima(2) = ima(3)
-      !ima(1) = ima(3)
-  !ENDIF
-
-  !IF (ABS(ima(3)) .LE. 1e-4) THEN 
-     !ima(3) = 0.0
-  !ENDIF
-  !IF (ABS(ima(2)) .LE. 1e-4) THEN 
-     !ima(2) = 0.0
-  !ENDIF
+!  !Comment out the rest of the wavelength conversion scheme: July 15, 2015
+!  ! Conversion of ssa500 to ssa388 and ssa342
+!
+!  ssa(2) = coef_ssa_wl2(1)+coef_ssa_wl2(2)*ssa(3)+coef_ssa_wl2(3)*ssa(3)**2+ &
+!           coef_ssa_wl2(4)*ssa(3)**3+coef_ssa_wl2(5)*ssa(3)**4
+!
+!  ssa(1) = coef_ssa_wl1(1)+coef_ssa_wl1(2)*ssa(3)+coef_ssa_wl1(3)*ssa(3)**2+ &
+!           coef_ssa_wl1(4)*ssa(3)**3+coef_ssa_wl1(5)*ssa(3)**4
+!
+!  ! Conversion of ssa500 to imaginary refractive index at 500nm (ima500)
+!
+!  ima(3) = coef_ima500(1)+coef_ima500(2)*ssa(3)+coef_ima500(3)*ssa(3)**2+ &
+!           coef_ima500(4)*ssa(3)**3+coef_ima500(5)*ssa(3)**4
+!
+!  IF (atype_aerac .EQ. 2) THEN
+!
+!     ! Conversion of ssa500 to imaginary refractive index at 388nm and 342nm
+!     ! Use fit only for dust
+!
+!      ima(2) = coef_ima_wl2(1)+coef_ima_wl2(2)*ssa(3)+coef_ima_wl2(3)*ssa(3)**2+&
+!               coef_ima_wl2(4)*ssa(3)**3+coef_ima_wl2(5)*ssa(3)**4
+!
+!      ima(1) = coef_ima_wl1(1)+coef_ima_wl1(2)*ssa(3)+coef_ima_wl1(3)*ssa(3)**2+&
+!               coef_ima_wl1(4)*ssa(3)**3+coef_ima_wl1(5)*ssa(3)**4
+! 
+!  ELSE IF (atype_aerac .EQ. 1) THEN ! for smoke
+!      ima(2) = ima(3)
+!      !-- New imaginary at 354 nm from Hiren Jethva, Hampton University --------------------------------------------------
+!      !ima(1) = coef_ima_wl1(1)+coef_ima_wl1(2)*ssa(3)+coef_ima_wl1(3)*ssa(3)**2+coef_ima_wl1(4)*ssa(3)**3+coef_ima_wl1(5)*ssa(3)**4 ! valid when wl1 = 354 nm
+!  ELSE ! for industrial:
+!      ima(2) = ima(3)
+!      ima(1) = ima(3)
+!  ENDIF
+!
+!  IF (ABS(ima(3)) .LE. 1e-4) THEN 
+!     ima(3) = 0.0
+!  ENDIF
+!  IF (ABS(ima(2)) .LE. 1e-4) THEN 
+!     ima(2) = 0.0
+!  ENDIF
+!
 
 END FUNCTION GetKRIndex
 !==============================================================================
@@ -635,8 +720,8 @@ END FUNCTION GetKRIndex
 !==============================================================================
 ! Nodal points of cloud optical depth values *** tau ***
 !==============================================================================
- REAL(KIND=4), DIMENSION(8) :: codtbl_aac
- DATA codtbl_aac/0.000,2.0,5.0,10.0,20.0,30.0,40.0,50.0/
+ REAL(KIND=4), DIMENSION(10) :: codtbl_aac
+ DATA codtbl_aac/0.000,2.0,5.0,10.0,20.0,30.0,40.0,50.0,60.0,70.0/
 
 !==============================================================================
 ! Tau values and indexes from tau table
@@ -653,8 +738,8 @@ END FUNCTION GetKRIndex
 ! Initialize variables
 !==============================================================================
   ngw02=0
-  aodtau = -999.
-  codtau = -999.
+  aodtau = -9999.
+  codtau = -9999.
   ratio_obs = muvai
 
 !  First index of naod_aac is for AOD equals zero--cloud only LUT
@@ -685,7 +770,7 @@ END FUNCTION GetKRIndex
      codtau = codtbl_aac(itau) - q_tmp * (codtbl_aac(itau) - codtbl_aac(itau2))
 
      IF(codtau.LE.0.OR.codtau.GT.50.OR.q_tmp.GT.1)THEN
-     codtau = -999.
+     codtau = -9999.
      ENDIF
 
 !==============================================================================
@@ -740,36 +825,43 @@ END FUNCTION GetKRIndex
   REAL(KIND=4), DIMENSION(naod_aac)                 :: ratio_mod
   REAL(KIND=4)                                      :: rad2wi
 ! 
-  REAL(KIND=4), DIMENSION(ncod_aac)                         :: w0g2, tauw2
-  REAL(KIND=4), DIMENSION(ncod_aac)                 :: rad2w
-  REAL(KIND=4), DIMENSION(ncod_aac)                 :: q_tmpset
+  REAL(KIND=4), DIMENSION(ncod_aac)                 :: w0g2, tauw2, tauw2_tmp
+  REAL(KIND=4), DIMENSION(ncod_aac)                 :: rad2w, rad2w_tmp
+  REAL(KIND=4), DIMENSION(ncod_aac)                 :: q_tmpset, codtbl_aac_tmp
+
+  REAL(KIND=4)                                      :: aodtaumax, codtaumax
 
 
 !==============================================================================
 ! Nodal points of cloud optical depth values *** tau ***
 !==============================================================================
  REAL(KIND=4), DIMENSION(7) :: aodtbl_aac
- REAL(KIND=4), DIMENSION(8) :: codtbl_aac
+ REAL(KIND=4), DIMENSION(10) :: codtbl_aac
 
  DATA aodtbl_aac/0.000,0.1,0.5,1.0,2.5,4.0,6.0/
- DATA codtbl_aac/0.000,2.0,5.0,10.0,20.0,30.0,40.0,50.0/
+ DATA codtbl_aac/0.000,2.0,5.0,10.0,20.0,30.0,40.0,50.0,60.0,70.0/
 
 !==============================================================================
 ! Tau values and indexes from tau table
 !==============================================================================
   REAL(KIND=4)  :: q1, q2, q_tmp, tau, ainuv
-  INTEGER 	:: iw0sel, ngw02
+  INTEGER 	:: iw0sel, ngw02, counter
   INTEGER       :: itau, itau2, jw0, jw02
   INTEGER(KIND=4)        :: status, ierr
 
   status = -1
 
+  !500-nm AOD/COD Max LUT values...
+  aodtaumax = 6.0
+  codtaumax = 70.0
+
+
 !==============================================================================
 ! Initialize variables
 !==============================================================================
   ngw02=0
-  aodtau = -999.
-  codtau = -999.
+  aodtau = -9999.
+  codtau = -9999.
   ratio_obs = muvai
 
 !==============================================================================
@@ -788,7 +880,7 @@ END FUNCTION GetKRIndex
      IF((itau .EQ. itau2) .AND. (itau .NE. 1)) itau2 = itau2-1
      
      !===========================================================!
-     IF(itau.GE.1.AND.itau.LE.7.AND.itau2.GE.1.AND.itau2.LE.7)THEN  
+     IF (itau .GE. 1 .AND. itau .LE. 7 .AND. itau2 .GE. 1 .AND. itau2 .LE. 7) THEN  
      q_tmp = (q1-ratio_obs)/(q1 - q2)
      q_tmpset(iw0sel) = q_tmp
 
@@ -826,40 +918,197 @@ END FUNCTION GetKRIndex
 !==============================================================================
 ! Interpolate on observed radiance to find the Aerosol model that fits best
 !==============================================================================
-  IF(ngw02.GT.1)THEN
+  IF (ngw02 .GT. 1) THEN
      status = FindTableEntry(rad2_obs,rad2w(1:ngw02),ngw02,q1,q2,jw0,jw02,q_tmp)
-     IF((jw0 .EQ. jw02) .AND. (jw0 .EQ. 1)) jw02 = jw02+1
-     IF((jw0 .EQ. jw02) .AND. (jw02 .EQ. ngw02)) jw0 = jw02-1 
+     IF ((jw0 .EQ. jw02) .AND. (jw0 .EQ. 1)) jw02 = jw02+1
+     IF ((jw0 .EQ. jw02) .AND. (jw02 .EQ. ngw02)) jw0 = jw02-1 
      q_tmp = (rad2_obs - q1) / (q2 - q1)
 
-	!==============================================================================
-	! Calculate the final values of tau and w0 base on the best Aerosol model
-	!==============================================================================
+
+      !***New SPLINE way of performing interpolation***!
+
+      !Checking IF observed reflectance @ 860 nm is within LUT range...
+      IF (rad2_obs.GE.rad2w(1) .AND. rad2_obs.LE.rad2w(ncod_aac)) THEN
+
+      !Preparing arrays of interpolated reflectance and COD nodes with valid positive values...
+      counter = 1
+
+      rad2w_tmp(:) = 0.0
+      tauw2_tmp(:) = 0.0
+      codtbl_aac_tmp(:) = 0.0
+
+
+      DO iw0sel = 1,ncod_aac
+      IF (rad2w(iw0sel).GT.0.AND.rad2w(iw0sel).LE.1) THEN
+      rad2w_tmp(counter) = rad2w(iw0sel)
+      tauw2_tmp(counter) = tauw2(iw0sel)
+      codtbl_aac_tmp(counter) = codtbl_aac(iw0sel)
+      counter = counter + 1
+      ENDIF
+      ENDDO
+
+
+      !AOD_TAU
+      IF (counter-1.GE.5) THEN
+      CALL SPLINE(rad2w_tmp,tauw2_tmp,counter-1,rad2_obs,aodtau)
+
+      !COD_TAU
+      CALL SPLINE(rad2w_tmp,codtbl_aac_tmp,counter-1,rad2_obs,codtau)
+      ELSE
+
       aodtau = tauw2(jw0) + q_tmp * (tauw2(jw02) - tauw2(jw0))
       codtau =  w0g2(jw0) + q_tmp *  (w0g2(jw02) -  w0g2(jw0))
-      
-     IF ((aodtau .GT. 7.0 .AND. codtau .LE. 8.0) .AND. (w0g2(jw02) .EQ. 50.0)) THEN
-         aodtau = tauw2(jw02)        
+
+      !  -- Checking interpolation indices to see out of bounds --
+      IF (q_tmpset(jw0) .GT. 1.0 .OR. q_tmpset(jw02) .GT. 1.0 .OR. q_tmp .GT. 1.0 .OR. q_tmp .LT. 0.0) THEN
+         aodtau = -9999.
+         codtau = -9999.
+      ENDIF
+
+      ENDIF     !IF(counter-1.GE.5)THEN
+
+
+     !  -- Checking the retrieved aodtau and codtau to see out of bounds --
+     IF (aodtau.LE.0 .OR. aodtau.GT.aodtaumax .OR. codtau.LE.0 .OR. codtau.GT.codtaumax) THEN
+        aodtau = -9999.
+        codtau = -9999.
      ENDIF
 
-     !  -- Checking interpolation indices to see out of bounds --
-     IF (q_tmpset(jw0) .GT. 1.0 .OR. q_tmpset(jw02) .GT. 1.0 .OR. &
-         q_tmp .GT. 1.0 .OR. q_tmp .LT. 0.0) THEN 
-        aodtau = -999.
-        codtau = -999.
-     ENDIF
+     ENDIF ! IF(rad2_obs.GE.rad2w(1) .AND. rad2_obs.LE.rad2w(ncod_aac))THEN
 
-  ELSE
-     aodtau = -999.
-     codtau = -999.
+     ELSE
+     aodtau = -9999.
+     codtau = -9999.
+
   ENDIF ! IF(ngw02.GT.1)THEN
-
 
   status = 1
 
   RETURN
 
  END FUNCTION NEARUV_aac2
- 
+
+
+!***************************************
+SUBROUTINE SPLINE(XI, FI, N_NODES, X, F)
+!***************************************
+
+  IMPLICIT NONE
+  INTEGER                                       :: N, M, I, K
+  REAL(KIND=4), INTENT(IN)                      :: X
+  INTEGER(KIND=4), INTENT(IN)                   :: N_NODES
+  REAL(KIND=4)                                  :: DX, H, ALPHA, BETA, GAMMA, ETA
+
+  REAL(KIND=4), DIMENSION (10), INTENT(IN)       :: XI, FI
+  REAL(KIND=4), DIMENSION (10)                   :: P2
+  REAL(KIND=4), INTENT(OUT)                     :: F
+
+
+  N = N_NODES -1
+  M = 2
+
+  CALL CUBIC_SPLINE(N, XI, FI, P2)
+
+
+! Find the interval that x resides
+    K = 1
+    DX = X-XI(1)
+    DO WHILE (DX .GE. 0 .AND. K .LE. N_NODES-1)
+      K = K + 1
+      DX = X-XI(K)
+    END DO
+    K = K - 1
+
+    !Initialize...
+    F = 0.0
+   IF (K .GE. 1 .AND. K .LE. N_NODES-1) THEN
+! Find the value of function f(x)
+    DX = XI(K+1) - XI(K)
+    ALPHA = P2(K+1)/(6*DX)
+    BETA = -P2(K)/(6*DX)
+    GAMMA = FI(K+1)/DX - DX*P2(K+1)/6
+    ETA = DX*P2(K)/6 - FI(K)/DX
+    F = ALPHA*(X-XI(K))*(X-XI(K))*(X-XI(K)) &
+       +BETA*(X-XI(K+1))*(X-XI(K+1))*(X-XI(K+1)) &
+       +GAMMA*(X-XI(K))+ETA*(X-XI(K+1))
+    ENDIF
+    
+END SUBROUTINE SPLINE
+
+
+SUBROUTINE CUBIC_SPLINE (N, XI, FI, P2)
+!
+! Function to carry out the cubic-spline approximation
+! with the second-order derivatives returned.
+!
+  INTEGER :: I
+  INTEGER, INTENT (IN) :: N
+  REAL, INTENT (IN), DIMENSION (N+1):: XI, FI
+  REAL, INTENT (OUT), DIMENSION (N+1):: P2
+  REAL, DIMENSION (N):: G, H
+  REAL, DIMENSION (N-1):: D, B, C
+!
+! Assign the intervals and function differences
+!
+  DO I = 1, N
+    H(I) = XI(I+1) - XI(I)
+    G(I) = FI(I+1) - FI(I)
+  END DO
+!
+! Evaluate the coefficient matrix elements
+  DO I = 1, N-1
+    D(I) = 2*(H(I+1)+H(I))
+    B(I) = 6*(G(I+1)/H(I+1)-G(I)/H(I))
+    C(I) = H(I+1)
+  END DO
+!
+! Obtain the second-order derivatives
+!
+  CALL TRIDIAGONAL_LINEAR_EQ (N-1, D, C, C, B, G)
+  P2(1) = 0
+  P2(N+1) = 0
+  DO I = 2, N
+    P2(I) = G(I-1)
+  END DO
+END SUBROUTINE CUBIC_SPLINE
+!
+SUBROUTINE TRIDIAGONAL_LINEAR_EQ (L, D, E, C, B, Z)
+!
+! Functione to solve the tridiagonal linear equation set.
+!
+  INTEGER, INTENT (IN) :: L
+  INTEGER :: I
+  REAL, INTENT (IN), DIMENSION (L):: D, E, C, B
+  REAL, INTENT (OUT), DIMENSION (L):: Z
+  REAL, DIMENSION (L):: Y, W
+  REAL, DIMENSION (L-1):: V, T
+!
+! Evaluate the elements in the LU decomposition
+!
+  W(1) = D(1)
+  V(1)  = C(1)
+  T(1)  = E(1)/W(1)
+  DO I = 2, L - 1
+    W(I) = D(I)-V(I-1)*T(I-1)
+    V(I) = C(I)
+    T(I) = E(I)/W(I)
+  END DO
+  W(L) = D(L)-V(L-1)*T(L-1)
+!
+! Forward substitution to obtain y
+!
+  Y(1) = B(1)/W(1)
+  DO I = 2, L
+    Y(I) = (B(I)-V(I-1)*Y(I-1))/W(I)
+  END DO
+!
+! Backward substitution to obtain z
+  Z(L) = Y(L)
+  DO I = L-1, 1, -1
+    Z(I) = Y(I) - T(I)*Z(I+1)
+  END DO
+END SUBROUTINE TRIDIAGONAL_LINEAR_EQ
+
  
 END MODULE NUV_ACAerosolModule 
+

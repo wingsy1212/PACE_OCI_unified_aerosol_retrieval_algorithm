@@ -21,7 +21,8 @@ contains
                    Ret_Tau_LandOcean,ret_ref_LandOcean,Cldmask_Native_LandOcean,&
                    Cloud_Frac_LandOcean,Ret_Xtrack,Ret_Lines,&
                    Ret_ocean_Quality, Ret_Quality_LandOcean,Ret_Quality_LandOcean_W0,&
-                   Ret_CLDFRC_land_DT,Ret_CLDFRC_ocean)
+                   Ret_CLDFRC_land_DT,Ret_CLDFRC_ocean,Ret_ref_LandOceanwOutUV,&
+                   Ret_ref_LandOcean_UV)
                               
                                       
 !     Define input variable dimensions, etc.
@@ -34,10 +35,11 @@ contains
       REAL,DIMENSION(:,:,:),ALLOCATABLE  :: dbdt_refl
       REAL,DIMENSION(:,:),ALLOCATABLE  :: dbdt_cld
        
-    !                 
-               Ret_Tau_LandOcean(1:Ret_Xtrack,1:Ret_Lines,1:9) = -9999  
+Ret_Tau_LandOcean(1:Ret_Xtrack,1:Ret_Lines,1:9) = -9999  
                Ret_Quality_LandOcean(1:Ret_Xtrack,1:Ret_Lines) = -9999 
-               ret_ref_LandOcean(1:Ret_Xtrack,1:Ret_Lines,1:9) = -9999  
+               Ret_ref_LandOcean(1:Ret_Xtrack,1:Ret_Lines,1:9) = -9999 
+               Ret_ref_LandOceanwOutUV(1:Ret_Xtrack,1:Ret_Lines,1:7) = -9999 
+               Ret_ref_LandOcean_UV(1:Ret_Xtrack,1:Ret_Lines,1:2) = -9999 
                Cldmask_Native_LandOcean(1:IX_B,1:IY_B) = -9999 
                Cloud_Frac_LandOcean(1:Ret_Xtrack,1:Ret_Lines) = -9999 
                Ret_Quality_LandOcean_W0(1:Ret_Xtrack,1:Ret_Lines) = -9999 
@@ -105,24 +107,52 @@ contains
              Enddo  
              Enddo
              
-                    
-                       
-             Do  IL = 1,9
-             Do  IX = 1,Ret_Xtrack
-             Do  IY = 1,Ret_Lines
-      IF(Land_sea_flag(IX,IY) .eq. 0)THEN
-         Ret_ref_LandOcean(IX,IY,IL)= Ret_ref_ocean(IX,IY,IL)  
-      ElseIF(Land_sea_flag(IX,IY) .eq. 1 .AND. dbdt_refl(IX,IY,IL) .GE.0)THEN 
-             Ret_ref_LandOcean(IX,IY,IL) =  dbdt_refl(IX,IY,IL) 
-       Endif
-          ENDDO 
+     
+           Do  IL = 1,9
+           Do  IX = 1,Ret_Xtrack
+            Do  IY = 1,Ret_Lines
+              IF(Land_sea_flag(IX,IY) .eq. 0)THEN
+                Ret_ref_LandOcean(IX,IY,IL)= Ret_ref_ocean(IX,IY,IL)  
+                 ElseIF(Land_sea_flag(IX,IY) .eq. 1 .AND. dbdt_refl(IX,IY,IL) .GE.0)THEN 
+              	 Ret_ref_LandOcean(IX,IY,IL) =  dbdt_refl(IX,IY,IL) 
+              Endif
+           ENDDO 
          ENDDO  
-         ENDDO   
+      ENDDO    
+      
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                    
+! saving  Mean Reflectance UV channels which  are not gas corrected in saperate array  
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                        
+  
+           Do  IL = 1,2
+           Do  IX = 1,Ret_Xtrack
+            Do  IY = 1,Ret_Lines
+              IF(Land_sea_flag(IX,IY) .eq. 0)THEN
+                Ret_ref_LandOcean_UV(IX,IY,IL)= Ret_ref_ocean(IX,IY,IL)  
+                 ElseIF(Land_sea_flag(IX,IY) .eq. 1 .AND. dbdt_refl(IX,IY,IL) .GE.0)THEN 
+              	 Ret_ref_LandOcean_UV(IX,IY,IL) =  dbdt_refl(IX,IY,IL) 
+              Endif
+           ENDDO 
+         ENDDO  
+      ENDDO    
+          
+              
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                    
+!  saving  Mean Reflectance  which  are gas corrected in saperate array 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     Do  IL = 3,9
+         Do  IX = 1,Ret_Xtrack
+            Do  IY = 1,Ret_Lines
+              IF(Land_sea_flag(IX,IY) .eq. 0)THEN
+                 Ret_ref_LandOceanwOutUV(IX,IY,IL-2)= Ret_ref_ocean(IX,IY,IL)  
+                 ElseIF(Land_sea_flag(IX,IY) .eq. 1 .AND. dbdt_refl(IX,IY,IL) .GE.0)THEN 
+                Ret_ref_LandOceanwOutUV(IX,IY,IL-2) =  dbdt_refl(IX,IY,IL) 
+              Endif
+           ENDDO 
+         ENDDO  
+      ENDDO            
+
+         
          Return  
 end subroutine   merge_land_ocean_VAR    
 end module merge_land_ocean
-
- 
-
-
-

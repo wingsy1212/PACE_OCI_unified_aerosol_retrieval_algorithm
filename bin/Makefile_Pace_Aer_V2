@@ -1,0 +1,263 @@
+#
+##############################################################################################
+# GNUi (3.82) Makefile
+# # This is a GNU  makefile to automate the compilation of the FORTRAN and C source files of
+# the aerosol PACE package.
+# #
+# If the package is expanded/improved with additional source files, users/developers should
+# add the source files to the SRCS list and recompile the system.
+# #
+# # Since implicit dependency rules are used, the order of the source file list is essential.
+# If the module in File A is used by File B, File A should be put in front of File B in
+# the list.
+# #
+# # The path to NetCDF, HDF, HDF5 and the other utility libraries should be modified if not
+# # on Windhoek. 
+# #
+# # CREATION HISTORY:
+# #       Written by:     Zhaohui Zhang, 30-Nov-2021
+# #                       zhaohui.zhang@nasa.gov
+# #
+# #
+# ############################################################################################
+#
+#
+#
+PKG_HOME=..
+ 
+#Program name and installation directory.
+PROGRAM   = oci_ua_aer
+DEST      = .                
+
+## Source files.
+pkg_home=$(PKG_HOME)
+vpath % ${pkg_home}/DT_Ocean/src ${pkg_home}/DT_Common_src/src ${pkg_home}/DT_Common_src/src/nc4 \
+        ${pkg_home}/DB_DT_Land/DB_Land/src ${pkg_home}/DB_DT_Land/DB_Land/src/nc4 \
+        ${pkg_home}/DB_DT_Land/DT_Land/src \
+        ${pkg_home}/UV/src ${pkg_home}/UV/src/nc4 ${pkg_home}/UV/src/util \
+        ${pkg_home}/Write_L2_data/src \
+        ${pkg_home}/Write_interm_file/src \
+        ${pkg_home}/Main
+     
+# UV source files
+UV_SRCS =  \
+        ${pkg_home}/UV/src/util/ErrorHandler_class.f90 \
+	${pkg_home}/UV/src/util/DataTypeDef.f90 \
+	${pkg_home}/UV/src/util/MyConstants.f90 \
+	${pkg_home}/UV/src/util/MyMathUtil.f90 \
+	${pkg_home}/UV/src/InterpolationModule.f90 \
+	${pkg_home}/UV/src/util/H5Util_class.f90 \
+	${pkg_home}/UV/src/util/H5write_module.f90 \
+	${pkg_home}/UV/src/util/H5read_module.f90 \
+	${pkg_home}/Main/OCIUAAER_Config_Module.f90 \
+	${pkg_home}/Main/OCIUAAER_L1BModule.f90 \
+	${pkg_home}/Main/Proxydata_L1BModule.f90 \
+	${pkg_home}/Main/Merge_land_ocean_Module.f90 \
+	${pkg_home}/UV/src/nc4/LookupTableModule_nc4.f90 \
+	${pkg_home}/UV/src/nc4/GetSurfAlbLUT_H5module_nc4.f90 \
+	${pkg_home}/UV/src/nc4/GetLUT_LER_AI_H5module_nc4.f90 \
+	${pkg_home}/UV/src/nc4/GetLUT_Miecloud_AI_H5module_nc4.f90 \
+	${pkg_home}/UV/src/nc4/Get_OceanLUT_H5module_nc4.f90 \
+	${pkg_home}/UV/src/nc4/Get_TerrainPressure_H5module_nc4.f90 \
+	${pkg_home}/UV/src/nc4/Get_SnowIce_module_nc4.f90 \
+	${pkg_home}/UV/src/nc4/GetLUT_H5module_nc4.f90 \
+	${pkg_home}/UV/src/nc4/Get_ssaclimLUT2_H5module_nc4.f90 \
+	${pkg_home}/UV/src/nc4/Get_omacaLUT7dim_H5module_nc4.f90 \
+	${pkg_home}/DB_DT_Land/DB_Land/src/calendars.f95 \
+	${pkg_home}/UV/src/read_for_nuv_test.f90 \
+	${pkg_home}/UV/src/regpolymonial_predict_ssa.f90 \
+	${pkg_home}/UV/src/Nearuv_alhssa_Module.f90 \
+	${pkg_home}/UV/src/OCI_UV1km_DataModule.f90 \
+	${pkg_home}/UV/src/OCI_UVAI_MieCloudModule.f90 \
+	${pkg_home}/UV/src/NUV_AerosolModule.f90 \
+	${pkg_home}/Main/NUV_ACAerosolModule.f90 \
+	${pkg_home}/UV/src/NUV_package_modules.f90
+	
+	                    
+# DT Source files common to ocean and Land
+DT_Common_SRCS  =  \
+	${pkg_home}/DT_Common_src/src/Interp.f90 \
+  	${pkg_home}/DT_Common_src/src/Read_gdas.f90 \
+  	${pkg_home}/DT_Common_src/src/Read_GMAO.f90 \
+  	${pkg_home}/DT_Common_src/src/init_save_array.f90 \
+ 	${pkg_home}/DT_Common_src/src/convert_rad.f90 \
+  	${pkg_home}/DT_Common_src/src/Apply_Trans_twoway.f90 \
+  	${pkg_home}/DT_Common_src/src/compute_Boxes_and_edges.f90 \
+  	${pkg_home}/DT_Common_src/src/compute_water_land.f90 \
+  	${pkg_home}/DT_Common_src/src/compute_center_GEOLOC_ANGLE.f90 \
+  	${pkg_home}/DT_Common_src/src/compute_center_Glint_Angle.f90 \
+  	${pkg_home}/DT_Common_src/src/compute_Gascorrection.f90 \
+  	${pkg_home}/DT_Common_src/src/Move_Data_Reso.f90 \
+  	${pkg_home}/DT_Common_src/src/SET_INDEX_L1b.f90 \
+  	${pkg_home}/DT_Common_src/src/open_l1b_OCI_data.f90 \
+  	${pkg_home}/DT_Common_src/src/Fillvalue_MOD04_V2.f90 \
+  	${pkg_home}/DT_Common_src/src/compute_temp_from_rad.f90       
+       
+       
+# DT Source files
+DT_SRCS_Land = \
+  ${pkg_home}/DB_DT_Land/DT_Land/src/compute_snow_flag.f90 \
+  ${pkg_home}/DB_DT_Land/DT_Land/src/write_pacedt_land.f90 \
+  ${pkg_home}/DB_DT_Land/DT_Land/src/compute_theshold_water_land_coastal.f90 \
+  ${pkg_home}/DB_DT_Land/DT_Land/src/make_land_cloudmask.f90 \
+  ${pkg_home}/DB_DT_Land/DT_Land/src/Handler_land.f90 \
+  ${pkg_home}/DB_DT_Land/DT_Land/src/cld_flags_forLand.f90 \
+  ${pkg_home}/DB_DT_Land/DT_Land/src/Fill_Output_SDS_land.f90
+
+
+DT_SRCS_Ocean =  \
+	${pkg_home}/DT_Ocean/src/write_pacedt_ocean.f90 \
+	${pkg_home}/DT_Ocean/src/write_UV.f90 \
+	${pkg_home}/DT_Ocean/src/Handler_ocean.f90 \
+	${pkg_home}/DT_Ocean/src/byte_set.f90 \
+	${pkg_home}/DT_Ocean/src/compute_indx_wspeed_forLUT.f90 \
+	${pkg_home}/DT_Ocean/src/compute_wspeed_spatial.f90 \
+	${pkg_home}/DT_Ocean/src/Fill_Output_SDS_Ocean.f90 \
+	${pkg_home}/DT_Ocean/src/make_ocean_cloudmask.f90 \
+	${pkg_home}/DT_Ocean/src/Fill_Output_SDS_UV.f90 \
+	${pkg_home}/DT_Ocean/src/Compute_Sd_for_Dust.f90 \
+	${pkg_home}/DT_Common_src/src/nc4/dt_nc4.f90 \
+	${pkg_home}/DT_Common_src/src/nc4/UV_processing_nc4.f90 \
+	${pkg_home}/DT_Common_src/src/nc4/Process_ocean_V2_nc4.f90 \
+	${pkg_home}/DT_Common_src/src/nc4/DT_package_Ocean_main_nc4.f90 \
+	${pkg_home}/DT_Common_src/src/nc4/DT_package_Land_main_nc4.f90 \
+	${pkg_home}/DT_Common_src/src/nc4/Process_land_V6_nc4.f90 
+
+
+# DB Source files
+DB_SRCS =  \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/pack_412.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/lmpar.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/fdjac2.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/lmdif1.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/lmdif_v2.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/lmdif.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/dpmpar.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/enorm.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/qrfac.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/qrsolv.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/covar.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/fdjac2_v2.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/atmos.f90 \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/intero.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/interr.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/reflec.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/nc4/viirs_aerosol_luts_nc4.f95 \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/nc4/viirs_ler_luts_nc4.f95 \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/lodbuf.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/prflec.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/lodsmp.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/total.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/sortrx.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/lmdif1_v2.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/viirs_ocean_aero.f95 \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/set_qa_land.f95 \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/set_qa_ocean.f95 \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/nc4/read_l1b_nc4.f95 \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/nc4/modis_surface_nc4.f95 \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/nc4/viirs_db_utils_nc4.f95 \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/nc4/seawifs_surface_pressure_nc4.f95 \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/modis.f90 \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/nc4/landcover_nc4.f95 \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/nc4/get_lut_igbp_land_cover_nc4.f90 \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/find_v_vegset.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/find_v_viirs.f \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/nc4/get_lut_211sfc_nc4.f90 \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/viirs_config.f95 \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/viirs_ancillary.f95 \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/screening.f95 \
+  ${pkg_home}/DB_DT_Land/DB_Land/src/nc4/DB_package_Land_main_nc4.f90
+   
+
+              
+S_Write = \
+  ${pkg_home}/Write_L2_data/src/write_merged_file.f90 \
+  ${pkg_home}/Write_interm_file/src/write_Output_forUVtau.f90 \
+  ${pkg_home}/Write_interm_file/src/read_Output_forUVtau.f90 \
+  ${pkg_home}/Main/OCIUAAER.f90  
+       
+SRCS = $(UV_SRCS) $(DT_Common_SRCS) $(DT_SRCS_Land) $(DT_SRCS_Ocean) $(DB_SRCS) $(S_Write)
+
+         
+OBJS  = $(notdir $(patsubst %.f90,%.o,\
+        $(patsubst %.f95,%.o,\
+        $(patsubst %.f,%.o,$(SRCS)))))       
+
+
+PKG_INC = -I${pkg_home}/DT_Common_src/inc 
+PKG_INC1 = -I${pkg_home}/include    
+# utility Libraries 
+CDF4_INC = -I/usr/include
+CDF4_LIB = -L/usr/lib/x86_64-linux-gnu/lib -lnetcdff -Wall -lcurl 
+HDF4_INC = -I/usr/include/hdf
+HDF4_LIB = -L/usr/lib/x86_64-linux-gnu/lib -lmfhdf  -ldf  -lz -lm 
+HDF5_INC = -I/usr/include/hdf5/serial
+HDF5_LIB = -L/usr/lib/x86_64-linux-gnu -lhdf5_serial  \
+	   -lhdf5_serial_fortran -lhdf5_serialhl_fortran -lhdf5_serial_hl
+
+EOS4_DIR = /tis/releases/modaps/hdf-eos2/2.20.100-3
+EOS4_INC = -I$(EOS4_DIR)/include
+EOS4_LIB = -L$(EOS4_DIR)/lib  -lGctp  -lhdfeos 
+EOS5_DIR = /tis/releases/modaps/hdf-eos5/5.1.16-1
+EOS5_INC = -I$(EOS5_DIR)/include
+EOS5_LIB = -L$(EOS5_DIR)/lib  -lGctp  -lhe5_hdfeos
+SZIP_INC = -I/usr/include 
+SZIP_LIB = -L/usr/lib/x86_64-linux-gnu -lsz   
+JPEG_INC = -I/usr/include
+JPEG_LIB = -L/usr/lib/x86_64-linux-gnu/lib -ljpeg
+USERLIBS = 
+
+
+## C compiler variables.
+CC       =  gcc 
+CFLAGS   = -O -C -static #-n32 
+
+## F90 compiler variables. 
+FC       =  gfortran 
+FCFLAGS  =  -O2 -mcmodel=large  -fbounds-check -g -fbacktrace \
+            -ffpe-trap=zero,overflow,underflow  
+FCFLAGS += $(CDF4_INC) $(HDF4_INC) $(HDF5_INC) $(EOS5_INC) $(EOS4_INC) $(SZIP_INC) $(JPEG_INC) $(PKG_INC) $(PKG_INC1)
+F90FLAGS = $(FCFLAGS)
+F77FLAGS = $(FCFLAGS) -ffixed-line-length-none
+
+## linker libraries (add/remove as needed)
+FLFLAGS  = $(HDF5_LIB) $(CDF4_LIB) $(HDF4_LIB) 
+FLFLAGS += $(EOS5_LIB) $(EOS4_LIB) $(SZIP_LIB) $(JPEG_LIB)
+FLFLAGS += $(SZIP_LIB) $(JPEG_LIB) $(USERLIBS)
+
+## Default target.
+all:  $(PROGRAM)
+
+# create the exectuable  
+$(PROGRAM):  $(OBJS) $(USERLIBS)
+	@echo "Linking $(PROGRAM) ..."
+	$(FC) $(OBJS) $(FLFLAGS) $(USERLIBS) -o $@
+	@echo "done" 
+	
+## Redefine rule for compiling C files.
+.SUFFIXES:  
+.SUFFIXES: .f90 .f95 .f .c .o
+.c.o:
+	$(CC) $(CFLAGS) -c $<
+
+## Define rule for compiling F90 files.
+.f90.o:
+	$(FC) $(F90FLAGS) -c $< 
+.f95.o:
+	$(FC) $(F90FLAGS) -c $< 	
+.f.o:
+	$(FC) $(F77FLAGS) -c $< 	
+
+# remove object code, executables and core
+clean:
+	rm -f $(PROGRAM) $(OBJS) *.mod 
+
+# install executable in destination directory
+install: $(PROGRAM)
+	@echo Installing $(PROGRAM) in $(DEST)
+	@-strip $(PROGRAM)
+	@if [ $(DEST) != . ]; then \
+	(cp -f $(PROGRAM) $(DEST)); fi	
+	
+	
+

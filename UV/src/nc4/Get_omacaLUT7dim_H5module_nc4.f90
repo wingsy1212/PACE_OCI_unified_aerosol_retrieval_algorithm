@@ -1,4 +1,4 @@
- MODULE Get_omacaLUT7dim_H5module 
+ MODULE Get_omacaLUT7dim_H5module_nc4 
 !==============================================================================
 !
 ! FILENAME:
@@ -23,7 +23,7 @@
 
  INTEGER(KIND = 4), PARAMETER :: nwav_aac = 2
  INTEGER(KIND = 4), PARAMETER :: naod_aac = 7
- INTEGER(KIND = 4), PARAMETER :: ncod_aac = 8
+ INTEGER(KIND = 4), PARAMETER :: ncod_aac = 10
  INTEGER(KIND = 4), PARAMETER :: nsza_aac = 7
  INTEGER(KIND = 4), PARAMETER :: nraa_aac = 11
  INTEGER(KIND = 4), PARAMETER :: nvza_aac = 14
@@ -36,75 +36,121 @@
 		     ssatbl_aac, salbtbl_aac
 
 !  Smoke over land & ocean variables...
-    REAL (KIND=4), DIMENSION(:), ALLOCATABLE :: rad388_smokelin1013zhgt3_aac,rad388_smokelin1013zhgt4_aac,&
+  REAL (KIND=4), DIMENSION(:), ALLOCATABLE ::  rad388_smokelin1013zhgt3_aac,rad388_smokelin1013zhgt4_aac,&
                                                 rad388_smokelin1013zhgt5_aac,rad388_smokelin1013zhgt6_aac,&
+                                                rad388_smokelin1013zhgt9_aac,rad388_smokelin1013zhgt12_aac,&
+						rad388_smokelin1013zhgt15_aac,&
                                                 rad388_smokelin800zhgt5_aac,rad388_smokelin800zhgt6_aac,&
                                                 rad388_smokelin800zhgt7_aac,rad388_smokelin800zhgt8_aac,&
+                                                rad388_smokelin800zhgt11_aac,rad388_smokelin800zhgt14_aac,&
+						rad388_smokelin800zhgt17_aac,&
                                                 uvaimie_smokelin1013zhgt3_aac,uvaimie_smokelin1013zhgt4_aac,&
                                                 uvaimie_smokelin1013zhgt5_aac,uvaimie_smokelin1013zhgt6_aac,&
+                                                uvaimie_smokelin1013zhgt9_aac,uvaimie_smokelin1013zhgt12_aac,&
+						uvaimie_smokelin1013zhgt15_aac,&
                                                 uvaimie_smokelin800zhgt5_aac,uvaimie_smokelin800zhgt6_aac,&
-                                                uvaimie_smokelin800zhgt7_aac,uvaimie_smokelin800zhgt8_aac
+                                                uvaimie_smokelin800zhgt7_aac,uvaimie_smokelin800zhgt8_aac,&
+                                                uvaimie_smokelin800zhgt11_aac,uvaimie_smokelin800zhgt14_aac,&
+						uvaimie_smokelin800zhgt17_aac
 
 !  Dust over land variables...
-   REAL (KIND=4), DIMENSION(:), ALLOCATABLE ::  rad388_dustlin1013zhgt3_aac,rad388_dustlin1013zhgt4_aac,&
+ REAL (KIND=4), DIMENSION(:), ALLOCATABLE ::  rad388_dustlin1013zhgt3_aac,rad388_dustlin1013zhgt4_aac,&
                                                 rad388_dustlin1013zhgt5_aac,rad388_dustlin1013zhgt6_aac,&
+                                                rad388_dustlin1013zhgt9_aac,rad388_dustlin1013zhgt12_aac,&
+						rad388_dustlin1013zhgt15_aac,&
                                                 rad388_dustlin800zhgt5_aac,rad388_dustlin800zhgt6_aac,&
                                                 rad388_dustlin800zhgt7_aac,rad388_dustlin800zhgt8_aac,&
+                                                rad388_dustlin800zhgt11_aac,rad388_dustlin800zhgt14_aac,&
+						rad388_dustlin800zhgt17_aac,&
                                                 uvaimie_dustlin1013zhgt3_aac,uvaimie_dustlin1013zhgt4_aac,&
                                                 uvaimie_dustlin1013zhgt5_aac,uvaimie_dustlin1013zhgt6_aac,&
+                                                uvaimie_dustlin1013zhgt9_aac,uvaimie_dustlin1013zhgt12_aac,&
+						uvaimie_dustlin1013zhgt15_aac,&
                                                 uvaimie_dustlin800zhgt5_aac,uvaimie_dustlin800zhgt6_aac,&
-                                                uvaimie_dustlin800zhgt7_aac,uvaimie_dustlin800zhgt8_aac
+                                                uvaimie_dustlin800zhgt7_aac,uvaimie_dustlin800zhgt8_aac,&
+                                                uvaimie_dustlin800zhgt11_aac,uvaimie_dustlin800zhgt14_aac,&
+						uvaimie_dustlin800zhgt17_aac
 
 !  Dust over ocean variables...
    REAL (KIND=4), DIMENSION(:), ALLOCATABLE ::  rad388_dustolin1013zhgt3_aac,rad388_dustolin1013zhgt4_aac,&
                                                 rad388_dustolin1013zhgt5_aac,rad388_dustolin1013zhgt6_aac,&
+                                                rad388_dustolin1013zhgt9_aac,rad388_dustolin1013zhgt12_aac,&
+						rad388_dustolin1013zhgt15_aac,&
                                                 rad388_dustolin800zhgt5_aac,rad388_dustolin800zhgt6_aac,&
                                                 rad388_dustolin800zhgt7_aac,rad388_dustolin800zhgt8_aac,&
+                                                rad388_dustolin800zhgt11_aac,rad388_dustolin800zhgt14_aac,&
+						rad388_dustolin800zhgt17_aac,&
                                                 uvaimie_dustolin1013zhgt3_aac,uvaimie_dustolin1013zhgt4_aac,&
                                                 uvaimie_dustolin1013zhgt5_aac,uvaimie_dustolin1013zhgt6_aac,&
+                                                uvaimie_dustolin1013zhgt9_aac,uvaimie_dustolin1013zhgt12_aac,&
+						uvaimie_dustolin1013zhgt15_aac,&
                                                 uvaimie_dustolin800zhgt5_aac,uvaimie_dustolin800zhgt6_aac,&
-                                                uvaimie_dustolin800zhgt7_aac,uvaimie_dustolin800zhgt8_aac
+                                                uvaimie_dustolin800zhgt7_aac,uvaimie_dustolin800zhgt8_aac,&
+                                                uvaimie_dustolin800zhgt11_aac,uvaimie_dustolin800zhgt14_aac,&
+						uvaimie_dustolin800zhgt17_aac
 
 !
     REAL(KIND=4), DIMENSION(:,:), ALLOCATABLE :: fint_rad388_aac, fint_uvaimie_aac
 
 
  CONTAINS
-
 !
 !
 
- SUBROUTINE Read_aac_LUTparams(lut_fn, &
- 			       rad388_smokelin1013zhgt3_aac,rad388_smokelin1013zhgt4_aac,&
+ SUBROUTINE Read_aac_LUTparams(lut_fn, rad388_smokelin1013zhgt3_aac,rad388_smokelin1013zhgt4_aac,&
                                rad388_smokelin1013zhgt5_aac,rad388_smokelin1013zhgt6_aac,&
+                               rad388_smokelin1013zhgt9_aac,rad388_smokelin1013zhgt12_aac,&
+			       rad388_smokelin1013zhgt15_aac,&
                                rad388_smokelin800zhgt5_aac,rad388_smokelin800zhgt6_aac,&
                                rad388_smokelin800zhgt7_aac,rad388_smokelin800zhgt8_aac,&
+                               rad388_smokelin800zhgt11_aac,rad388_smokelin800zhgt14_aac,&
+			       rad388_smokelin800zhgt17_aac,&
                                uvaimie_smokelin1013zhgt3_aac,uvaimie_smokelin1013zhgt4_aac,&
                                uvaimie_smokelin1013zhgt5_aac,uvaimie_smokelin1013zhgt6_aac,&
+                               uvaimie_smokelin1013zhgt9_aac,uvaimie_smokelin1013zhgt12_aac,&
+			       uvaimie_smokelin1013zhgt15_aac,&
                                uvaimie_smokelin800zhgt5_aac,uvaimie_smokelin800zhgt6_aac,&
                                uvaimie_smokelin800zhgt7_aac,uvaimie_smokelin800zhgt8_aac,&
+                               uvaimie_smokelin800zhgt11_aac,uvaimie_smokelin800zhgt14_aac,&
+			       uvaimie_smokelin800zhgt17_aac,&
 
-!	                       ;DUST Over-land LUT Parameters...
+!                              ;DUST Over-land LUT Parameters...
                                rad388_dustlin1013zhgt3_aac,rad388_dustlin1013zhgt4_aac,&
                                rad388_dustlin1013zhgt5_aac,rad388_dustlin1013zhgt6_aac,&
+                               rad388_dustlin1013zhgt9_aac,rad388_dustlin1013zhgt12_aac,&
+			       rad388_dustlin1013zhgt15_aac,&
                                rad388_dustlin800zhgt5_aac,rad388_dustlin800zhgt6_aac,&
                                rad388_dustlin800zhgt7_aac,rad388_dustlin800zhgt8_aac,&
+                               rad388_dustlin800zhgt11_aac,rad388_dustlin800zhgt14_aac,&
+			       rad388_dustlin800zhgt17_aac,&
                                uvaimie_dustlin1013zhgt3_aac,uvaimie_dustlin1013zhgt4_aac,&
                                uvaimie_dustlin1013zhgt5_aac,uvaimie_dustlin1013zhgt6_aac,&
+                               uvaimie_dustlin1013zhgt9_aac,uvaimie_dustlin1013zhgt12_aac,&
+			       uvaimie_dustlin1013zhgt15_aac,&
                                uvaimie_dustlin800zhgt5_aac,uvaimie_dustlin800zhgt6_aac,&
                                uvaimie_dustlin800zhgt7_aac,uvaimie_dustlin800zhgt8_aac,&
+                               uvaimie_dustlin800zhgt11_aac,uvaimie_dustlin800zhgt14_aac,&
+			       uvaimie_dustlin800zhgt17_aac,&
 
-!	                       ;DUST Over-ocean LUT Parameters...
+!                              ;DUST Over-ocean LUT Parameters...
                                rad388_dustolin1013zhgt3_aac,rad388_dustolin1013zhgt4_aac,&
                                rad388_dustolin1013zhgt5_aac,rad388_dustolin1013zhgt6_aac,&
+                               rad388_dustolin1013zhgt9_aac,rad388_dustolin1013zhgt12_aac,&
+			       rad388_dustolin1013zhgt15_aac,&
                                rad388_dustolin800zhgt5_aac,rad388_dustolin800zhgt6_aac,&
                                rad388_dustolin800zhgt7_aac,rad388_dustolin800zhgt8_aac,&
+                               rad388_dustolin800zhgt11_aac,rad388_dustolin800zhgt14_aac,&
+			       rad388_dustolin800zhgt17_aac,&
                                uvaimie_dustolin1013zhgt3_aac,uvaimie_dustolin1013zhgt4_aac,&
                                uvaimie_dustolin1013zhgt5_aac,uvaimie_dustolin1013zhgt6_aac,&
+                               uvaimie_dustolin1013zhgt9_aac,uvaimie_dustolin1013zhgt12_aac,&
+			       uvaimie_dustolin1013zhgt15_aac,&
                                uvaimie_dustolin800zhgt5_aac,uvaimie_dustolin800zhgt6_aac,&
                                uvaimie_dustolin800zhgt7_aac,uvaimie_dustolin800zhgt8_aac,&
-                               wavetbl_aac, aodtbl_aac, codtbl_aac, szatbl_aac,vzatbl_aac, &
-                               raatbl_aac,ssatbl_aac, salbtbl_aac)
+                               uvaimie_dustolin800zhgt11_aac,uvaimie_dustolin800zhgt14_aac,&
+			       uvaimie_dustolin800zhgt17_aac,&
+                               wavetbl_aac, aodtbl_aac, codtbl_aac, &
+			       szatbl_aac,vzatbl_aac,raatbl_aac,ssatbl_aac, salbtbl_aac)
       
 
  IMPLICIT NONE
@@ -114,7 +160,7 @@
 
 ! File, group, dataset and attribute names.
   CHARACTER(LEN=*), INTENT(IN) :: lut_fn
-! HSIZE_T type integer.
+
   INTEGER :: wavdims(nwav_aac), aoddims(naod_aac), coddims(ncod_aac)
   INTEGER :: szadims(nsza_aac), vzadims(nvza_aac), raadims(nraa_aac)
   INTEGER :: ssadims(nssa_aac), salbdims(nsalb_aac)
@@ -127,69 +173,115 @@
 !
     REAL(KIND=4), DIMENSION(:), ALLOCATABLE, INTENT(OUT)  :: rad388_smokelin1013zhgt3_aac,rad388_smokelin1013zhgt4_aac,&
                                                              rad388_smokelin1013zhgt5_aac,rad388_smokelin1013zhgt6_aac,&
+                                                             rad388_smokelin1013zhgt9_aac,rad388_smokelin1013zhgt12_aac,&
+							     rad388_smokelin1013zhgt15_aac,&
                                                              rad388_smokelin800zhgt5_aac,rad388_smokelin800zhgt6_aac,&
                                                              rad388_smokelin800zhgt7_aac,rad388_smokelin800zhgt8_aac,&
+                                                             rad388_smokelin800zhgt11_aac,rad388_smokelin800zhgt14_aac,&
+							     rad388_smokelin800zhgt17_aac,&
                                                              uvaimie_smokelin1013zhgt3_aac,uvaimie_smokelin1013zhgt4_aac,&
                                                              uvaimie_smokelin1013zhgt5_aac,uvaimie_smokelin1013zhgt6_aac,&
+                                                             uvaimie_smokelin1013zhgt9_aac,uvaimie_smokelin1013zhgt12_aac,&
+							     uvaimie_smokelin1013zhgt15_aac,&
                                                              uvaimie_smokelin800zhgt5_aac,uvaimie_smokelin800zhgt6_aac,&
-                                                             uvaimie_smokelin800zhgt7_aac,uvaimie_smokelin800zhgt8_aac
-
+                                                             uvaimie_smokelin800zhgt7_aac,uvaimie_smokelin800zhgt8_aac,&
+                                                             uvaimie_smokelin800zhgt11_aac,uvaimie_smokelin800zhgt14_aac,&
+							     uvaimie_smokelin800zhgt17_aac
 !
     REAL(KIND=4), DIMENSION(:), ALLOCATABLE, INTENT(OUT)  :: rad388_dustlin1013zhgt3_aac,rad388_dustlin1013zhgt4_aac,&
                                                              rad388_dustlin1013zhgt5_aac,rad388_dustlin1013zhgt6_aac,&
+                                                             rad388_dustlin1013zhgt9_aac,rad388_dustlin1013zhgt12_aac,&
+							     rad388_dustlin1013zhgt15_aac,&
                                                              rad388_dustlin800zhgt5_aac,rad388_dustlin800zhgt6_aac,&
                                                              rad388_dustlin800zhgt7_aac,rad388_dustlin800zhgt8_aac,&
+                                                             rad388_dustlin800zhgt11_aac,rad388_dustlin800zhgt14_aac,&
+							     rad388_dustlin800zhgt17_aac,&
                                                              uvaimie_dustlin1013zhgt3_aac,uvaimie_dustlin1013zhgt4_aac,&
                                                              uvaimie_dustlin1013zhgt5_aac,uvaimie_dustlin1013zhgt6_aac,&
+                                                             uvaimie_dustlin1013zhgt9_aac,uvaimie_dustlin1013zhgt12_aac,&
+							     uvaimie_dustlin1013zhgt15_aac,&
                                                              uvaimie_dustlin800zhgt5_aac,uvaimie_dustlin800zhgt6_aac,&
-                                                             uvaimie_dustlin800zhgt7_aac,uvaimie_dustlin800zhgt8_aac
-
+                                                             uvaimie_dustlin800zhgt7_aac,uvaimie_dustlin800zhgt8_aac,&
+                                                             uvaimie_dustlin800zhgt11_aac,uvaimie_dustlin800zhgt14_aac,&
+							     uvaimie_dustlin800zhgt17_aac
 !
     REAL(KIND=4), DIMENSION(:), ALLOCATABLE, INTENT(OUT)  :: rad388_dustolin1013zhgt3_aac,rad388_dustolin1013zhgt4_aac,&
                                                              rad388_dustolin1013zhgt5_aac,rad388_dustolin1013zhgt6_aac,&
+                                                             rad388_dustolin1013zhgt9_aac,rad388_dustolin1013zhgt12_aac,&
+							     rad388_dustolin1013zhgt15_aac,&
                                                              rad388_dustolin800zhgt5_aac,rad388_dustolin800zhgt6_aac,&
                                                              rad388_dustolin800zhgt7_aac,rad388_dustolin800zhgt8_aac,&
+                                                             rad388_dustolin800zhgt11_aac,rad388_dustolin800zhgt14_aac,&
+							     rad388_dustolin800zhgt17_aac,&
                                                              uvaimie_dustolin1013zhgt3_aac,uvaimie_dustolin1013zhgt4_aac,&
                                                              uvaimie_dustolin1013zhgt5_aac,uvaimie_dustolin1013zhgt6_aac,&
+                                                             uvaimie_dustolin1013zhgt9_aac,uvaimie_dustolin1013zhgt12_aac,&
+							     uvaimie_dustolin1013zhgt15_aac,&
                                                              uvaimie_dustolin800zhgt5_aac,uvaimie_dustolin800zhgt6_aac,&
-                                                             uvaimie_dustolin800zhgt7_aac,uvaimie_dustolin800zhgt8_aac
-
+                                                             uvaimie_dustolin800zhgt7_aac,uvaimie_dustolin800zhgt8_aac,&
+                                                             uvaimie_dustolin800zhgt11_aac,uvaimie_dustolin800zhgt14_aac,&
+							     uvaimie_dustolin800zhgt17_aac
+!
     REAL(KIND=4), DIMENSION(:), ALLOCATABLE,  INTENT(OUT) :: wavetbl_aac, aodtbl_aac,&
                                                              codtbl_aac, szatbl_aac, &
                                                              vzatbl_aac, raatbl_aac, ssatbl_aac, salbtbl_aac
 !  For SMOKE Over Land & Ocean
     REAL(KIND=4), DIMENSION(:,:,:,:,:,:,:), ALLOCATABLE  :: rad388_1013zhgt3_aac_smk, rad388_1013zhgt4_aac_smk, &
-    							    rad388_1013zhgt5_aac_smk, rad388_1013zhgt6_aac_smk, &
+    							    rad388_1013zhgt5_aac_smk, rad388_1013zhgt6_aac_smk,&
+                                                            rad388_1013zhgt9_aac_smk, rad388_1013zhgt12_aac_smk, &
+							    rad388_1013zhgt15_aac_smk,&
                                                             rad388_800zhgt5_aac_smk, rad388_800zhgt6_aac_smk, &
-							    rad388_800zhgt7_aac_smk, rad388_800zhgt8_aac_smk, &
+							    rad388_800zhgt7_aac_smk, rad388_800zhgt8_aac_smk,&
+                                                            rad388_800zhgt11_aac_smk, rad388_800zhgt14_aac_smk, &
+							    rad388_800zhgt17_aac_smk,&
                                                             uvaimie_1013zhgt3_aac_smk, uvaimie_1013zhgt4_aac_smk, &
-							    uvaimie_1013zhgt5_aac_smk, uvaimie_1013zhgt6_aac_smk, &
-                                                            uvaimie_800zhgt5_aac_smk, uvaimie_800zhgt6_aac_smk, &
-							    uvaimie_800zhgt7_aac_smk, uvaimie_800zhgt8_aac_smk
-
+							    uvaimie_1013zhgt5_aac_smk, uvaimie_1013zhgt6_aac_smk,&
+                                                            uvaimie_1013zhgt9_aac_smk, uvaimie_1013zhgt12_aac_smk, &
+							    uvaimie_1013zhgt15_aac_smk,&
+                                                            uvaimie_800zhgt5_aac_smk, uvaimie_800zhgt6_aac_smk,&
+							    uvaimie_800zhgt7_aac_smk, uvaimie_800zhgt8_aac_smk,&
+                                                            uvaimie_800zhgt11_aac_smk, uvaimie_800zhgt14_aac_smk, &
+							    uvaimie_800zhgt17_aac_smk
               
 !  For DUST Over Land
    REAL(KIND=4), DIMENSION(:,:,:,:,:,:,:), ALLOCATABLE  ::  rad388_1013zhgt3_aac_dst, rad388_1013zhgt4_aac_dst, &
-   							    rad388_1013zhgt5_aac_dst, rad388_1013zhgt6_aac_dst, &
-                                                            rad388_800zhgt5_aac_dst, rad388_800zhgt6_aac_dst, &
-							    rad388_800zhgt7_aac_dst, rad388_800zhgt8_aac_dst, &
-                                                            uvaimie_1013zhgt3_aac_dst, uvaimie_1013zhgt4_aac_dst, &
-							    uvaimie_1013zhgt5_aac_dst, uvaimie_1013zhgt6_aac_dst, &
-                                                            uvaimie_800zhgt5_aac_dst, uvaimie_800zhgt6_aac_dst, &
-							    uvaimie_800zhgt7_aac_dst, uvaimie_800zhgt8_aac_dst
-
+   							    rad388_1013zhgt5_aac_dst, rad388_1013zhgt6_aac_dst,&
+                                                            rad388_1013zhgt9_aac_dst, rad388_1013zhgt12_aac_dst, &
+							    rad388_1013zhgt15_aac_dst,&
+                                                            rad388_800zhgt5_aac_dst, rad388_800zhgt6_aac_dst,&
+							    rad388_800zhgt7_aac_dst, rad388_800zhgt8_aac_dst,&
+                                                            rad388_800zhgt11_aac_dst, rad388_800zhgt14_aac_dst, &
+							    rad388_800zhgt17_aac_dst,&
+                                                            uvaimie_1013zhgt3_aac_dst, uvaimie_1013zhgt4_aac_dst,&
+							    uvaimie_1013zhgt5_aac_dst, uvaimie_1013zhgt6_aac_dst,&
+                                                            uvaimie_1013zhgt9_aac_dst, uvaimie_1013zhgt12_aac_dst, &
+							    uvaimie_1013zhgt15_aac_dst,&
+                                                            uvaimie_800zhgt5_aac_dst, uvaimie_800zhgt6_aac_dst,&
+							    uvaimie_800zhgt7_aac_dst, uvaimie_800zhgt8_aac_dst,&
+                                                            uvaimie_800zhgt11_aac_dst, uvaimie_800zhgt14_aac_dst, &
+							    uvaimie_800zhgt17_aac_dst
   
 ! For DUST Over Ocean
    REAL(KIND=4), DIMENSION(:,:,:,:,:,:,:), ALLOCATABLE  ::  rad388_1013zhgt3_aac_dsto, rad388_1013zhgt4_aac_dsto, &
-   							    rad388_1013zhgt5_aac_dsto, rad388_1013zhgt6_aac_dsto, &
+   							    rad388_1013zhgt5_aac_dsto, rad388_1013zhgt6_aac_dsto,&
+                                                            rad388_1013zhgt9_aac_dsto, rad388_1013zhgt12_aac_dsto, &
+							    rad388_1013zhgt15_aac_dsto,&
                                                             rad388_800zhgt5_aac_dsto, rad388_800zhgt6_aac_dsto, &
-							    rad388_800zhgt7_aac_dsto, rad388_800zhgt8_aac_dsto, &
+							    rad388_800zhgt7_aac_dsto, rad388_800zhgt8_aac_dsto,&
+                                                            rad388_800zhgt11_aac_dsto, rad388_800zhgt14_aac_dsto, &
+							    rad388_800zhgt17_aac_dsto,&
                                                             uvaimie_1013zhgt3_aac_dsto, uvaimie_1013zhgt4_aac_dsto, &
-							    uvaimie_1013zhgt5_aac_dsto, uvaimie_1013zhgt6_aac_dsto, &
-                                                            uvaimie_800zhgt5_aac_dsto, uvaimie_800zhgt6_aac_dsto, &
-							    uvaimie_800zhgt7_aac_dsto, uvaimie_800zhgt8_aac_dsto
+							    uvaimie_1013zhgt5_aac_dsto, uvaimie_1013zhgt6_aac_dsto,&
+                                                            uvaimie_1013zhgt9_aac_dsto, uvaimie_1013zhgt12_aac_dsto, &
+							    uvaimie_1013zhgt15_aac_dsto,&
+                                                            uvaimie_800zhgt5_aac_dsto, uvaimie_800zhgt6_aac_dsto,&
+							    uvaimie_800zhgt7_aac_dsto, uvaimie_800zhgt8_aac_dsto,&
+                                                            uvaimie_800zhgt11_aac_dsto, uvaimie_800zhgt14_aac_dsto, &
+							    uvaimie_800zhgt17_aac_dsto
  
 !--------------------------------------------------------------------------------------------------------------------------------------------------
+
+
       integer, dimension (1) :: start1, edge1, stride1
       integer, dimension (7) :: start7, edge7, stride7
 
@@ -220,7 +312,7 @@
                 codtbl_aac(ncod_aac), szatbl_aac(nsza_aac), &
                 vzatbl_aac(nvza_aac), raatbl_aac(nraa_aac), &
                 ssatbl_aac(nssa_aac),salbtbl_aac(nsalb_aac) )
-
+!
       dset_name = 'NumberOfWavelength'
       status = nf90_inq_varid(grp_id, dset_name, dset_id)
       if (status /= NF90_NOERR) then
@@ -236,6 +328,7 @@
          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
          return
       end if
+!
       dset_name = 'NumberOfAerosolOpticalDepth'
       status = nf90_inq_varid(grp_id, dset_name, dset_id)
       if (status /= NF90_NOERR) then
@@ -249,6 +342,7 @@
          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
          return
       end if
+!
       dset_name = 'NumberOfCloudOpticalDepth'
       status = nf90_inq_varid(grp_id, dset_name, dset_id)
       if (status /= NF90_NOERR) then
@@ -262,6 +356,7 @@
          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
          return
       end if
+!
       dset_name = 'NumberOfSolarZenithAngle'
       status = nf90_inq_varid(grp_id, dset_name, dset_id)
       if (status /= NF90_NOERR) then
@@ -275,6 +370,7 @@
          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
          return
       end if
+!
       dset_name = 'NumberOfViewingZenithAngle'
       status = nf90_inq_varid(grp_id, dset_name, dset_id)
       if (status /= NF90_NOERR) then
@@ -288,6 +384,7 @@
          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
          return
       end if
+!
       dset_name = 'NumberOfRelativeAzimuthAngle'
       status = nf90_inq_varid(grp_id, dset_name, dset_id)
       if (status /= NF90_NOERR) then
@@ -301,7 +398,8 @@
          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
          return
       end if
-      dset_name = 'NumberOfSingleScatteringAlbedoDust'
+!
+      dset_name = 'NumberOfSingleScatteringAlbedoSmoke'
       status = nf90_inq_varid(grp_id, dset_name, dset_id)
       if (status /= NF90_NOERR) then
          print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
@@ -314,6 +412,7 @@
          print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
          return
       end if
+!
       dset_name = 'NumberOfSurfaceAlbedo'
       status = nf90_inq_varid(grp_id, dset_name, dset_id)
       if (status /= NF90_NOERR) then
@@ -328,77 +427,110 @@
          return
       end if
 
+
     !! Allocate memory
 
 !   FOR SMOKE
-    ALLOCATE(rad388_1013zhgt3_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
-             rad388_1013zhgt4_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
-             rad388_1013zhgt5_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
-             rad388_1013zhgt6_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+    ALLOCATE( rad388_1013zhgt3_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+              rad388_1013zhgt4_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+              rad388_1013zhgt5_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+              rad388_1013zhgt6_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+              rad388_1013zhgt9_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             rad388_1013zhgt12_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             rad388_1013zhgt15_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_1013zhgt3_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_1013zhgt4_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_1013zhgt5_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_1013zhgt6_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             uvaimie_1013zhgt9_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             uvaimie_1013zhgt12_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             uvaimie_1013zhgt15_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              STAT = status)
 
-    ALLOCATE(rad388_800zhgt5_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
-             rad388_800zhgt6_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
-             rad388_800zhgt7_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
-             rad388_800zhgt8_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+    ALLOCATE( rad388_800zhgt5_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+              rad388_800zhgt6_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+              rad388_800zhgt7_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+              rad388_800zhgt8_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             rad388_800zhgt11_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             rad388_800zhgt14_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             rad388_800zhgt17_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_800zhgt5_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_800zhgt6_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_800zhgt7_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_800zhgt8_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             uvaimie_800zhgt11_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             uvaimie_800zhgt14_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             uvaimie_800zhgt17_aac_smk( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              STAT = status)
 
 ! FOR DUST OVER LAND
 
-    ALLOCATE(rad388_1013zhgt3_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
-             rad388_1013zhgt4_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
-             rad388_1013zhgt5_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
-             rad388_1013zhgt6_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+    ALLOCATE( rad388_1013zhgt3_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+              rad388_1013zhgt4_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+              rad388_1013zhgt5_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+              rad388_1013zhgt6_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+              rad388_1013zhgt9_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             rad388_1013zhgt12_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             rad388_1013zhgt15_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_1013zhgt3_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_1013zhgt4_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_1013zhgt5_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_1013zhgt6_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             uvaimie_1013zhgt9_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             uvaimie_1013zhgt12_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             uvaimie_1013zhgt15_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              STAT = status)
 
-    ALLOCATE(rad388_800zhgt5_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
-             rad388_800zhgt6_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
-             rad388_800zhgt7_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
-             rad388_800zhgt8_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+    ALLOCATE( rad388_800zhgt5_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+              rad388_800zhgt6_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+              rad388_800zhgt7_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+              rad388_800zhgt8_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             rad388_800zhgt11_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             rad388_800zhgt14_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             rad388_800zhgt17_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_800zhgt5_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_800zhgt6_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_800zhgt7_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_800zhgt8_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             uvaimie_800zhgt11_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             uvaimie_800zhgt14_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             uvaimie_800zhgt17_aac_dst( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              STAT = status)
 
 
 ! FOR DUST OVER OCEAN
-    ALLOCATE(rad388_1013zhgt3_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
-             rad388_1013zhgt4_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
-             rad388_1013zhgt5_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
-             rad388_1013zhgt6_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+    ALLOCATE( rad388_1013zhgt3_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+              rad388_1013zhgt4_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+              rad388_1013zhgt5_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+              rad388_1013zhgt6_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+              rad388_1013zhgt9_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             rad388_1013zhgt12_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             rad388_1013zhgt15_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_1013zhgt3_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_1013zhgt4_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_1013zhgt5_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_1013zhgt6_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             uvaimie_1013zhgt9_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             uvaimie_1013zhgt12_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             uvaimie_1013zhgt15_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              STAT = status)
 
 
-    ALLOCATE(rad388_800zhgt5_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
-             rad388_800zhgt6_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
-             rad388_800zhgt7_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
-             rad388_800zhgt8_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+    ALLOCATE( rad388_800zhgt5_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+              rad388_800zhgt6_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+              rad388_800zhgt7_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+              rad388_800zhgt8_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             rad388_800zhgt11_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             rad388_800zhgt14_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             rad388_800zhgt17_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_800zhgt5_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_800zhgt6_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_800zhgt7_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              uvaimie_800zhgt8_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             uvaimie_800zhgt11_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             uvaimie_800zhgt14_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
+             uvaimie_800zhgt17_aac_dsto( nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac ), &
              STAT = status)
-
-    ALLOCATE(wavetbl_aac(nwav_aac), aodtbl_aac(naod_aac), codtbl_aac(ncod_aac),  szatbl_aac(nsza_aac), &
-              vzatbl_aac(nvza_aac), raatbl_aac(nraa_aac), ssatbl_aac(nssa_aac),salbtbl_aac(nsalb_aac), &
-	      STAT = status)
 
   
 ! -------------------------------------------------------------------------------------------------------------------------
@@ -526,6 +658,99 @@
       return
    end if
   uvaimie_1013zhgt6_aac_smk = uvaimie_1013zhgt6_aac_smk
+!
+   dset_name = 'Radiance388_SMOKE_PRESLEV1013_AERHGT9p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_1013zhgt9_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, rad388_1013zhgt9_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  rad388_1013zhgt9_aac_smk = rad388_1013zhgt9_aac_smk / sflux_lutaac
+!
+   dset_name = 'UVAIMie_SMOKE_PRESLEV1013_AERHGT9p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_1013zhgt9_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_1013zhgt9_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  uvaimie_1013zhgt9_aac_smk = uvaimie_1013zhgt9_aac_smk
+!
+   dset_name = 'Radiance388_SMOKE_PRESLEV1013_AERHGT12p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_1013zhgt12_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, rad388_1013zhgt12_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  rad388_1013zhgt12_aac_smk = rad388_1013zhgt12_aac_smk / sflux_lutaac
+!
+   dset_name = 'UVAIMie_SMOKE_PRESLEV1013_AERHGT12p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_1013zhgt12_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_1013zhgt12_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  uvaimie_1013zhgt12_aac_smk = uvaimie_1013zhgt12_aac_smk
+!
+   dset_name = 'Radiance388_SMOKE_PRESLEV1013_AERHGT15p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_1013zhgt15_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, rad388_1013zhgt15_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  rad388_1013zhgt15_aac_smk = rad388_1013zhgt15_aac_smk / sflux_lutaac
+!
+   dset_name = 'UVAIMie_SMOKE_PRESLEV1013_AERHGT15p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_1013zhgt15_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_1013zhgt15_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  uvaimie_1013zhgt15_aac_smk = uvaimie_1013zhgt15_aac_smk
+
+
+
 
 !
 ! --- Read 800 hPa files ----------------------------------------------------------------------
@@ -649,8 +874,99 @@
       return
    end if
   uvaimie_800zhgt8_aac_smk = uvaimie_800zhgt8_aac_smk
-
 !
+   dset_name = 'Radiance388_SMOKE_PRESLEV0800_AERHGT11p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_800zhgt11_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, rad388_800zhgt11_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  rad388_800zhgt11_aac_smk = rad388_800zhgt11_aac_smk / sflux_lutaac
+!
+   dset_name = 'UVAIMie_SMOKE_PRESLEV0800_AERHGT11p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_800zhgt11_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_800zhgt11_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  uvaimie_800zhgt11_aac_smk = uvaimie_800zhgt11_aac_smk
+!
+   dset_name = 'Radiance388_SMOKE_PRESLEV0800_AERHGT14p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_800zhgt14_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, rad388_800zhgt14_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  rad388_800zhgt14_aac_smk = rad388_800zhgt14_aac_smk / sflux_lutaac
+!
+   dset_name = 'UVAIMie_SMOKE_PRESLEV0800_AERHGT14p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_800zhgt14_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_800zhgt14_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  uvaimie_800zhgt14_aac_smk = uvaimie_800zhgt14_aac_smk
+!
+   dset_name = 'Radiance388_SMOKE_PRESLEV0800_AERHGT17p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_800zhgt17_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, rad388_800zhgt17_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  rad388_800zhgt17_aac_smk = rad388_800zhgt17_aac_smk / sflux_lutaac
+!
+   dset_name = 'UVAIMie_SMOKE_PRESLEV0800_AERHGT17p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_800zhgt17_aac_smk)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_800zhgt17_aac_smk, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  uvaimie_800zhgt17_aac_smk = uvaimie_800zhgt17_aac_smk
+
+
+
 
 ! -------------------------------------------------------------------------------------------------------------------------
 ! -------------------------------------------------------------------------------------------------------------------------
@@ -776,6 +1092,98 @@
       return
    end if
   uvaimie_1013zhgt6_aac_dst = uvaimie_1013zhgt6_aac_dst
+!
+   dset_name = 'Radiance388_DUST_PRESLEV1013_AERHGT9p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_1013zhgt9_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, rad388_1013zhgt9_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  rad388_1013zhgt9_aac_dst = rad388_1013zhgt9_aac_dst / sflux_lutaac
+!
+   dset_name = 'UVAIMie_DUST_PRESLEV1013_AERHGT9p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_1013zhgt9_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_1013zhgt9_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  uvaimie_1013zhgt9_aac_dst = uvaimie_1013zhgt9_aac_dst
+!
+   dset_name = 'Radiance388_DUST_PRESLEV1013_AERHGT12p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_1013zhgt12_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, rad388_1013zhgt12_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  rad388_1013zhgt12_aac_dst = rad388_1013zhgt12_aac_dst / sflux_lutaac
+!
+   dset_name = 'UVAIMie_DUST_PRESLEV1013_AERHGT12p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_1013zhgt12_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_1013zhgt12_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  uvaimie_1013zhgt12_aac_dst = uvaimie_1013zhgt12_aac_dst
+!
+   dset_name = 'Radiance388_DUST_PRESLEV1013_AERHGT15p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_1013zhgt15_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, rad388_1013zhgt15_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  rad388_1013zhgt15_aac_dst = rad388_1013zhgt15_aac_dst / sflux_lutaac
+!
+   dset_name = 'UVAIMie_DUST_PRESLEV1013_AERHGT15p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_1013zhgt15_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_1013zhgt15_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  uvaimie_1013zhgt15_aac_dst = uvaimie_1013zhgt15_aac_dst
+
+
 
 !
 ! --- Read 800 hPa files ----------------------------------------------------------------------
@@ -899,7 +1307,97 @@
       return
    end if
   uvaimie_800zhgt8_aac_dst = uvaimie_800zhgt8_aac_dst
- 
+!
+   dset_name = 'Radiance388_DUST_PRESLEV0800_AERHGT11p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_800zhgt11_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, rad388_800zhgt11_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  rad388_800zhgt11_aac_dst = rad388_800zhgt11_aac_dst / sflux_lutaac
+!
+   dset_name = 'UVAIMie_DUST_PRESLEV0800_AERHGT11p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_800zhgt11_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_800zhgt11_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  uvaimie_800zhgt11_aac_dst = uvaimie_800zhgt11_aac_dst
+!
+   dset_name = 'Radiance388_DUST_PRESLEV0800_AERHGT14p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_800zhgt14_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, rad388_800zhgt14_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  rad388_800zhgt14_aac_dst = rad388_800zhgt14_aac_dst / sflux_lutaac
+!
+   dset_name = 'UVAIMie_DUST_PRESLEV0800_AERHGT14p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_800zhgt14_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_800zhgt14_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  uvaimie_800zhgt14_aac_dst = uvaimie_800zhgt14_aac_dst
+!
+   dset_name = 'Radiance388_DUST_PRESLEV0800_AERHGT17p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_800zhgt17_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, rad388_800zhgt17_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  rad388_800zhgt17_aac_dst = rad388_800zhgt17_aac_dst / sflux_lutaac
+!
+   dset_name = 'UVAIMie_DUST_PRESLEV0800_AERHGT17p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_800zhgt17_aac_dst)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_800zhgt17_aac_dst, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  uvaimie_800zhgt17_aac_dst = uvaimie_800zhgt17_aac_dst
+
 
 ! -------------------------------------------------------------------------------------------------------------------------
 ! FOR DUSTO OVER OCEAN
@@ -1024,6 +1522,98 @@
       return
    end if
   uvaimie_1013zhgt6_aac_dsto = uvaimie_1013zhgt6_aac_dsto
+!
+   dset_name = 'Radiance388_DUSTO_PRESLEV1013_AERHGT9p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_1013zhgt9_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, rad388_1013zhgt9_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  rad388_1013zhgt9_aac_dsto = rad388_1013zhgt9_aac_dsto / sflux_lutaac
+!
+   dset_name = 'UVAIMie_DUSTO_PRESLEV1013_AERHGT9p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_1013zhgt9_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_1013zhgt9_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  uvaimie_1013zhgt9_aac_dsto = uvaimie_1013zhgt9_aac_dsto
+!
+   dset_name = 'Radiance388_DUSTO_PRESLEV1013_AERHGT12p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_1013zhgt12_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, rad388_1013zhgt12_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  rad388_1013zhgt12_aac_dsto = rad388_1013zhgt12_aac_dsto / sflux_lutaac
+!
+   dset_name = 'UVAIMie_DUSTO_PRESLEV1013_AERHGT12p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_1013zhgt12_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_1013zhgt12_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  uvaimie_1013zhgt12_aac_dsto = uvaimie_1013zhgt12_aac_dsto
+!
+   dset_name = 'Radiance388_DUSTO_PRESLEV1013_AERHGT15p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_1013zhgt15_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, rad388_1013zhgt15_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  rad388_1013zhgt15_aac_dsto = rad388_1013zhgt15_aac_dsto / sflux_lutaac
+!
+   dset_name = 'UVAIMie_DUSTO_PRESLEV1013_AERHGT15p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_1013zhgt15_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_1013zhgt15_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  uvaimie_1013zhgt15_aac_dsto = uvaimie_1013zhgt15_aac_dsto
+
+
 
 !
 ! --- Read 800 hPa files ----------------------------------------------------------------------
@@ -1147,193 +1737,407 @@
       return
    end if
   uvaimie_800zhgt8_aac_dsto = uvaimie_800zhgt8_aac_dsto
+!
+   dset_name = 'Radiance388_DUSTO_PRESLEV0800_AERHGT11p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_800zhgt11_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, rad388_800zhgt11_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  rad388_800zhgt11_aac_dsto = rad388_800zhgt11_aac_dsto / sflux_lutaac
+!
+   dset_name = 'UVAIMie_DUSTO_PRESLEV0800_AERHGT11p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_800zhgt11_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_800zhgt11_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  uvaimie_800zhgt11_aac_dsto = uvaimie_800zhgt11_aac_dsto
+!
+   dset_name = 'Radiance388_DUSTO_PRESLEV0800_AERHGT14p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_800zhgt14_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, rad388_800zhgt14_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  rad388_800zhgt14_aac_dsto = rad388_800zhgt14_aac_dsto / sflux_lutaac
+!
+   dset_name = 'UVAIMie_DUSTO_PRESLEV0800_AERHGT14p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_800zhgt14_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_800zhgt14_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  uvaimie_800zhgt14_aac_dsto = uvaimie_800zhgt14_aac_dsto
+!
+   dset_name = 'Radiance388_DUSTO_PRESLEV0800_AERHGT17p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(rad388_800zhgt17_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, rad388_800zhgt17_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  rad388_800zhgt17_aac_dsto = rad388_800zhgt17_aac_dsto / sflux_lutaac
+!
+   dset_name = 'UVAIMie_DUSTO_PRESLEV0800_AERHGT17p00_aac'
+   status = nf90_inq_varid(grp_id, dset_name, dset_id)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to get ID of dataset "//trim(dset_name)//": ", status
+      return
+   end if
+   edge7   = SHAPE(uvaimie_800zhgt17_aac_dsto)
+   status = nf90_get_var(grp_id, dset_id, uvaimie_800zhgt17_aac_dsto, start=start7, &
+      stride=stride7, count=edge7)
+   if (status /= NF90_NOERR) then
+      print *, "ERROR: Failed to read dataset "//trim(dset_name)//": ", status
+      return
+   end if
+  uvaimie_800zhgt17_aac_dsto = uvaimie_800zhgt17_aac_dsto
+
  
     
 !
 ! -- Do Lagrange interpolation for Radiance fields ----------------------
-  ALLOCATE(rad388_smokelin1013zhgt3_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           rad388_smokelin1013zhgt4_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           rad388_smokelin1013zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           rad388_smokelin1013zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_smokelin1013zhgt3_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_smokelin1013zhgt4_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_smokelin1013zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_smokelin1013zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+ ALLOCATE(   rad388_smokelin1013zhgt3_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+             rad388_smokelin1013zhgt4_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+             rad388_smokelin1013zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+             rad388_smokelin1013zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+             rad388_smokelin1013zhgt9_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            rad388_smokelin1013zhgt12_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            rad388_smokelin1013zhgt15_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_smokelin1013zhgt3_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_smokelin1013zhgt4_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_smokelin1013zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_smokelin1013zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_smokelin1013zhgt9_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+           uvaimie_smokelin1013zhgt12_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+           uvaimie_smokelin1013zhgt15_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
            STAT = status)
-   !
-  ALLOCATE(rad388_smokelin800zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           rad388_smokelin800zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           rad388_smokelin800zhgt7_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           rad388_smokelin800zhgt8_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_smokelin800zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_smokelin800zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_smokelin800zhgt7_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_smokelin800zhgt8_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+!
+  ALLOCATE(  rad388_smokelin800zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+             rad388_smokelin800zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+             rad388_smokelin800zhgt7_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+             rad388_smokelin800zhgt8_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            rad388_smokelin800zhgt11_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            rad388_smokelin800zhgt14_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            rad388_smokelin800zhgt17_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_smokelin800zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_smokelin800zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_smokelin800zhgt7_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_smokelin800zhgt8_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+           uvaimie_smokelin800zhgt11_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+           uvaimie_smokelin800zhgt14_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+           uvaimie_smokelin800zhgt17_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
            STAT = status)
 
 ! DUST Over-land Parameters...
-  ALLOCATE(rad388_dustlin1013zhgt3_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           rad388_dustlin1013zhgt4_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           rad388_dustlin1013zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           rad388_dustlin1013zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_dustlin1013zhgt3_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_dustlin1013zhgt4_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_dustlin1013zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_dustlin1013zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+ ALLOCATE(   rad388_dustlin1013zhgt3_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+             rad388_dustlin1013zhgt4_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+             rad388_dustlin1013zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+             rad388_dustlin1013zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+             rad388_dustlin1013zhgt9_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            rad388_dustlin1013zhgt12_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            rad388_dustlin1013zhgt15_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_dustlin1013zhgt3_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_dustlin1013zhgt4_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_dustlin1013zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_dustlin1013zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_dustlin1013zhgt9_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+           uvaimie_dustlin1013zhgt12_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+           uvaimie_dustlin1013zhgt15_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
            STAT = status)
-   !
-  ALLOCATE(rad388_dustlin800zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           rad388_dustlin800zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           rad388_dustlin800zhgt7_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           rad388_dustlin800zhgt8_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_dustlin800zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_dustlin800zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_dustlin800zhgt7_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_dustlin800zhgt8_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+!
+  ALLOCATE(  rad388_dustlin800zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+             rad388_dustlin800zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+             rad388_dustlin800zhgt7_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+             rad388_dustlin800zhgt8_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            rad388_dustlin800zhgt11_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            rad388_dustlin800zhgt14_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            rad388_dustlin800zhgt17_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_dustlin800zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_dustlin800zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_dustlin800zhgt7_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_dustlin800zhgt8_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+           uvaimie_dustlin800zhgt11_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+           uvaimie_dustlin800zhgt14_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+           uvaimie_dustlin800zhgt17_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
            STAT = status)
 
 ! DUST Over-ocean Parameters...
-  ALLOCATE(rad388_dustolin1013zhgt3_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           rad388_dustolin1013zhgt4_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           rad388_dustolin1013zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           rad388_dustolin1013zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_dustolin1013zhgt3_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_dustolin1013zhgt4_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_dustolin1013zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_dustolin1013zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+
+ ALLOCATE(   rad388_dustolin1013zhgt3_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+             rad388_dustolin1013zhgt4_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+             rad388_dustolin1013zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+             rad388_dustolin1013zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+             rad388_dustolin1013zhgt9_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            rad388_dustolin1013zhgt12_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            rad388_dustolin1013zhgt15_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_dustolin1013zhgt3_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_dustolin1013zhgt4_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_dustolin1013zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_dustolin1013zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_dustolin1013zhgt9_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+           uvaimie_dustolin1013zhgt12_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+           uvaimie_dustolin1013zhgt15_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
            STAT = status)
 !
-  ALLOCATE(rad388_dustolin800zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           rad388_dustolin800zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           rad388_dustolin800zhgt7_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           rad388_dustolin800zhgt8_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_dustolin800zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_dustolin800zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_dustolin800zhgt7_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
-           uvaimie_dustolin800zhgt8_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+  ALLOCATE(  rad388_dustolin800zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+             rad388_dustolin800zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+             rad388_dustolin800zhgt7_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+             rad388_dustolin800zhgt8_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            rad388_dustolin800zhgt11_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            rad388_dustolin800zhgt14_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            rad388_dustolin800zhgt17_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_dustolin800zhgt5_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_dustolin800zhgt6_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_dustolin800zhgt7_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+            uvaimie_dustolin800zhgt8_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+           uvaimie_dustolin800zhgt11_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+           uvaimie_dustolin800zhgt14_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
+           uvaimie_dustolin800zhgt17_aac(nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac), &
            STAT = status)
 
 
-  rad388_smokelin1013zhgt3_aac(:)  = RESHAPE(rad388_1013zhgt3_aac_smk, &
+  rad388_smokelin1013zhgt3_aac(:)  = RESHAPE(rad388_1013zhgt3_aac_smk,  & 
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  rad388_smokelin1013zhgt4_aac(:)  = RESHAPE(rad388_1013zhgt4_aac_smk, &
+  rad388_smokelin1013zhgt4_aac(:)  = RESHAPE(rad388_1013zhgt4_aac_smk,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  rad388_smokelin1013zhgt5_aac(:)  = RESHAPE(rad388_1013zhgt5_aac_smk, &
+  rad388_smokelin1013zhgt5_aac(:)  = RESHAPE(rad388_1013zhgt5_aac_smk,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  rad388_smokelin1013zhgt6_aac(:)  = RESHAPE(rad388_1013zhgt6_aac_smk, &
+  rad388_smokelin1013zhgt6_aac(:)  = RESHAPE(rad388_1013zhgt6_aac_smk,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_smokelin1013zhgt3_aac(:)  = RESHAPE(uvaimie_1013zhgt3_aac_smk, &
+  rad388_smokelin1013zhgt9_aac(:)  = RESHAPE(rad388_1013zhgt9_aac_smk,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_smokelin1013zhgt4_aac(:)  = RESHAPE(uvaimie_1013zhgt4_aac_smk, &
+  rad388_smokelin1013zhgt12_aac(:) = RESHAPE(rad388_1013zhgt12_aac_smk, &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_smokelin1013zhgt5_aac(:)  = RESHAPE(uvaimie_1013zhgt5_aac_smk, &
+  rad388_smokelin1013zhgt15_aac(:) = RESHAPE(rad388_1013zhgt15_aac_smk, &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_smokelin1013zhgt6_aac(:)  = RESHAPE(uvaimie_1013zhgt6_aac_smk, &
+  uvaimie_smokelin1013zhgt3_aac(:) = RESHAPE(uvaimie_1013zhgt3_aac_smk, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_smokelin1013zhgt4_aac(:) = RESHAPE(uvaimie_1013zhgt4_aac_smk, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_smokelin1013zhgt5_aac(:) = RESHAPE(uvaimie_1013zhgt5_aac_smk, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_smokelin1013zhgt6_aac(:) = RESHAPE(uvaimie_1013zhgt6_aac_smk, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_smokelin1013zhgt9_aac(:) = RESHAPE(uvaimie_1013zhgt9_aac_smk, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_smokelin1013zhgt12_aac(:)= RESHAPE(uvaimie_1013zhgt12_aac_smk,&
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_smokelin1013zhgt15_aac(:)= RESHAPE(uvaimie_1013zhgt15_aac_smk,&
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
 !
-  rad388_smokelin800zhgt5_aac(:)  = RESHAPE(rad388_800zhgt5_aac_smk, &
+  rad388_smokelin800zhgt5_aac(:)  = RESHAPE(rad388_800zhgt5_aac_smk,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  rad388_smokelin800zhgt6_aac(:)  = RESHAPE(rad388_800zhgt6_aac_smk, &
+  rad388_smokelin800zhgt6_aac(:)  = RESHAPE(rad388_800zhgt6_aac_smk,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  rad388_smokelin800zhgt7_aac(:)  = RESHAPE(rad388_800zhgt7_aac_smk, &
+  rad388_smokelin800zhgt7_aac(:)  = RESHAPE(rad388_800zhgt7_aac_smk,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  rad388_smokelin800zhgt8_aac(:)  = RESHAPE(rad388_800zhgt8_aac_smk, &
+  rad388_smokelin800zhgt8_aac(:)  = RESHAPE(rad388_800zhgt8_aac_smk,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_smokelin800zhgt5_aac(:)  = RESHAPE(uvaimie_800zhgt5_aac_smk, &
+  rad388_smokelin800zhgt11_aac(:) = RESHAPE(rad388_800zhgt11_aac_smk, &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_smokelin800zhgt6_aac(:)  = RESHAPE(uvaimie_800zhgt6_aac_smk, &
+  rad388_smokelin800zhgt14_aac(:) = RESHAPE(rad388_800zhgt14_aac_smk, &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_smokelin800zhgt7_aac(:)  = RESHAPE(uvaimie_800zhgt7_aac_smk, &
+  rad388_smokelin800zhgt17_aac(:) = RESHAPE(rad388_800zhgt17_aac_smk, &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_smokelin800zhgt8_aac(:)  = RESHAPE(uvaimie_800zhgt8_aac_smk, &
+  uvaimie_smokelin800zhgt5_aac(:) = RESHAPE(uvaimie_800zhgt5_aac_smk, &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_smokelin800zhgt6_aac(:) = RESHAPE(uvaimie_800zhgt6_aac_smk, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_smokelin800zhgt7_aac(:) = RESHAPE(uvaimie_800zhgt7_aac_smk, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_smokelin800zhgt8_aac(:) = RESHAPE(uvaimie_800zhgt8_aac_smk, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_smokelin800zhgt11_aac(:)= RESHAPE(uvaimie_800zhgt11_aac_smk,&
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_smokelin800zhgt14_aac(:)= RESHAPE(uvaimie_800zhgt14_aac_smk,&
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_smokelin800zhgt17_aac(:)= RESHAPE(uvaimie_800zhgt17_aac_smk,&
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+
 
 ! DUST Over-land Parameters...
-  rad388_dustlin1013zhgt3_aac(:)  = RESHAPE(rad388_1013zhgt3_aac_dst, &
+
+  rad388_dustlin1013zhgt3_aac(:)  = RESHAPE(rad388_1013zhgt3_aac_dst,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  rad388_dustlin1013zhgt4_aac(:)  = RESHAPE(rad388_1013zhgt4_aac_dst, &
+  rad388_dustlin1013zhgt4_aac(:)  = RESHAPE(rad388_1013zhgt4_aac_dst,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  rad388_dustlin1013zhgt5_aac(:)  = RESHAPE(rad388_1013zhgt5_aac_dst, &
- 	 				(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  rad388_dustlin1013zhgt6_aac(:)  = RESHAPE(rad388_1013zhgt6_aac_dst, &
+  rad388_dustlin1013zhgt5_aac(:)  = RESHAPE(rad388_1013zhgt5_aac_dst,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_dustlin1013zhgt3_aac(:)  = RESHAPE(uvaimie_1013zhgt3_aac_dst, &
+  rad388_dustlin1013zhgt6_aac(:)  = RESHAPE(rad388_1013zhgt6_aac_dst,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_dustlin1013zhgt4_aac(:)  = RESHAPE(uvaimie_1013zhgt4_aac_dst, &
+  rad388_dustlin1013zhgt9_aac(:)  = RESHAPE(rad388_1013zhgt9_aac_dst,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_dustlin1013zhgt5_aac(:)  = RESHAPE(uvaimie_1013zhgt5_aac_dst, &
+  rad388_dustlin1013zhgt12_aac(:) = RESHAPE(rad388_1013zhgt12_aac_dst, &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_dustlin1013zhgt6_aac(:)  = RESHAPE(uvaimie_1013zhgt6_aac_dst, &
+  rad388_dustlin1013zhgt15_aac(:) = RESHAPE(rad388_1013zhgt15_aac_dst, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustlin1013zhgt3_aac(:) = RESHAPE(uvaimie_1013zhgt3_aac_dst, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustlin1013zhgt4_aac(:) = RESHAPE(uvaimie_1013zhgt4_aac_dst, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustlin1013zhgt5_aac(:) = RESHAPE(uvaimie_1013zhgt5_aac_dst, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustlin1013zhgt6_aac(:) = RESHAPE(uvaimie_1013zhgt6_aac_dst, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustlin1013zhgt9_aac(:) = RESHAPE(uvaimie_1013zhgt9_aac_dst, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustlin1013zhgt12_aac(:)= RESHAPE(uvaimie_1013zhgt12_aac_dst,&
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustlin1013zhgt15_aac(:)= RESHAPE(uvaimie_1013zhgt15_aac_dst,&
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
 !
-  rad388_dustlin800zhgt5_aac(:)  = RESHAPE(rad388_800zhgt5_aac_dst, &
+  rad388_dustlin800zhgt5_aac(:)  = RESHAPE(rad388_800zhgt5_aac_dst,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  rad388_dustlin800zhgt6_aac(:)  = RESHAPE(rad388_800zhgt6_aac_dst, &
+  rad388_dustlin800zhgt6_aac(:)  = RESHAPE(rad388_800zhgt6_aac_dst,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  rad388_dustlin800zhgt7_aac(:)  = RESHAPE(rad388_800zhgt7_aac_dst, &
+  rad388_dustlin800zhgt7_aac(:)  = RESHAPE(rad388_800zhgt7_aac_dst,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  rad388_dustlin800zhgt8_aac(:)  = RESHAPE(rad388_800zhgt8_aac_dst, &
+  rad388_dustlin800zhgt8_aac(:)  = RESHAPE(rad388_800zhgt8_aac_dst,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_dustlin800zhgt5_aac(:)  = RESHAPE(uvaimie_800zhgt5_aac_dst, &
+  rad388_dustlin800zhgt11_aac(:) = RESHAPE(rad388_800zhgt11_aac_dst, &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_dustlin800zhgt6_aac(:)  = RESHAPE(uvaimie_800zhgt6_aac_dst, &
+  rad388_dustlin800zhgt14_aac(:) = RESHAPE(rad388_800zhgt14_aac_dst, &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_dustlin800zhgt7_aac(:)  = RESHAPE(uvaimie_800zhgt7_aac_dst, &
+  rad388_dustlin800zhgt17_aac(:) = RESHAPE(rad388_800zhgt17_aac_dst, &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_dustlin800zhgt8_aac(:)  = RESHAPE(uvaimie_800zhgt8_aac_dst, &
+  uvaimie_dustlin800zhgt5_aac(:) = RESHAPE(uvaimie_800zhgt5_aac_dst, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustlin800zhgt6_aac(:) = RESHAPE(uvaimie_800zhgt6_aac_dst, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustlin800zhgt7_aac(:) = RESHAPE(uvaimie_800zhgt7_aac_dst, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustlin800zhgt8_aac(:) = RESHAPE(uvaimie_800zhgt8_aac_dst, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustlin800zhgt11_aac(:)= RESHAPE(uvaimie_800zhgt11_aac_dst,&
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustlin800zhgt14_aac(:)= RESHAPE(uvaimie_800zhgt14_aac_dst,&
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustlin800zhgt17_aac(:)= RESHAPE(uvaimie_800zhgt17_aac_dst,&
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
 
 
 ! DUST Over-ocean Parameters...
-  rad388_dustolin1013zhgt3_aac(:)  = RESHAPE(rad388_1013zhgt3_aac_dsto, &
+
+  rad388_dustolin1013zhgt3_aac(:)  = RESHAPE(rad388_1013zhgt3_aac_dsto,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  rad388_dustolin1013zhgt4_aac(:)  = RESHAPE(rad388_1013zhgt4_aac_dsto, &
+  rad388_dustolin1013zhgt4_aac(:)  = RESHAPE(rad388_1013zhgt4_aac_dsto,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  rad388_dustolin1013zhgt5_aac(:)  = RESHAPE(rad388_1013zhgt5_aac_dsto, &
+  rad388_dustolin1013zhgt5_aac(:)  = RESHAPE(rad388_1013zhgt5_aac_dsto,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  rad388_dustolin1013zhgt6_aac(:)  = RESHAPE(rad388_1013zhgt6_aac_dsto, &
+  rad388_dustolin1013zhgt6_aac(:)  = RESHAPE(rad388_1013zhgt6_aac_dsto,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_dustolin1013zhgt3_aac(:)  = RESHAPE(uvaimie_1013zhgt3_aac_dsto, &
+  rad388_dustolin1013zhgt9_aac(:)  = RESHAPE(rad388_1013zhgt9_aac_dsto,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_dustolin1013zhgt4_aac(:)  = RESHAPE(uvaimie_1013zhgt4_aac_dsto, &
+  rad388_dustolin1013zhgt12_aac(:) = RESHAPE(rad388_1013zhgt12_aac_dsto, &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_dustolin1013zhgt5_aac(:)  = RESHAPE(uvaimie_1013zhgt5_aac_dsto, &
+  rad388_dustolin1013zhgt15_aac(:) = RESHAPE(rad388_1013zhgt15_aac_dsto, &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_dustolin1013zhgt6_aac(:)  = RESHAPE(uvaimie_1013zhgt6_aac_dsto, &
+  uvaimie_dustolin1013zhgt3_aac(:) = RESHAPE(uvaimie_1013zhgt3_aac_dsto, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustolin1013zhgt4_aac(:) = RESHAPE(uvaimie_1013zhgt4_aac_dsto, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustolin1013zhgt5_aac(:) = RESHAPE(uvaimie_1013zhgt5_aac_dsto, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustolin1013zhgt6_aac(:) = RESHAPE(uvaimie_1013zhgt6_aac_dsto, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustolin1013zhgt9_aac(:) = RESHAPE(uvaimie_1013zhgt9_aac_dsto, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustolin1013zhgt12_aac(:)= RESHAPE(uvaimie_1013zhgt12_aac_dsto,&
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustolin1013zhgt15_aac(:)= RESHAPE(uvaimie_1013zhgt15_aac_dsto,&
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
 !
-  rad388_dustolin800zhgt5_aac(:)  = RESHAPE(rad388_800zhgt5_aac_dsto, &
+  rad388_dustolin800zhgt5_aac(:)  = RESHAPE(rad388_800zhgt5_aac_dsto,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  rad388_dustolin800zhgt6_aac(:)  = RESHAPE(rad388_800zhgt6_aac_dsto, &
+  rad388_dustolin800zhgt6_aac(:)  = RESHAPE(rad388_800zhgt6_aac_dsto,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  rad388_dustolin800zhgt7_aac(:)  = RESHAPE(rad388_800zhgt7_aac_dsto, &
+  rad388_dustolin800zhgt7_aac(:)  = RESHAPE(rad388_800zhgt7_aac_dsto,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  rad388_dustolin800zhgt8_aac(:)  = RESHAPE(rad388_800zhgt8_aac_dsto, &
+  rad388_dustolin800zhgt8_aac(:)  = RESHAPE(rad388_800zhgt8_aac_dsto,  &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_dustolin800zhgt5_aac(:)  = RESHAPE(uvaimie_800zhgt5_aac_dsto, &
+  rad388_dustolin800zhgt11_aac(:) = RESHAPE(rad388_800zhgt11_aac_dsto, &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_dustolin800zhgt6_aac(:)  = RESHAPE(uvaimie_800zhgt6_aac_dsto, &
+  rad388_dustolin800zhgt14_aac(:) = RESHAPE(rad388_800zhgt14_aac_dsto, &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_dustolin800zhgt7_aac(:)  = RESHAPE(uvaimie_800zhgt7_aac_dsto, &
+  rad388_dustolin800zhgt17_aac(:) = RESHAPE(rad388_800zhgt17_aac_dsto, &
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
-  uvaimie_dustolin800zhgt8_aac(:)  = RESHAPE(uvaimie_800zhgt8_aac_dsto, &
+  uvaimie_dustolin800zhgt5_aac(:) = RESHAPE(uvaimie_800zhgt5_aac_dsto, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustolin800zhgt6_aac(:) = RESHAPE(uvaimie_800zhgt6_aac_dsto, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustolin800zhgt7_aac(:) = RESHAPE(uvaimie_800zhgt7_aac_dsto, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustolin800zhgt8_aac(:) = RESHAPE(uvaimie_800zhgt8_aac_dsto, &
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustolin800zhgt11_aac(:)= RESHAPE(uvaimie_800zhgt11_aac_dsto,&
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustolin800zhgt14_aac(:)= RESHAPE(uvaimie_800zhgt14_aac_dsto,&
+  					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
+  uvaimie_dustolin800zhgt17_aac(:)= RESHAPE(uvaimie_800zhgt17_aac_dsto,&
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
 
  DEALLOCATE(rad388_1013zhgt3_aac_smk, rad388_1013zhgt4_aac_smk, rad388_1013zhgt5_aac_smk, rad388_1013zhgt6_aac_smk,&
+            rad388_1013zhgt9_aac_smk, rad388_1013zhgt12_aac_smk, rad388_1013zhgt15_aac_smk,&
             rad388_800zhgt5_aac_smk, rad388_800zhgt6_aac_smk, rad388_800zhgt7_aac_smk, rad388_800zhgt8_aac_smk,&
+            rad388_800zhgt11_aac_smk, rad388_800zhgt14_aac_smk, rad388_800zhgt17_aac_smk,&
             uvaimie_1013zhgt3_aac_smk, uvaimie_1013zhgt4_aac_smk, uvaimie_1013zhgt5_aac_smk, uvaimie_1013zhgt6_aac_smk,&
-            uvaimie_800zhgt5_aac_smk, uvaimie_800zhgt6_aac_smk, uvaimie_800zhgt7_aac_smk, uvaimie_800zhgt8_aac_smk, STAT=status)
+            uvaimie_1013zhgt9_aac_smk, uvaimie_1013zhgt12_aac_smk, uvaimie_1013zhgt15_aac_smk,&
+            uvaimie_800zhgt5_aac_smk, uvaimie_800zhgt6_aac_smk, uvaimie_800zhgt7_aac_smk, uvaimie_800zhgt8_aac_smk,&
+            uvaimie_800zhgt11_aac_smk, uvaimie_800zhgt14_aac_smk, uvaimie_800zhgt17_aac_smk, STAT=status)
 
  DEALLOCATE(rad388_1013zhgt3_aac_dst, rad388_1013zhgt4_aac_dst, rad388_1013zhgt5_aac_dst, rad388_1013zhgt6_aac_dst,&
+            rad388_1013zhgt9_aac_dst, rad388_1013zhgt12_aac_dst, rad388_1013zhgt15_aac_dst,&
             rad388_800zhgt5_aac_dst, rad388_800zhgt6_aac_dst, rad388_800zhgt7_aac_dst, rad388_800zhgt8_aac_dst,&
+            rad388_800zhgt11_aac_dst, rad388_800zhgt14_aac_dst, rad388_800zhgt17_aac_dst,&
             uvaimie_1013zhgt3_aac_dst, uvaimie_1013zhgt4_aac_dst, uvaimie_1013zhgt5_aac_dst, uvaimie_1013zhgt6_aac_dst,&
-            uvaimie_800zhgt5_aac_dst, uvaimie_800zhgt6_aac_dst, uvaimie_800zhgt7_aac_dst, uvaimie_800zhgt8_aac_dst, STAT=status)
+            uvaimie_1013zhgt9_aac_dst, uvaimie_1013zhgt12_aac_dst, uvaimie_1013zhgt15_aac_dst,&
+            uvaimie_800zhgt5_aac_dst, uvaimie_800zhgt6_aac_dst, uvaimie_800zhgt7_aac_dst, uvaimie_800zhgt8_aac_dst,&
+            uvaimie_800zhgt11_aac_dst, uvaimie_800zhgt14_aac_dst, uvaimie_800zhgt17_aac_dst, STAT=status)
 
  DEALLOCATE(rad388_1013zhgt3_aac_dsto, rad388_1013zhgt4_aac_dsto, rad388_1013zhgt5_aac_dsto, rad388_1013zhgt6_aac_dsto,&
+            rad388_1013zhgt9_aac_dsto, rad388_1013zhgt12_aac_dsto, rad388_1013zhgt15_aac_dsto,&
             rad388_800zhgt5_aac_dsto, rad388_800zhgt6_aac_dsto, rad388_800zhgt7_aac_dsto, rad388_800zhgt8_aac_dsto,&
+            rad388_800zhgt11_aac_dsto, rad388_800zhgt14_aac_dsto, rad388_800zhgt17_aac_dsto,&
             uvaimie_1013zhgt3_aac_dsto, uvaimie_1013zhgt4_aac_dsto, uvaimie_1013zhgt5_aac_dsto, uvaimie_1013zhgt6_aac_dsto,&
-            uvaimie_800zhgt5_aac_dsto, uvaimie_800zhgt6_aac_dsto, uvaimie_800zhgt7_aac_dsto, uvaimie_800zhgt8_aac_dsto, STAT=status)
-
+            uvaimie_1013zhgt9_aac_dsto, uvaimie_1013zhgt12_aac_dsto, uvaimie_1013zhgt15_aac_dsto,&
+            uvaimie_800zhgt5_aac_dsto, uvaimie_800zhgt6_aac_dsto, uvaimie_800zhgt7_aac_dsto, uvaimie_800zhgt8_aac_dsto,&
+            uvaimie_800zhgt11_aac_dsto, uvaimie_800zhgt14_aac_dsto, uvaimie_800zhgt17_aac_dsto, STAT=status)
 !
 
 90   status = nf90_close(nc_id)
@@ -1348,7 +2152,7 @@
  SUBROUTINE Interpol_aac_LUTparams(ocean,atype,inpterr, inzhgt, inssa, insalb354, insalb388, &
                                    fint_rad388_aac, fint_uvaimie_aac)
 !
-   USE LookupTableModule
+   USE LookupTableModule_nc4
 
    IMPLICIT NONE
 
@@ -1356,25 +2160,20 @@
    INTEGER(KIND=2), INTENT(IN)  :: atype
    REAL(KIND=4),    INTENT(IN)  ::  inpterr, inzhgt, inssa, insalb354, insalb388
 
+  REAL(KIND=4), DIMENSION(:,:), ALLOCATABLE, INTENT(OUT) :: fint_rad388_aac, fint_uvaimie_aac
 
-!
-   REAL(KIND=4)     ::  inpterr2
-!
-   REAL(KIND=4), DIMENSION(:,:), ALLOCATABLE, INTENT(OUT) :: fint_rad388_aac, fint_uvaimie_aac
-!
-   REAL(KIND=4), DIMENSION(:,:,:), ALLOCATABLE        :: rad_smokeout_aac, rad_dustout_aac, rad_dustoout_aac 
-   REAL(KIND=4), DIMENSION(:,:,:), ALLOCATABLE        :: uvaimie_smokeout_aac, uvaimie_dustout_aac, uvaimie_dustoout_aac
-!
-   REAL(KIND=4), DIMENSION(:,:,:,:,:), ALLOCATABLE      :: intrad388_1013_aac, intrad388_800_aac,&
-                                                           intuvaimie_1013_aac, intuvaimie_800_aac
-!
-  REAL(KIND=4), DIMENSION(:,:,:,:), ALLOCATABLE      :: int2_rad388_1013_aac, int2_rad388_800_aac, &
-                                                        int2_uvaimie_1013_aac, int2_uvaimie_800_aac
-!
-  REAL(KIND=4), DIMENSION(:,:,:), ALLOCATABLE      :: int3_rad388_1013_aac, int3_rad388_800_aac, &
-                                                      int3_uvaimie_1013_aac, int3_uvaimie_800_aac
+  REAL(KIND=4)     ::  inpterr2
+  REAL(KIND=4), DIMENSION(:,:,:), ALLOCATABLE    :: rad_smokeout_aac, rad_dustout_aac, rad_dustoout_aac 
+  REAL(KIND=4), DIMENSION(:,:,:), ALLOCATABLE    :: uvaimie_smokeout_aac, uvaimie_dustout_aac, uvaimie_dustoout_aac
 
-  REAL(KIND=4), DIMENSION(:,:), ALLOCATABLE      :: int4_rad388_1013_aac, int4_rad388_800_aac, &
+  REAL(KIND=4), DIMENSION(:,:,:,:,:), ALLOCATABLE:: intrad388_1013_aac, intrad388_800_aac,&
+                                                    intuvaimie_1013_aac, intuvaimie_800_aac
+
+  REAL(KIND=4), DIMENSION(:,:,:,:), ALLOCATABLE  :: int2_rad388_1013_aac, int2_rad388_800_aac, &
+                                                    int2_uvaimie_1013_aac, int2_uvaimie_800_aac
+  REAL(KIND=4), DIMENSION(:,:,:),   ALLOCATABLE  :: int3_rad388_1013_aac, int3_rad388_800_aac, &
+                                                    int3_uvaimie_1013_aac, int3_uvaimie_800_aac
+  REAL(KIND=4), DIMENSION(:,:),     ALLOCATABLE  :: int4_rad388_1013_aac, int4_rad388_800_aac, &
                                                     int4_uvaimie_1013_aac, int4_uvaimie_800_aac
 
 
@@ -1389,9 +2188,10 @@
 !==============================================================================
   INTEGER(KIND=4) :: jtheta, jtheta2, jsza, jsza2, jphi, jphi2, jw1
 
-  REAL(KIND=4), DIMENSION(7) :: ssa388val_smk = (/0.780184, 0.807809, 0.845545, 0.887624, 0.935943, 0.964274, 1.000/)
-  REAL(KIND=4), DIMENSION(7) :: ssa388val_dst = (/0.765130, 0.828882, 0.870567, 0.902707, 0.948519, 0.972289, 1.000/)
-  REAL(KIND=4), DIMENSION(4) :: zhgt1013val = (/3.0, 4.0, 5.0, 6.0/)
+  REAL(KIND=4), DIMENSION(7) ::       ssa388val_smk = (/0.780184, 0.807809, 0.845545, 0.887624, 0.935943, 0.964274, 1.000/)
+  REAL(KIND=4), DIMENSION(7) ::  ssa388val_dst_land = (/0.779210, 0.837780, 0.876060, 0.905320, 0.948860, 0.972340, 1.000/)
+  REAL(KIND=4), DIMENSION(7) :: ssa388val_dst_ocean = (/0.767990, 0.829980, 0.870520, 0.901320, 0.946900, 0.971240, 1.000/)
+  REAL(KIND=4), DIMENSION(7) :: zhgt1013val = (/3.0, 4.0, 5.0, 6.0, 9.0, 12.0, 15.0/)
   REAL(KIND=4), DIMENSION(5) :: salbval = (/0.0, 0.05, 0.10, 0.15, 0.20/)
 
   INTEGER(KIND=4) :: zhgtlw, zhgtup, ssalw, ssaup, salblw354, salbup354, salblw388, salbup388
@@ -1416,9 +2216,9 @@
 !=============================================================================
 ! Find the two index values for input zhgt vlaues
 !=============================================================================
-  status=FindTableEntry(inzhgt, zhgt1013val, 4, theta1,theta2, zhgtlw, zhgtup,&
+  status=FindTableEntry(inzhgt, zhgt1013val, 7, theta1,theta2, zhgtlw, zhgtup,&
                                                                  fractionalZhgt)
-  if (zhgtlw .ge. 4) zhgtup = zhgtlw
+  if (zhgtlw .ge. 7) zhgtup = zhgtlw
   if (zhgtlw .lt. 1) then
       zhgtlw = 1
       zhgtup = zhgtlw
@@ -1427,13 +2227,18 @@
 !=============================================================================
 ! Find the two index values for input SSA vlaues
 !=============================================================================
-  IF(atype.eq.1) THEN
+  IF(atype .eq. 1) THEN
   status=FindTableEntry(inssa, ssa388val_smk, 7, theta1,theta2, ssalw, ssaup,&
                                                            fractionalSSA)
   ENDIF
 
-  IF(atype.eq.2) THEN
-  status=FindTableEntry(inssa, ssa388val_dst, 7, theta1,theta2, ssalw, ssaup,&
+  IF(atype .eq. 2) THEN
+  status=FindTableEntry(inssa, ssa388val_dst_land, 7, theta1,theta2, ssalw, ssaup,&
+                                                           fractionalSSA)
+  ENDIF
+
+  IF(atype .eq. 4) THEN
+  status=FindTableEntry(inssa, ssa388val_dst_ocean, 7, theta1,theta2, ssalw, ssaup,&
                                                            fractionalSSA)
   ENDIF
 
@@ -1456,299 +2261,445 @@
                                                                   fractionalSALB388)
 
 
-  IF(atype.eq.1) THEN
+  IF(atype .eq. 1) THEN
    !
-   DO ialo = salblw388, salbup388
-     IF(zhgtlw.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt3_aac, rad_smokeout_aac)
-     IF(zhgtlw.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt4_aac, rad_smokeout_aac)
-     IF(zhgtlw.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt5_aac, rad_smokeout_aac)
-     IF(zhgtlw.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt6_aac, rad_smokeout_aac)
-     intrad388_1013_aac(ialo,zhgtlw,:,:,:) = rad_smokeout_aac
+  DO ialo = salblw388, salbup388
+   IF(zhgtlw .EQ. 1) &
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt3_aac, rad_smokeout_aac)
+   IF(zhgtlw .EQ. 2) &
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt4_aac, rad_smokeout_aac)
+   IF(zhgtlw .EQ. 3) &
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt5_aac, rad_smokeout_aac)
+   IF(zhgtlw .EQ. 4) &
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt6_aac, rad_smokeout_aac)
+   IF(zhgtlw .EQ. 5) &
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt9_aac, rad_smokeout_aac)
+   IF(zhgtlw .EQ. 6) &
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt12_aac, rad_smokeout_aac)
+   IF(zhgtlw .EQ. 7) &
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt15_aac, rad_smokeout_aac)
+   intrad388_1013_aac(ialo,zhgtlw,:,:,:) = rad_smokeout_aac
   
-     IF(zhgtup.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt3_aac, rad_smokeout_aac)
-     IF(zhgtup.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt4_aac, rad_smokeout_aac)
-     IF(zhgtup.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt5_aac, rad_smokeout_aac)
-     IF(zhgtup.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt6_aac, rad_smokeout_aac)
-     intrad388_1013_aac(ialo,zhgtup,:,:,:) = rad_smokeout_aac
-   ENDDO   !DO ialo = salblw388, salbup388
+   IF(zhgtup .EQ. 1) &
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt3_aac, rad_smokeout_aac)
+   IF(zhgtup .EQ. 2) &
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt4_aac, rad_smokeout_aac)
+   IF(zhgtup .EQ. 3) &
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt5_aac, rad_smokeout_aac)
+   IF(zhgtup .EQ. 4) &
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt6_aac, rad_smokeout_aac)
+   IF(zhgtup .EQ. 5) &
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt9_aac, rad_smokeout_aac)
+   IF(zhgtup .EQ. 6) &
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt12_aac, rad_smokeout_aac)
+   IF(zhgtup .EQ. 7) &
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt15_aac, rad_smokeout_aac)
+   intrad388_1013_aac(ialo,zhgtup,:,:,:) = rad_smokeout_aac
+  ENDDO   !DO ialo = salblw388, salbup388
    
 
-   DO ialo = salblw388, salbup388
-     IF(zhgtlw.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt3_aac, uvaimie_smokeout_aac)
-     IF(zhgtlw.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt4_aac, uvaimie_smokeout_aac)
-     IF(zhgtlw.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt5_aac, uvaimie_smokeout_aac)
-     IF(zhgtlw.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt6_aac, uvaimie_smokeout_aac)
-     intuvaimie_1013_aac(ialo,zhgtlw,:,:,:) = uvaimie_smokeout_aac
+  DO ialo = salblw388, salbup388
+   IF(zhgtlw .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt3_aac, uvaimie_smokeout_aac)
+   IF(zhgtlw .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt4_aac, uvaimie_smokeout_aac)
+   IF(zhgtlw .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt5_aac, uvaimie_smokeout_aac)
+   IF(zhgtlw .EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt6_aac, uvaimie_smokeout_aac)
+   IF(zhgtlw .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt9_aac, uvaimie_smokeout_aac)
+   IF(zhgtlw .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt12_aac, uvaimie_smokeout_aac)
+   IF(zhgtlw .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt15_aac, uvaimie_smokeout_aac)
+   intuvaimie_1013_aac(ialo,zhgtlw,:,:,:) = uvaimie_smokeout_aac
 
-     IF(zhgtup.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt3_aac, uvaimie_smokeout_aac)
-     IF(zhgtup.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt4_aac, uvaimie_smokeout_aac)
-     IF(zhgtup.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt5_aac, uvaimie_smokeout_aac)
-     IF(zhgtup.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt6_aac, uvaimie_smokeout_aac)
-     intuvaimie_1013_aac(ialo,zhgtup,:,:,:) = uvaimie_smokeout_aac
-   ENDDO   !DO ialo = salblw388, salbup388
+   IF(zhgtup .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt3_aac, uvaimie_smokeout_aac)
+   IF(zhgtup .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt4_aac, uvaimie_smokeout_aac)
+   IF(zhgtup .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt5_aac, uvaimie_smokeout_aac)
+   IF(zhgtup .EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt6_aac, uvaimie_smokeout_aac)
+   IF(zhgtup .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt9_aac, uvaimie_smokeout_aac)
+   IF(zhgtup .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt12_aac, uvaimie_smokeout_aac)
+   IF(zhgtup .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt15_aac, uvaimie_smokeout_aac)
+   intuvaimie_1013_aac(ialo,zhgtup,:,:,:) = uvaimie_smokeout_aac
+  ENDDO   !DO ialo = salblw388, salbup388
 
 
  ! -- 800 hPa --------------------------------------------------
    !
-   DO ialo = salblw388, salbup388
-     IF(zhgtlw.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt5_aac, rad_smokeout_aac)
-     IF(zhgtlw.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt6_aac, rad_smokeout_aac)
-     IF(zhgtlw.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt7_aac, rad_smokeout_aac)
-     IF(zhgtlw.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt8_aac, rad_smokeout_aac)
-     intrad388_800_aac(ialo,zhgtlw,:,:,:) = rad_smokeout_aac
+  DO ialo = salblw388, salbup388
+   IF(zhgtlw .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt5_aac, rad_smokeout_aac)
+   IF(zhgtlw .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt6_aac, rad_smokeout_aac)
+   IF(zhgtlw .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt7_aac, rad_smokeout_aac)
+   IF(zhgtlw .EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt8_aac, rad_smokeout_aac)
+   IF(zhgtlw .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt11_aac, rad_smokeout_aac)
+   IF(zhgtlw .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt14_aac, rad_smokeout_aac)
+   IF(zhgtlw .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt17_aac, rad_smokeout_aac)
+   intrad388_800_aac(ialo,zhgtlw,:,:,:) = rad_smokeout_aac
 
-     IF(zhgtup.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt5_aac, rad_smokeout_aac)
-     IF(zhgtup.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt6_aac, rad_smokeout_aac)
-     IF(zhgtup.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt7_aac, rad_smokeout_aac)
-     IF(zhgtup.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt8_aac, rad_smokeout_aac)
-     intrad388_800_aac(ialo,zhgtup,:,:,:) = rad_smokeout_aac
-   ENDDO   !DO ialo = salblw388, salbup388
+   IF(zhgtup .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt5_aac, rad_smokeout_aac)
+   IF(zhgtup .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt6_aac, rad_smokeout_aac)
+   IF(zhgtup .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt7_aac, rad_smokeout_aac)
+   IF(zhgtup .EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt8_aac, rad_smokeout_aac)
+   IF(zhgtup .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt11_aac, rad_smokeout_aac)
+   IF(zhgtup .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt14_aac, rad_smokeout_aac)
+   IF(zhgtup .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt17_aac, rad_smokeout_aac)
+   intrad388_800_aac(ialo,zhgtup,:,:,:) = rad_smokeout_aac
+  ENDDO   !DO ialo = salblw388, salbup388
 
 
-   DO ialo = salblw388, salbup388
-     IF(zhgtlw.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt5_aac, uvaimie_smokeout_aac)
-     IF(zhgtlw.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt6_aac, uvaimie_smokeout_aac)
-     IF(zhgtlw.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt7_aac, uvaimie_smokeout_aac)
-     IF(zhgtlw.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt8_aac, uvaimie_smokeout_aac)
-     intuvaimie_800_aac(ialo,zhgtlw,:,:,:) = uvaimie_smokeout_aac
+  DO ialo = salblw388, salbup388
+   IF(zhgtlw .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt5_aac, uvaimie_smokeout_aac)
+   IF(zhgtlw .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt6_aac, uvaimie_smokeout_aac)
+   IF(zhgtlw .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt7_aac, uvaimie_smokeout_aac)
+   IF(zhgtlw .EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt8_aac, uvaimie_smokeout_aac)
+   IF(zhgtlw .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt11_aac, uvaimie_smokeout_aac)
+   IF(zhgtlw .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt14_aac, uvaimie_smokeout_aac)
+   IF(zhgtlw .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt17_aac, uvaimie_smokeout_aac)
+   intuvaimie_800_aac(ialo,zhgtlw,:,:,:) = uvaimie_smokeout_aac
 
-     IF(zhgtup.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt5_aac, uvaimie_smokeout_aac)
-     IF(zhgtup.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt6_aac, uvaimie_smokeout_aac)
-     IF(zhgtup.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt7_aac, uvaimie_smokeout_aac)
-     IF(zhgtup.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt8_aac, uvaimie_smokeout_aac)
-     intuvaimie_800_aac(ialo,zhgtup,:,:,:) = uvaimie_smokeout_aac
-   ENDDO   !DO ialo = salblw388, salbup388
+   IF(zhgtup .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt5_aac, uvaimie_smokeout_aac)
+   IF(zhgtup .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt6_aac, uvaimie_smokeout_aac)
+   IF(zhgtup .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt7_aac, uvaimie_smokeout_aac)
+   IF(zhgtup .EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt8_aac, uvaimie_smokeout_aac)
+   IF(zhgtup .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt11_aac, uvaimie_smokeout_aac)
+   IF(zhgtup .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt14_aac, uvaimie_smokeout_aac)
+   IF(zhgtup .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt17_aac, uvaimie_smokeout_aac)
+   intuvaimie_800_aac(ialo,zhgtup,:,:,:) = uvaimie_smokeout_aac
+  ENDDO   !DO ialo = salblw388, salbup388
 
  ENDIF
 
 
- IF(atype.eq.2.and.ocean.eq.0) THEN     !over-land pixel
-   !
-   DO ialo = salblw388, salbup388
-     IF(zhgtlw.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt3_aac, rad_dustout_aac)
-     IF(zhgtlw.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt4_aac, rad_dustout_aac)
-     IF(zhgtlw.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt5_aac, rad_dustout_aac)
-     IF(zhgtlw.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt6_aac, rad_dustout_aac)
-     intrad388_1013_aac(ialo,zhgtlw,:,:,:) = rad_dustout_aac
+ IF(atype .eq. 2) THEN     !over-land pixel
+  !
+  DO ialo = salblw388, salbup388
+   IF(zhgtlw .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt3_aac, rad_dustout_aac)
+   IF(zhgtlw .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt4_aac, rad_dustout_aac)
+   IF(zhgtlw .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt5_aac, rad_dustout_aac)
+   IF(zhgtlw .EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt6_aac, rad_dustout_aac)
+   IF(zhgtlw .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt9_aac, rad_dustout_aac)
+   IF(zhgtlw .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt12_aac, rad_dustout_aac)
+   IF(zhgtlw .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt15_aac, rad_dustout_aac)
+   intrad388_1013_aac(ialo,zhgtlw,:,:,:) = rad_dustout_aac
 
-     IF(zhgtup.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt3_aac, rad_dustout_aac)
-     IF(zhgtup.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt4_aac, rad_dustout_aac)
-     IF(zhgtup.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt5_aac, rad_dustout_aac)
-     IF(zhgtup.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt6_aac, rad_dustout_aac)
-     intrad388_1013_aac(ialo,zhgtup,:,:,:) = rad_dustout_aac
-   ENDDO   !DO ialo = salblw388, salbup388
+   IF(zhgtup .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt3_aac, rad_dustout_aac)
+   IF(zhgtup .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt4_aac, rad_dustout_aac)
+   IF(zhgtup .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt5_aac, rad_dustout_aac)
+   IF(zhgtup.EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt6_aac, rad_dustout_aac)
+   IF(zhgtup .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt9_aac, rad_dustout_aac)
+   IF(zhgtup .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt12_aac, rad_dustout_aac)
+   IF(zhgtup .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt15_aac, rad_dustout_aac)
+   intrad388_1013_aac(ialo,zhgtup,:,:,:) = rad_dustout_aac
+  ENDDO   !DO ialo = salblw388, salbup388
 
-   DO ialo = salblw388, salbup388
-     IF(zhgtlw.EQ.1)  &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt3_aac, uvaimie_dustout_aac)
-     IF(zhgtlw.EQ.2)  &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt4_aac, uvaimie_dustout_aac)
-     IF(zhgtlw.EQ.3)  &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt5_aac, uvaimie_dustout_aac)
-     IF(zhgtlw.EQ.4)  &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt6_aac, uvaimie_dustout_aac)
-     intuvaimie_1013_aac(ialo,zhgtlw,:,:,:) = uvaimie_dustout_aac
+  DO ialo = salblw388, salbup388
+   IF(zhgtlw .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt3_aac, uvaimie_dustout_aac)
+   IF(zhgtlw .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt4_aac, uvaimie_dustout_aac)
+   IF(zhgtlw .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt5_aac, uvaimie_dustout_aac)
+   IF(zhgtlw .EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt6_aac, uvaimie_dustout_aac)
+   IF(zhgtlw .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt9_aac, uvaimie_dustout_aac)
+   IF(zhgtlw .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt12_aac, uvaimie_dustout_aac)
+   IF(zhgtlw .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt15_aac, uvaimie_dustout_aac)
+   intuvaimie_1013_aac(ialo,zhgtlw,:,:,:) = uvaimie_dustout_aac
 
-     IF(zhgtup.EQ.1)  &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt3_aac, uvaimie_dustout_aac)
-     IF(zhgtup.EQ.2)  &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt4_aac, uvaimie_dustout_aac)
-     IF(zhgtup.EQ.3)  &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt5_aac, uvaimie_dustout_aac)
-     IF(zhgtup.EQ.4)  &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt6_aac, uvaimie_dustout_aac)
-     intuvaimie_1013_aac(ialo,zhgtup,:,:,:) = uvaimie_dustout_aac
-   ENDDO   !DO ialo = salblw388, salbup388
+   IF(zhgtup .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt3_aac, uvaimie_dustout_aac)
+   IF(zhgtup .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt4_aac, uvaimie_dustout_aac)
+   IF(zhgtup .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt5_aac, uvaimie_dustout_aac)
+   IF(zhgtup .EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt6_aac, uvaimie_dustout_aac)
+   IF(zhgtup .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt9_aac, uvaimie_dustout_aac)
+   IF(zhgtup .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt12_aac, uvaimie_dustout_aac)
+   IF(zhgtup .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt15_aac, uvaimie_dustout_aac)
+   intuvaimie_1013_aac(ialo,zhgtup,:,:,:) = uvaimie_dustout_aac
+  ENDDO   !DO ialo = salblw388, salbup388
 
  ! -- 800 hPa --------------------------------------------------
-   !
-   DO ialo = salblw388, salbup388
-     IF(zhgtlw.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt5_aac, rad_dustout_aac)
-     IF(zhgtlw.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt6_aac, rad_dustout_aac)
-     IF(zhgtlw.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt7_aac, rad_dustout_aac)
-     IF(zhgtlw.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt8_aac, rad_dustout_aac)
-     intrad388_800_aac(ialo,zhgtlw,:,:,:) = rad_dustout_aac
+  !
+  DO ialo = salblw388, salbup388
+   IF(zhgtlw .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt5_aac, rad_dustout_aac)
+   IF(zhgtlw .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt6_aac, rad_dustout_aac)
+   IF(zhgtlw .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt7_aac, rad_dustout_aac)
+   IF(zhgtlw .EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt8_aac, rad_dustout_aac)
+   IF(zhgtlw .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt11_aac, rad_dustout_aac)
+   IF(zhgtlw .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt14_aac, rad_dustout_aac)
+   IF(zhgtlw .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt17_aac, rad_dustout_aac)
+   intrad388_800_aac(ialo,zhgtlw,:,:,:) = rad_dustout_aac
 
-     IF(zhgtup.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt5_aac, rad_dustout_aac)
-     IF(zhgtup.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt6_aac, rad_dustout_aac)
-     IF(zhgtup.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt7_aac, rad_dustout_aac)
-     IF(zhgtup.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt8_aac, rad_dustout_aac)
-     intrad388_800_aac(ialo,zhgtup,:,:,:) = rad_dustout_aac
-   ENDDO   !DO ialo = salblw388, salbup388
+   IF(zhgtup .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt5_aac, rad_dustout_aac)
+   IF(zhgtup .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt6_aac, rad_dustout_aac)
+   IF(zhgtup .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt7_aac, rad_dustout_aac)
+   IF(zhgtup .EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt8_aac, rad_dustout_aac)
+   IF(zhgtup .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt11_aac, rad_dustout_aac)
+   IF(zhgtup .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt14_aac, rad_dustout_aac)
+   IF(zhgtup .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt17_aac, rad_dustout_aac)
+   intrad388_800_aac(ialo,zhgtup,:,:,:) = rad_dustout_aac
+  ENDDO   !DO ialo = salblw388, salbup388
 
-   DO ialo = salblw388, salbup388
-     IF(zhgtlw.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt5_aac, uvaimie_dustout_aac)
-     IF(zhgtlw.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt6_aac, uvaimie_dustout_aac)
-     IF(zhgtlw.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt7_aac, uvaimie_dustout_aac)
-     IF(zhgtlw.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt8_aac, uvaimie_dustout_aac)
-     intuvaimie_800_aac(ialo,zhgtlw,:,:,:) = uvaimie_dustout_aac
+  DO ialo = salblw388, salbup388
+   IF(zhgtlw .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt5_aac, uvaimie_dustout_aac)
+   IF(zhgtlw .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt6_aac, uvaimie_dustout_aac)
+   IF(zhgtlw .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt7_aac, uvaimie_dustout_aac)
+   IF(zhgtlw .EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt8_aac, uvaimie_dustout_aac)
+   IF(zhgtlw .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt11_aac, uvaimie_dustout_aac)
+   IF(zhgtlw .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt14_aac, uvaimie_dustout_aac)
+   IF(zhgtlw .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt17_aac, uvaimie_dustout_aac)
+   intuvaimie_800_aac(ialo,zhgtlw,:,:,:) = uvaimie_dustout_aac
 
-     IF(zhgtup.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt5_aac, uvaimie_dustout_aac)
-     IF(zhgtup.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt6_aac, uvaimie_dustout_aac)
-     IF(zhgtup.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt7_aac, uvaimie_dustout_aac)
-     IF(zhgtup.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt8_aac, uvaimie_dustout_aac)
-     intuvaimie_800_aac(ialo,zhgtup,:,:,:) = uvaimie_dustout_aac
-   ENDDO   !DO ialo = salblw388, salbup388
+   IF(zhgtup .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt5_aac, uvaimie_dustout_aac)
+   IF(zhgtup .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt6_aac, uvaimie_dustout_aac)
+   IF(zhgtup .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt7_aac, uvaimie_dustout_aac)
+   IF(zhgtup .EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt8_aac, uvaimie_dustout_aac)
+   IF(zhgtup .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt11_aac, uvaimie_dustout_aac)
+   IF(zhgtup .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt14_aac, uvaimie_dustout_aac)
+   IF(zhgtup .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt17_aac, uvaimie_dustout_aac)
+   intuvaimie_800_aac(ialo,zhgtup,:,:,:) = uvaimie_dustout_aac
+  ENDDO   !DO ialo = salblw388, salbup388
  ENDIF
 
 
-IF(atype.eq.2.and.ocean.eq.1) THEN     !over-ocean pixel
-   !
-   DO ialo = salblw388, salbup388
-     IF(zhgtlw.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt3_aac, rad_dustoout_aac)
-     IF(zhgtlw.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt4_aac, rad_dustoout_aac)
-     IF(zhgtlw.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt5_aac, rad_dustoout_aac)
-     IF(zhgtlw.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt6_aac, rad_dustoout_aac)
-     intrad388_1013_aac(ialo,zhgtlw,:,:,:) = rad_dustoout_aac
 
-     IF(zhgtup.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt3_aac, rad_dustoout_aac)
-     IF(zhgtup.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt4_aac, rad_dustoout_aac)
-     IF(zhgtup.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt5_aac, rad_dustoout_aac)
-     IF(zhgtup.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt6_aac, rad_dustoout_aac)
-     intrad388_1013_aac(ialo,zhgtup,:,:,:) = rad_dustoout_aac
-   ENDDO   !DO ialo = salblw388, salbup388
+IF(atype .eq. 4) THEN     !over-ocean pixel
+  !
+  DO ialo = salblw388, salbup388
+   IF(zhgtlw .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt3_aac, rad_dustoout_aac)
+   IF(zhgtlw .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt4_aac, rad_dustoout_aac)
+   IF(zhgtlw .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt5_aac, rad_dustoout_aac)
+   IF(zhgtlw .EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt6_aac, rad_dustoout_aac)
+   IF(zhgtlw .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt9_aac, rad_dustoout_aac)
+   IF(zhgtlw .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt12_aac, rad_dustoout_aac)
+   IF(zhgtlw .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt15_aac, rad_dustoout_aac)
+   intrad388_1013_aac(ialo,zhgtlw,:,:,:) = rad_dustoout_aac
 
-   DO ialo = salblw388, salbup388
-     IF(zhgtlw.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt3_aac, uvaimie_dustoout_aac)
-     IF(zhgtlw.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt4_aac, uvaimie_dustoout_aac)
-     IF(zhgtlw.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt5_aac, uvaimie_dustoout_aac)
-     IF(zhgtlw.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt6_aac, uvaimie_dustoout_aac)
-     intuvaimie_1013_aac(ialo,zhgtlw,:,:,:) = uvaimie_dustoout_aac
+   IF(zhgtup .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt3_aac, rad_dustoout_aac)
+   IF(zhgtup .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt4_aac, rad_dustoout_aac)
+   IF(zhgtup .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt5_aac, rad_dustoout_aac)
+   IF(zhgtup .EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt6_aac, rad_dustoout_aac)
+   IF(zhgtup .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt9_aac, rad_dustoout_aac)
+   IF(zhgtup .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt12_aac, rad_dustoout_aac)
+   IF(zhgtup .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt15_aac, rad_dustoout_aac)
+   intrad388_1013_aac(ialo,zhgtup,:,:,:) = rad_dustoout_aac
+  ENDDO   !DO ialo = salblw388, salbup388
 
-     IF(zhgtup.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt3_aac, uvaimie_dustoout_aac)
-     IF(zhgtup.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt4_aac, uvaimie_dustoout_aac)
-     IF(zhgtup.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt5_aac, uvaimie_dustoout_aac)
-     IF(zhgtup.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt6_aac, uvaimie_dustoout_aac)
-     intuvaimie_1013_aac(ialo,zhgtup,:,:,:) = uvaimie_dustoout_aac
-   ENDDO   !DO ialo = salblw388, salbup388
+  DO ialo = salblw388, salbup388
+   IF(zhgtlw .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt3_aac, uvaimie_dustoout_aac)
+   IF(zhgtlw .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt4_aac, uvaimie_dustoout_aac)
+   IF(zhgtlw .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt5_aac, uvaimie_dustoout_aac)
+   IF(zhgtlw .EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt6_aac, uvaimie_dustoout_aac)
+   IF(zhgtlw .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt9_aac, uvaimie_dustoout_aac)
+   IF(zhgtlw .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt12_aac, uvaimie_dustoout_aac)
+   IF(zhgtlw .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt15_aac, uvaimie_dustoout_aac)
+   intuvaimie_1013_aac(ialo,zhgtlw,:,:,:) = uvaimie_dustoout_aac
+
+   IF(zhgtup .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt3_aac, uvaimie_dustoout_aac)
+   IF(zhgtup .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt4_aac, uvaimie_dustoout_aac)
+   IF(zhgtup .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt5_aac, uvaimie_dustoout_aac)
+   IF(zhgtup .EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt6_aac, uvaimie_dustoout_aac)
+   IF(zhgtup .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt9_aac, uvaimie_dustoout_aac)
+   IF(zhgtup .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt12_aac, uvaimie_dustoout_aac)
+   IF(zhgtup .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt15_aac, uvaimie_dustoout_aac)
+   intuvaimie_1013_aac(ialo,zhgtup,:,:,:) = uvaimie_dustoout_aac
+  ENDDO   !DO ialo = salblw388, salbup388
 
 
 ! -- 800 hPa --------------------------------------------------
-   !
-   DO ialo = salblw388, salbup388
-     IF(zhgtlw.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt5_aac, rad_dustoout_aac)
-     IF(zhgtlw.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt6_aac, rad_dustoout_aac)
-     IF(zhgtlw.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt7_aac, rad_dustoout_aac)
-     IF(zhgtlw.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt8_aac, rad_dustoout_aac)
-     intrad388_800_aac(ialo,zhgtlw,:,:,:) = rad_dustoout_aac
+  !
+  DO ialo = salblw388, salbup388
+   IF(zhgtlw .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt5_aac, rad_dustoout_aac)
+   IF(zhgtlw .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt6_aac, rad_dustoout_aac)
+   IF(zhgtlw .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt7_aac, rad_dustoout_aac)
+   IF(zhgtlw .EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt8_aac, rad_dustoout_aac)
+   IF(zhgtlw .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt11_aac, rad_dustoout_aac)
+   IF(zhgtlw .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt14_aac, rad_dustoout_aac)
+   IF(zhgtlw .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt17_aac, rad_dustoout_aac)
+   intrad388_800_aac(ialo,zhgtlw,:,:,:) = rad_dustoout_aac
 
-     IF(zhgtup.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt5_aac, rad_dustoout_aac)
-     IF(zhgtup.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt6_aac, rad_dustoout_aac)
-     IF(zhgtup.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt7_aac, rad_dustoout_aac)
-     IF(zhgtup.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt8_aac, rad_dustoout_aac)
-     intrad388_800_aac(ialo,zhgtup,:,:,:) = rad_dustoout_aac
-   ENDDO   !DO ialo = salblw388, salbup388
+   IF(zhgtup .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt5_aac, rad_dustoout_aac)
+   IF(zhgtup .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt6_aac, rad_dustoout_aac)
+   IF(zhgtup .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt7_aac, rad_dustoout_aac)
+   IF(zhgtup .EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt8_aac, rad_dustoout_aac)
+   IF(zhgtup .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt11_aac, rad_dustoout_aac)
+   IF(zhgtup .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt14_aac, rad_dustoout_aac)
+   IF(zhgtup .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt17_aac, rad_dustoout_aac)
+   intrad388_800_aac(ialo,zhgtup,:,:,:) = rad_dustoout_aac
+  ENDDO   !DO ialo = salblw388, salbup388
 
-   DO ialo = salblw388, salbup388
-     IF(zhgtlw.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt5_aac, uvaimie_dustoout_aac)
-     IF(zhgtlw.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt6_aac, uvaimie_dustoout_aac)
-     IF(zhgtlw.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt7_aac, uvaimie_dustoout_aac)
-     IF(zhgtlw.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt8_aac, uvaimie_dustoout_aac)
-     intuvaimie_800_aac(ialo,zhgtlw,:,:,:) = uvaimie_dustoout_aac
+  DO ialo = salblw388, salbup388
+   IF(zhgtlw .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt5_aac, uvaimie_dustoout_aac)
+   IF(zhgtlw .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt6_aac, uvaimie_dustoout_aac)
+   IF(zhgtlw .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt7_aac, uvaimie_dustoout_aac)
+   IF(zhgtlw .EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt8_aac, uvaimie_dustoout_aac)
+   IF(zhgtlw .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt11_aac, uvaimie_dustoout_aac)
+   IF(zhgtlw .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt14_aac, uvaimie_dustoout_aac)
+   IF(zhgtlw .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt17_aac, uvaimie_dustoout_aac)
+   intuvaimie_800_aac(ialo,zhgtlw,:,:,:) = uvaimie_dustoout_aac
 
-     IF(zhgtup.EQ.1) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt5_aac, uvaimie_dustoout_aac)
-     IF(zhgtup.EQ.2) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt6_aac, uvaimie_dustoout_aac)
-     IF(zhgtup.EQ.3) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt7_aac, uvaimie_dustoout_aac)
-     IF(zhgtup.EQ.4) &
-     status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt8_aac, uvaimie_dustoout_aac)
-     intuvaimie_800_aac(ialo,zhgtup,:,:,:) = uvaimie_dustoout_aac
-   ENDDO   !DO ialo = salblw388, salbup388
+   IF(zhgtup .EQ. 1) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt5_aac, uvaimie_dustoout_aac)
+   IF(zhgtup .EQ. 2) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt6_aac, uvaimie_dustoout_aac)
+   IF(zhgtup .EQ. 3) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt7_aac, uvaimie_dustoout_aac)
+   IF(zhgtup .EQ. 4) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt8_aac, uvaimie_dustoout_aac)
+   IF(zhgtup .EQ. 5) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt11_aac, uvaimie_dustoout_aac)
+   IF(zhgtup .EQ. 6) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt14_aac, uvaimie_dustoout_aac)
+   IF(zhgtup .EQ. 7) & 
+   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt17_aac, uvaimie_dustoout_aac)
+   intuvaimie_800_aac(ialo,zhgtup,:,:,:) = uvaimie_dustoout_aac
+  ENDDO   !DO ialo = salblw388, salbup388
  ENDIF
+
 
 ! --------------------------------------------------------------------------------
 
 !!  -- Do linear interpolation on SSA --
- ALLOCATE(int2_rad388_1013_aac(nsalb_aac,4,naod_aac,ncod_aac), &
-           int2_rad388_800_aac(nsalb_aac,4,naod_aac,ncod_aac), &
-         int2_uvaimie_1013_aac(nsalb_aac,4,naod_aac,ncod_aac), &
-	  int2_uvaimie_800_aac(nsalb_aac,4,naod_aac,ncod_aac) )
+ ALLOCATE(int2_rad388_1013_aac(nsalb_aac,7,naod_aac,ncod_aac), &
+           int2_rad388_800_aac(nsalb_aac,7,naod_aac,ncod_aac), &
+         int2_uvaimie_1013_aac(nsalb_aac,7,naod_aac,ncod_aac), &
+	  int2_uvaimie_800_aac(nsalb_aac,7,naod_aac,ncod_aac) )
 
 !
  DO ialo = salblw388, salbup388
@@ -1807,7 +2758,7 @@ IF(atype.eq.2.and.ocean.eq.1) THEN     !over-ocean pixel
                                int3_rad388_1013_aac(salbup388,:,:)*fractionalSALB388
   int4_uvaimie_1013_aac(:,:) = int3_uvaimie_1013_aac(salblw388,:,:)*(1.0 - fractionalSALB388) + &
                                int3_uvaimie_1013_aac(salbup388,:,:)*fractionalSALB388
-  !
+!
   int4_rad388_800_aac(:,:) =  int3_rad388_800_aac(salblw388,:,:)*(1.0 - fractionalSALB388) + &
                               int3_rad388_800_aac(salbup388,:,:)*fractionalSALB388
   int4_uvaimie_800_aac(:,:) = int3_uvaimie_800_aac(salblw388,:,:)*(1.0 - fractionalSALB388) + &
@@ -1831,7 +2782,8 @@ IF(atype.eq.2.and.ocean.eq.1) THEN     !over-ocean pixel
   fint_uvaimie_aac(:,:) = int4_uvaimie_1013_aac(:,:)*(1.0 -wt) + int4_uvaimie_800_aac(:,:)*wt
 
 !
-!write(*,*) 'fint_rad388_aac(:,6) : ', fint_rad388_aac(:,6)
+!write(*,*) 'fint_rad388_aac(:,1) : ', fint_rad388_aac(:,1)
+!write(*,*) 'fint_rad388_aac(:,8) : ', fint_rad388_aac(:,8)
 
   DEALLOCATE(rad_smokeout_aac, rad_dustout_aac, rad_dustoout_aac, &
              uvaimie_smokeout_aac, uvaimie_dustout_aac, uvaimie_dustoout_aac, & 
@@ -1861,7 +2813,7 @@ IF(atype.eq.2.and.ocean.eq.1) THEN     !over-ocean pixel
 !       Written by Marcos Andrade based on f77 TOMS code (2007)
 !
 !==============================================================================
-  USE LookupTableModule
+  USE LookupTableModule_nc4
 
   IMPLICIT NONE
 
@@ -1919,4 +2871,4 @@ ENDDO  ! DO issa = 1, nssa_aac
  END FUNCTION InterpRadiance_aac
 
 
-END MODULE Get_omacaLUT7dim_H5module 
+END MODULE Get_omacaLUT7dim_H5module_nc4 

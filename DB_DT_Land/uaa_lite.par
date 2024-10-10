@@ -1,0 +1,5 @@
+dt_nc4 = /tis/atmosphere/scratch/Dark_Target/yshi1/data4/PACE_github/Input/nclut_dt.nc
+db_nc4 = /tis/atmosphere/scratch/Dark_Target/yshi1/data4/PACE_github/Input/nclut_db.nc
+uv_nc4 = /tis/atmosphere/scratch/Dark_Target/yshi1/data4/PACE_github/Input/nclut_uv.nc
+landwater_mask = /tis/atmosphere/scratch/Dark_Target/yshi1/data4/PACE_unified_algorithm_from_paceteam_Feb9_2024/ancillary/landmask_GMT15ARC.nc 
+read_nc_landonly= /tis/atmosphere/scratch/Dark_Target/yshi1/data4/PACE_github/PACE_OCI_unified_aerosol_retrieval_algorithm/ML_UVAOD/read_nc_landonly.py

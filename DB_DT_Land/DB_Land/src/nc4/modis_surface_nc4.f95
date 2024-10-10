@@ -125,7 +125,7 @@ module modis_surface
          print *, "ERROR: Failed to open deepblue lut_nc4 file: ", status
          return
       end if
-
+!!!!!!!
       group_name = 'geozone'
       status = nf90_inq_ncid(nc_id, group_name, grp_id)
       if (status /= NF90_NOERR) then

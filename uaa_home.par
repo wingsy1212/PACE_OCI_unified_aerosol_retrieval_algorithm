@@ -2,7 +2,7 @@ output_dir   =    /home/sam/winhome/nasa/uaa/luts/L2_data/
 ! ANCILLARY DATASETS FROM PACE TEAM
 landwater_mask = /home/sam/winhome/nasa/uaa/luts/ancillary/landmask_GMT15ARC.nc 
 ! NC4 LUTs
-dt_nc4 = /home/sam/winhome/nasa/uaa/cp_test/lut_nc4/nclut_dt3.nc
+dt_nc4 = /home/sam/winhome/nasa/uaa/cp_test/lut_nc4/nclut_dt4.nc
 db_nc4 = /home/sam/winhome/nasa/uaa/cp_test/lut_nc4/nclut_db3.nc
 uv_nc4 = /home/sam/winhome/nasa/uaa/cp_test/lut_nc4/nclut_uv2.nc
 ! UV-group LUTs
@@ -29,5 +29,7 @@ VIIRS_land   =   /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DT_Land/tbls/VIIRS_L
 ! DEEP-BLUE(s) LUTs
 db_aero_lut_land = /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DB_Land/tbls/VIIRS_LUT/land_aerosol_luts_20151105.hdf
 db_aero_lut_dust = /home/sam/winhome/nasa/uaa/luts/DB_DT_Land/DB_Land/tbls/VIIRS_LUT/land_aerosol_luts_dust_0628.hdf
-db_config= /home/sam/git/PACE_OCI_unified_aerosol_retrieval_algorithm/uaa_db_home.par
-read_nc_landonly= /home/sam/git/PACE_OCI_unified_aerosol_retrieval_algorithm/ML_UVAOD/read_nc_landonly.py
+db_config = /home/sam/git/PACE_OCI_unified_aerosol_retrieval_algorithm/uaa_db_home.par
+read_nc_landonly = /home/sam/ml/ml.py
+ml_340 = /home/sam/ml/ml_340.pkl
+ml_380 = /home/sam/ml/ml_380.pkl

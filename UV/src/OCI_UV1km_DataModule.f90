@@ -21,17 +21,17 @@ USE MyConstants
   REAL(KIND=4),      DIMENSION(:,:), ALLOCATABLE :: SnowIce_fraction
 !  REAL(KIND=4),      DIMENSION(:,:), ALLOCATABLE :: TerrainHeight
   REAL(KIND=4),    DIMENSION(:,:,:), ALLOCATABLE :: SurfaceAlbedo_Oceancorr
-  REAL(KIND=4),      DIMENSION(:,:), ALLOCATABLE :: UVAerosolIndex
+!  REAL(KIND=4),      DIMENSION(:,:), ALLOCATABLE :: UVAerosolIndex
   REAL(KIND=4),      DIMENSION(:,:), ALLOCATABLE :: CloudOpticalDepth
   REAL(KIND=4),      DIMENSION(:,:), ALLOCATABLE :: CloudFraction
-  REAL(KIND=4),      DIMENSION(:,:), ALLOCATABLE :: Residue
-  REAL(KIND=4),    DIMENSION(:,:,:), ALLOCATABLE :: Reflectivity
+!  REAL(KIND=4),      DIMENSION(:,:), ALLOCATABLE :: Residue
+!  REAL(KIND=4),    DIMENSION(:,:,:), ALLOCATABLE :: Reflectivity
   REAL(KIND=4),    DIMENSION(:,:,:), ALLOCATABLE :: NormRadiances
+  INTEGER(KIND=2),   DIMENSION(:,:), ALLOCATABLE :: SurfaceTypeNativeRes
 
 ! Functions
   PUBLIC  :: allocate_UV1km_Data
   PUBLIC  :: deallocate_UV1km_Data
-  PUBLIC  :: inti_UV1km_Data
 
   CONTAINS   
 !==============================================================================
@@ -68,6 +68,15 @@ USE MyConstants
   ENDIF 
                                 
 !==============================================================================
+! Allocate space for SurfaceTypeNativeRes
+!==============================================================================
+  ALLOCATE(SurfaceTypeNativeRes(nX,nT), stat=STATUS)                               
+  IF (STATUS < 0) THEN
+     PRINT *,"Error : Unable to allocate SurfaceTypeNativeRes"
+     CALL EXIT(1)
+  ENDIF 
+
+!==============================================================================
 ! Allocate space for TerrainPressure
 !==============================================================================
   ALLOCATE(TerrainPressure(nX,nT), stat=STATUS)                               
@@ -95,15 +104,6 @@ USE MyConstants
   ENDIF 
 
 !==============================================================================
-! Allocate space for UVAerosolIndex
-!==============================================================================
-  ALLOCATE(UVAerosolIndex(nX,nT), stat=STATUS)                               
-  IF (STATUS < 0) THEN
-     PRINT *,"Error : Unable to allocate UVAerosolIndex"
-     CALL EXIT(1)
-  ENDIF 
-
-!==============================================================================
 ! Allocate space for CloudOpticalDepth
 !==============================================================================
   ALLOCATE(CloudOpticalDepth(nX,nT), stat=STATUS)                               
@@ -121,25 +121,6 @@ USE MyConstants
      CALL EXIT(1)
   ENDIF 
 
-!==============================================================================
-! Allocate space for Residue
-!==============================================================================
-  ALLOCATE(Residue(nX,nT), stat=STATUS)                               
-  IF (STATUS < 0) THEN
-     PRINT *,"Error : Unable to allocate Residue"
-     CALL EXIT(1)
-  ENDIF 
-
-!==============================================================================
-! Allocate space for Reflectivity
-!==============================================================================
-  ALLOCATE(Reflectivity(2,nX,nT), stat=STATUS)                               
-  IF (STATUS < 0) THEN
-     PRINT *,"Error : Unable to allocate Reflectivity "
-     CALL EXIT(1)
-  ENDIF 
-
-!  STATUS = AER_S_SUCCESS
 
   RETURN
 
@@ -157,24 +138,6 @@ USE MyConstants
   INTEGER(KIND=4)        :: STATUS
 
 !==============================================================================
-! Deallocate space for Reflectivity
-!==============================================================================
-  IF(ALLOCATED(Reflectivity))DEALLOCATE(Reflectivity,stat=STATUS)         
-  IF (STATUS < 0) THEN
-     PRINT *,"Error :  Unable to deallocate Reflectivity"
-     CALL EXIT(1)
-  ENDIF 
-
-!==============================================================================
-! Deallocate space for Residue
-!==============================================================================
-  IF(ALLOCATED(Residue))DEALLOCATE(Residue,stat=STATUS)         
-  IF (STATUS < 0) THEN
-     PRINT *,"Error :  Unable to deallocate Residue"
-     CALL EXIT(1)
-  ENDIF 
-
-!==============================================================================
 ! Deallocate space for CloudOpticalDepth
 !==============================================================================
   IF(ALLOCATED(CloudOpticalDepth))DEALLOCATE(CloudOpticalDepth,stat=STATUS)         
@@ -189,15 +152,6 @@ USE MyConstants
   IF(ALLOCATED(CloudFraction))DEALLOCATE(CloudFraction,stat=STATUS)         
   IF (STATUS < 0) THEN
      PRINT *,"Error :  Unable to deallocate CloudFraction"
-     CALL EXIT(1)
-  ENDIF 
-
-!==============================================================================
-! Deallocate space for UVAerosolIndex
-!==============================================================================
-  IF(ALLOCATED(UVAerosolIndex))DEALLOCATE(UVAerosolIndex,stat=STATUS)         
-  IF (STATUS < 0) THEN
-     PRINT *,"Error :  Unable to deallocate UVAerosolIndex"
      CALL EXIT(1)
   ENDIF 
 
@@ -229,6 +183,15 @@ USE MyConstants
   ENDIF 
 
 !==============================================================================
+! Deallocate space for SurfaceTypeNativeRes
+!==============================================================================
+  IF(ALLOCATED(SurfaceTypeNativeRes))DEALLOCATE(SurfaceTypeNativeRes,stat=STATUS)         
+  IF (STATUS < 0) THEN
+     PRINT *,"Error :  Unable to deallocate SurfaceTypeNativeRes"
+     CALL EXIT(1)
+  ENDIF 
+
+!==============================================================================
 ! Deallocate space for NormRadiances
 !==============================================================================
   IF(ALLOCATED(NormRadiances))DEALLOCATE(NormRadiances,stat=STATUS)         
@@ -253,30 +216,6 @@ USE MyConstants
 !!
 !==============================================================================
 !==============================================================================
-!!
-SUBROUTINE inti_UV1km_Data 
-
-USE MyConstants, ONLY: FILLVALUE_SP
-
-IMPLICIT NONE
-
-INTEGER :: STATUS
-
-STATUS = 1
-
-  IF(ALLOCATED(Reflectivity))               Reflectivity = -9999.         
-  IF(ALLOCATED(Residue))                         Residue = -9999.      
-  IF(ALLOCATED(CloudOpticalDepth))     CloudOpticalDepth = -9999.       
-  IF(ALLOCATED(CloudFraction))             CloudFraction = -9999.        
-  IF(ALLOCATED(UVAerosolIndex))           UVAerosolIndex = -9999.      
-  IF(ALLOCATED(SurfaceAlbedo_Oceancorr))SurfaceAlbedo_Oceancorr = -9999.      
-  IF(ALLOCATED(SnowIce_fraction))       SnowIce_fraction = -9999.        
-  IF(ALLOCATED(TerrainPressure))         TerrainPressure = -9999.      
-  IF(ALLOCATED(Time))                               Time = -9999.                        
-
-END SUBROUTINE inti_UV1km_Data
-!!
-!==============================================================================
-!==============================================================================
+!
 !!
 END MODULE OCI_UV1km_DataModule

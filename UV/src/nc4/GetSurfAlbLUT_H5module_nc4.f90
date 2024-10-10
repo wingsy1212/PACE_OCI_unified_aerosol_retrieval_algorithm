@@ -1,4 +1,4 @@
-MODULE GetSurfAlbLUT_H5module
+MODULE GetSurfAlbLUT_H5module_nc4
    !==============================================================================
    ! DESCRIPTION:
    !     This module reads the UV surface albedo LUT H5 file.
@@ -193,4 +193,4 @@ CONTAINS
 !==============================================================================
 !==============================================================================
 !
-END MODULE GetSurfAlbLUT_H5module 
+END MODULE GetSurfAlbLUT_H5module_nc4

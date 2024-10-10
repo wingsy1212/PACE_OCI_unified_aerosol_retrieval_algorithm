@@ -211,6 +211,9 @@ contains
         
                 CALL Get_An_GMAO(Lat_center,Lon_center,ugrd,vgrd,pwat,&
                 ozone,skinTemp,set_counter_for_anc,RTN_NCEP,anc_file)
+                if(Iscan .eq. 11 .and. IDATA  .eq. 8)&
+                print*,'Lat_center,Lon_center,ugrd,vgrd,pwat,ozone,skinTemp',&
+                Lat_center,Lon_center,ugrd,vgrd,pwat,ozone,skinTemp
   
          
                

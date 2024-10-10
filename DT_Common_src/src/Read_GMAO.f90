@@ -33,7 +33,7 @@ contains
        real		met_ugrd
        real		met_vgrd,x(2),y(2),xx1(2),yy1(2),y1
        real		met_ozone,lat,lon  
-       integer set_counter_for_anc,RTN_NCEP,j1,j2,i1,i2,ilat,ilon,nn,mm,init,ik,ij
+       integer set_counter_for_anc,RTN_NCEP,j1,j2,i1,i2,ilat,ilon,nn,mm,init,ik,ij,nb
        integer KTHEM1,KTHEP1,istart, iend, jstart, jend,Imet_Var,Number_Lines,Number_pixels 
        SAVE
       ! Open the netCDF file
@@ -53,15 +53,25 @@ contains
       call check( nf90_inquire_dimension(ncid,dimid,len=npixels) )
       call check( nf90_inq_dimid(ncid,'lat',dimid) )
       call check( nf90_inquire_dimension(ncid,dimid,len=nlines) )
-      call check( nf90_inq_dimid(ncid,'time',dimid) )
-      call check( nf90_inquire_dimension(ncid,dimid,len=tt) )
+      if (index(anc_file, 'GMAO') == 0) then
+         call check( nf90_inq_dimid(ncid,'time',dimid) )
+         call check( nf90_inquire_dimension(ncid,dimid,len=tt) )
+      else
+          tt = 1
+      endif
+
        LA =  scale_Double(ncid,'lat',nlines) 
        Lo =  scale_Double(ncid,'lon',npixels) 
        U = scale_float(ncid,'U10M',npixels,nlines,tt) 
        V = scale_float(ncid,'V10M',npixels,nlines,tt)   
        W = scale_float(ncid,'TQV',npixels,nlines,tt)
        O = scale_float(ncid,'TO3',npixels,nlines,tt) 
+!       if (index(anc_file, 'GMAO') == 0) then
        ST =scale_float(ncid,'TS',npixels,nlines,tt)
+           nb = 5
+!       else
+!           nb = 4
+!       endif
        Number_pixels = npixels
        Number_Lines  = nlines 
         do Ik = 1,nlines
@@ -78,7 +88,7 @@ contains
           endif  
              
           call Find_index_for_inter(lat,lon,Number_pixels,Number_Lines,i1,i2,j1,j2)    
-           do   Imet_Var = 1,5
+           do   Imet_Var = 1,nb
              MM=0  
              DO  init = 1,2
              y1 =0
@@ -156,17 +166,13 @@ contains
       call check( nf90_inq_varid(fid,varname,vid) ) 
       call check( nf90_get_var(fid,vid,vdata) ) 
        
-      call check( nf90_get_att(fid,vid,'scale_factor',scl) ) 
-       
-      call check( nf90_get_att(fid,vid,'add_offset',ofs) )
-      
       call check( nf90_get_att(fid,vid,'_FillValue',fv) )
       
       do i=1,rsx
          do j=1,rsy 
             ! Apply scale factor, offset and new fill value
             if (vdata(i,j,tt) .ne. fv) then
-                rdata(i,j) = vdata(i,j,tt)*scl + ofs
+                rdata(i,j) = vdata(i,j,tt)
             else
                rdata(i,j) = -9999.
             endif  

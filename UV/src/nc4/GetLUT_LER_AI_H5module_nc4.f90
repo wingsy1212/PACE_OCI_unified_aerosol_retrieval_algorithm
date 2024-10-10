@@ -1,4 +1,4 @@
-MODULE GetLUT_LER_AI_H5module
+MODULE GetLUT_LER_AI_H5module_nc4
    !==============================================================================
    ! DESCRIPTION:
    !     This module reads the AI_LER LUT H5 file.
@@ -148,4 +148,4 @@ CONTAINS
 !==================================================================
 !==================================================================
 !
-END MODULE GetLUT_LER_AI_H5module 
+END MODULE GetLUT_LER_AI_H5module_nc4

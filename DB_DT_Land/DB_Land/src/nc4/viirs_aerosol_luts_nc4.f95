@@ -947,7 +947,7 @@ subroutine aero_470(dflag, refl, x1, x2, x3, mm, nn, ll, ma, imod,  &
       if (status == 1) then
         tau_x470 = 5.0
       else
-        print *, 'ERROR: Failed to extrapolate AOT: ', status
+        print *, 'aero_470, hit upper bound: ', status
         return
       end if
     end if
@@ -1076,7 +1076,7 @@ subroutine aero_650(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
       if (status == 1) then
         tau_x650 = 5.0
       else
-        print *, 'ERROR: Failed to extrapolate AOT: ', status
+        print *, 'aero_650, hit upper bound: ', status
         return
       end if
     end if
@@ -1254,7 +1254,7 @@ end subroutine aero_650
       if (status == 1) then
         tau_x412 = 5.0
       else
-        print *, 'ERROR: Failed to extrapolate AOT: ', status
+        print *, 'aero_412, hit upper bound: ', status
         return
       end if
     end if
@@ -1525,7 +1525,7 @@ subroutine aero_470_dust(dflag, refl, x1, x2, x3, mm, nn, ll, ma, imod,  &
       if (status == 1) then
         tau_x470 = 5.0
       else
-        print *, 'ERROR: Failed to extrapolate AOT: ', status
+        print *, 'aero_470, hit upper bound: ', status
         return
       end if
     end if
@@ -1653,7 +1653,7 @@ subroutine aero_650_dust(dflag,refl,x1,x2,x3,mm,nn,ll,ma,r650,tau_x650,     &
       if (status == 1) then
         tau_x650 = 5.0
       else
-        print *, 'ERROR: Failed to extrapolate AOT: ', status
+        print *, 'aero_650, hit upper bound: ', status
         return
       end if
     end if
@@ -1831,7 +1831,7 @@ end subroutine aero_650_dust
       if (status == 1) then
         tau_x412 = 5.0
       else
-        print *, 'ERROR: Failed to extrapolate AOT: ', status
+        print *, 'aero_412, hit upper bound: ', status
         return
       end if
     end if
@@ -2442,7 +2442,7 @@ end function create_reduced_lut_ssa
     n = size(xx, 1)
     status = linfit(xx(n-1:n), yy(n-1:n), r)
     if (status /= 0) then 
-      print *, "ERROR: linfit failed, skipping: ", status
+!       print *, "ERROR: linfit failed, skipping: ", status
       return
     end if
     
@@ -2455,7 +2455,7 @@ end function create_reduced_lut_ssa
       do while (res < 3.5 .AND. i >= 2)
         status = linfit(xx(i-1:i), yy(i-1:i), r)
         if (status /= 0) then 
-          print *, "ERROR: linfit failed, skipping: ", status
+!           print *, "ERROR: linfit failed, skipping: ", status
           return
         end if
     
@@ -2499,7 +2499,16 @@ end function create_reduced_lut_ssa
     end do
 
     if (abs((n*sxy) - (sx*sy)) < 1.0e-10 .or. abs((n*sxx)-(sx*sx))<1.0e-10 .or. n==0.) then 
-     status = -1
+     ! status = -1
+      status = 0
+      if (x(n)==x(n-1)) then 
+!         print *, x, y
+        status = -1
+      else
+        r(2) = (y(n)-y(n-1))/(x(n)-x(n-1)) 
+        r(1) =  y(n)- (r(2)*x(n))
+        status = 0
+      end if
     else 
      r(2) = ((n*sxy) - (sx*sy))/((n*sxx)-(sx*sx))
      r(1) = (sy/n)-(r(2)*sx/n)

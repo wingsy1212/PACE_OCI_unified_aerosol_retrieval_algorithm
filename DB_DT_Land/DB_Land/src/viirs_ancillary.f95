@@ -85,15 +85,15 @@ module viirs_ancillary
     end select
     
 !   -- for NRT retrieval
-    if (filename1(19:22) == 'fp.f') then
-      print *, 'start NRT Ancillary process'
+    if ((filename1(19:22) == 'fp.f') .or. index(filename1, 'GMAO') > 0) then
+!      print *, 'start NRT Ancillary process'
       time_interval =1.0      
       if (min >= 30) then
          t1 = hr + 0.5
       else
          t1 = hr - 0.5
       end if     
-    endif
+    end if
     
     allocate(gdas%u_wndspd(gdas1%ni, gdas1%nj), gdas%v_wndspd(gdas1%ni, gdas1%nj),  &
     & gdas%wndspd(gdas1%ni, gdas1%nj),gdas%ps(gdas1%ni, gdas1%nj), stat=status)
@@ -475,17 +475,21 @@ module viirs_ancillary
     end if
     gdas0%ni = nlon
     
-    dset_name = 'time'
-    status = nf90_inq_dimid(nc_id, dset_name, dim_id)
-    if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to get size of dimension "//trim(dset_name)//": ", status
-      return
-    end if
-    
-    status = nf90_inquire_dimension(nc_id, dim_id, len=ntime)
-    if (status /= NF90_NOERR) then
-      print *, "ERROR: Failed to size of dimension "//trim(dset_name)//": ", status
-      return
+    if (index(filename1, 'GMAO') == 0) then
+       dset_name = 'time'
+       status = nf90_inq_dimid(nc_id, dset_name, dim_id)
+       if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to get size of dimension "//trim(dset_name)//": ", status
+         return
+       end if
+
+       status = nf90_inquire_dimension(nc_id, dim_id, len=ntime)
+       if (status /= NF90_NOERR) then
+         print *, "ERROR: Failed to size of dimension "//trim(dset_name)//": ", status
+         return
+       end if
+    else
+        ntime = 1
     end if
     
     allocate(gdas0%u_wndspd(nlon,nlat), gdas0%v_wndspd(nlon,nlat),  &

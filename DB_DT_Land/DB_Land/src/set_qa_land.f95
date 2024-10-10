@@ -1,4 +1,4 @@
-subroutine set_qa_land(cxscan,nc,sdv,aot550,nedge,noob,smoke,high_alt_smoke_count,gzone,dstar,flag2,platform)
+subroutine set_qa_land(cxscan,nc,sdv,aot550,nedge,noob,smoke,high_alt_smoke_count,gzone,flag2,platform)
     implicit none
     
     integer, intent(in)         ::  cxscan
@@ -10,7 +10,7 @@ subroutine set_qa_land(cxscan,nc,sdv,aot550,nedge,noob,smoke,high_alt_smoke_coun
     integer, intent(in)         ::  smoke           ! number of smoke pixels in cell
     integer, intent(in)         ::  high_alt_smoke_count  
     integer, intent(in)         ::  gzone           ! geographic zone index
-    real, intent(in)            ::  dstar           ! Dstar parameter
+!     real, intent(in)            ::  dstar           ! Dstar parameter
     integer, intent(inout)      ::  flag2
     real                        ::  ncadj   
     character(len=*)            ::  platform
@@ -68,18 +68,18 @@ subroutine set_qa_land(cxscan,nc,sdv,aot550,nedge,noob,smoke,high_alt_smoke_coun
 
 !     -- do some special processing for N.Africa (gzone 1-5)                                 
 !      if ((gzone >= 1 .AND. gzone <= 5) .AND. Dstar > 1.2) then
-    if (Dstar > 1.2) then
-      if (nc > 24*ncadj) flag2 = 2
-      if (nc >= 36*ncadj) flag2 = 3
-      return
-    end if    
-
-!   -- lower pixel thresholds for high D* pixels, exclude N.Africa zones.      
-    if (Dstar >= 1.06 .AND. (gzone < 1 .OR. (gzone > 5 .AND. gzone /= 26 .AND. gzone /= 27))) then
-      if (nc > 24*ncadj) flag2 = 2
-      if (nc >= 36*ncadj) flag2 = 3
-      return
-    end if      
+!     if (Dstar > 1.2) then
+!       if (nc > 24*ncadj) flag2 = 2
+!       if (nc >= 36*ncadj) flag2 = 3
+!       return
+!     end if    
+! 
+! !   -- lower pixel thresholds for high D* pixels, exclude N.Africa zones.      
+!     if (Dstar >= 1.06 .AND. (gzone < 1 .OR. (gzone > 5 .AND. gzone /= 26 .AND. gzone /= 27))) then
+!       if (nc > 24*ncadj) flag2 = 2
+!       if (nc >= 36*ncadj) flag2 = 3
+!       return
+!     end if      
 
 !   if pass below checks, increase to qa=2
     if (noob == 1) go to 10           ! majority of retrievals were oob (out of bounds)

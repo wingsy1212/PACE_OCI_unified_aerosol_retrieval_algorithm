@@ -359,6 +359,8 @@ USE InterpolationModule
 
 IMPLICIT NONE
 
+Include 'common_l1b_var.inc'
+
 TYPE(l1b_rad_type), INTENT(INOUT) :: L1B
 INTEGER(KIND=4), INTENT(IN) :: UVtoSWIR_nWavel
 REAL(KIND=4), DIMENSION(UVtoSWIR_nWavel), INTENT(IN)     :: UVtoSWIR_wavelengths 
@@ -440,7 +442,14 @@ DO 30 idx_wv = 1 , UVtoSWIR_nWavel  !Wavelength Loop
         cossza = COS(DTOR * L1B%l1b_sza(ii,jj))
  !        UVtoSWIR_Reflectances(idx_wv,ii,jj) =(rad_pixel*PI)/(UVtoSWIR_IRRadiances(idx_wv)*cossza)
           UVtoSWIR_Reflectances(idx_wv,ii,jj) = rad_pixel 
-         
+	  
+	  !
+	  ! Soft calibration for UV channels are defined in 'common_l1b_var.inc'
+	  ! Based on OCI Ver2 L1B's it is increase in OCI by 2.5 and 0.9% for 354 and 388 nm channels. 
+	  !
+	  IF (idx_wv .eq. 2) UVtoSWIR_Reflectances(idx_wv,ii,jj) = (rad_pixel * softcalib354)
+      IF (idx_wv .eq. 3) UVtoSWIR_Reflectances(idx_wv,ii,jj) = (rad_pixel * softcalib388)
+	  
       ELSE			 
 	rad_pixel = -9999.
 	UVtoSWIR_Reflectances(idx_wv,ii,jj) = -9999.9		 

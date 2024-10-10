@@ -10,12 +10,13 @@ USE OCIUAAER_L1BModule
 USE Proxydata_L1BModule
 USE OCI_UV1km_DataModule
 USE OCI_UVAI_MieCloudModule
-USE GetLUT_Miecloud_AI_H5module 
+USE GetLUT_Miecloud_AI_H5module_nc4 
 USE compute_Ocean_main
 USE compute_DT_Land_main
 USE compute_DB_Land_main
 use calendars, only: gdatetime, gregorian_from_doy
 use write_Pace_merged
+use write_Pace_merged_1KM
 use write_intrim_forUVtau
 use read_intrim_forUVtau
 USE HDF5
@@ -35,7 +36,6 @@ Include 'output_Variables.inc'
 !==============================================================================
 CHARACTER(LEN=256)                         :: l1b_filename, l2_file, time_str
 INTEGER(KIND=4),DIMENSION(:,:),ALLOCATABLE :: grn_lwmask
-REAL(KIND=4),DIMENSION(:,:),ALLOCATABLE    :: UVAI
 REAL(KIND=4),DIMENSION(:,:,:),ALLOCATABLE  :: UVtoSWIR_Reflectances
 REAL(KIND=4),DIMENSION(:),ALLOCATABLE      :: UVtoSWIR_wavelengths
 INTEGER(KIND=4)                            :: Day, Month, Year, ifile, doy, hr, mn
@@ -55,23 +55,26 @@ REAL,DIMENSION(:,:),ALLOCATABLE    :: dbdtfmf
 REAL,DIMENSION(:,:,:),ALLOCATABLE  :: dbdt_refl
 REAL,DIMENSION(:,:),ALLOCATABLE    :: dbdt_cld
 INTEGER, DIMENSION(2)              :: cell_dims
-INTEGER IX,IY,IL,IXX,IYY,jjx,jjy,clear,IJ,IK,iwav
+INTEGER IX,IY,IL,IXX,IYY,jjx,jjy,clear,IJ,IK,iwav,land_pixels
 real :: start, finish,cloudy
 real :: lat_min,lat_max,lon_max,lon_min
 
                   
   INTEGER :: num_args
-  CHARACTER(255) :: par_file, l1b_file, met1_file, met2_file, out_file, interm_file
+  CHARACTER(255) :: par_file, l1b_file, met1_file, met2_file, out_file, interm_file,&
+  out_file_1KM
   CHARACTER(255) :: metdt_file
+  CHARACTER(2048) :: pycommand
 
   num_args = command_argument_count()
-  IF (num_args == 6) THEN
+  IF (num_args == 7) THEN
       call get_command_argument(1,par_file)
       call get_command_argument(2,l1b_file)
       call get_command_argument(3,met1_file)
       call get_command_argument(4,met2_file)
       call get_command_argument(5,out_file)
       call get_command_argument(6,interm_file)
+      call get_command_argument(7,out_file_1KM)
   ELSE
     PRINT *,'Error : Six command line arguments required.'
     CALL EXIT(1)
@@ -99,13 +102,12 @@ CALL h5open_f(hdferr)
  if (.not. do_testfile) then ! normal process
    call cpu_time(start)
    print *, 'start L1b read', start
+   
    ! Allocate space for UVtoSWIR wavelengths
    ALLOCATE(UVtoSWIR_wavelengths(UVtoSWIR_nWavel), stat=STATUS) 
    UVtoSWIR_wavelengths = waveTemp(1:UVtoSWIR_nWavel)
-!   WRITE (*,"(A,14(1x,f8.3))") 'UVtoSWIR_wavelengths = ',UVtoSWIR_wavelengths
   
    print*,'Inputfile = ',cfg%input_l1file
-!   print*,'Proxydata Inputfile = ',cfg%proxy_l1file
 
    IF (cfg%input_l1file /= 'NULL') THEN
      ! Read Synthetic data file
@@ -126,10 +128,18 @@ CALL h5open_f(hdferr)
      Read(l1b_date_time_str(10:11), '(I2)' )hr
      Read(l1b_date_time_str(12:13), '(I2)' )mn
 
-     if (mod(hr,3) * 60 + mn < 90) then
-        metdt_file = met1_file
+     if (index(met1_file, 'GMAO') > 0) then
+        if (mn < 30) then
+            metdt_file = met1_file
+        else
+            metdt_file = met2_file
+        endif
      else
-        metdt_file = met2_file
+        if (mod(hr,3) * 60 + mn < 90) then
+            metdt_file = met1_file
+        else
+            metdt_file = met2_file
+        endif
      endif
 
    ELSE IF (cfg%proxy_l1file /= 'NULL') THEN
@@ -165,20 +175,22 @@ CALL h5open_f(hdferr)
      PRINT *,'Error : Unable to Read landwater_mask Data'
      CALL EXIT(1)
    ENDIF 
-!   PRINT *, 'Got granule LW-mask : ', Shape(grn_lwmask), maxval(grn_lwmask), minval(grn_lwmask)
+
 
    ! Allocate space for UVAI
-   ALLOCATE(UVAI(l1b_nXTrack, l1b_nLines), stat=STATUS) 
+   ALLOCATE(               UVAI(l1b_nXTrack, l1b_nLines), &
+                    Residue_1km(l1b_nXTrack, l1b_nLines), & 
+	    Reflectivity_1km(2, l1b_nXTrack, l1b_nLines), stat=STATUS) 
    IF (STATUS < 0) THEN 
-     PRINT *,'Error : Unable allocate space for UVAI'
+     PRINT *,'Error : Unable allocate space for UVAI and diagnostics.'
      CALL EXIT(1)
    ENDIF 
 
 ! Computes Aerosol Index for 1-km pixels  Right now disabling it pending..............
-!   CALL OCI_UVAI_Miecloud(cfg, l1b_nXTrack, l1b_nLines, Month, &
-!                         Latitude, Longitude, SolarZenithAngle, ViewingZenithAngle, &
-!                         SolarAzimuthAngle, ViewingAzimuthAngle, TerrainHeight, &
-!                         UVtoSWIR_Reflectances, UVAI)
+   CALL OCI_UVAI_Miecloud(cfg, l1b_nXTrack, l1b_nLines, Month, &
+                         Latitude, Longitude, SolarZenithAngle, ViewingZenithAngle, &
+                         SolarAzimuthAngle, ViewingAzimuthAngle, TerrainHeight, &
+                         UVtoSWIR_Reflectances, UVAI, Residue_1km, Reflectivity_1km)
    call cpu_time(finish)                      
    print *, 'end (L1b read + 1km UVAI)', finish
 !   print '("L1b read + 1km UVAI, Time = ",f10.3," seconds.")',finish-start     
@@ -242,7 +254,7 @@ CALL h5open_f(hdferr)
     ViewingZenithAngle,ViewingAzimuthAngle,TerrainHeight,UVtoSWIR_Reflectances,Year,Month,Day,&
     doy,cfg%proxy_l1file,grn_lwmask,nXTrack, nLines,UVtoSWIR_nWavel,cfg%db_config,Ret_ref_allwav_land,&
     Ret_tau_land,Ret_Lat,Ret_Lon,CldMsk_Native_land,Ret_land_Quality_Flag,uvdbdtaod,dbdt_refl,&
-    cfg%input_l1file,Ret_Small_weighting_land,Ret_Xtrack,Ret_Lines,dbdtfmf,dbdt_cld,met1_file,met2_file)
+    cfg%input_l1file,Ret_Small_weighting_land,Ret_Xtrack,Ret_Lines,dbdtfmf,dbdt_cld,met1_file,met2_file, UVAI)
       
  call cpu_time(finish)
  print *, 'end DB', finish
@@ -275,24 +287,36 @@ CALL h5open_f(hdferr)
             print *, 'end DT-Ocean', finish
             print '("DT Ocean Time = ",f10.3," seconds.")',finish-start   
              
-             
+         land_pixels = 0
+          Do  IY = 1,Ret_Lines  
+              Do  IX =  1,Ret_Xtrack  
+                IF(Land_sea_flag(IX,IY) .ge. 1 .and. uvdbdtaod(IX,IY,3 ) .ge. -0.05)  &     
+                 land_pixels = land_pixels +1 
+               Enddo
+          Enddo
+                                             
+            print *, ' land pixels ', land_pixels    
+           
+             if(land_pixels > 1 )  then                    
+        
          Call  write_Output_forUVtau(Ret_Xtrack,Ret_Lines,Ret_Lat,Ret_Lon,&
                    Ret_SolZen,Ret_View_angle,Ret_View_phi,Ret_solar_phi,uvdbdtaod,&
                    Ret_tau_ocean,Month,interm_file)
            
-                                       
+                        
 !          print *, ' Finished writing  Interim file'
 !
 !******  *********  ML  Land( 0.354.0.388 0.55)
          block
-         call execute_command_line("python3 " // cfg%read_nc_landonly // " interm_file")
-         endblock
+         pycommand = "python " // trim(cfg%read_nc_landonly) // " " // trim(cfg%ml_340) // " " // trim(cfg%ml_380)
+         pycommand = trim(pycommand) // " " // trim(interm_file)
+         call execute_command_line( pycommand ) 
+         endblock 
+	 
          call read_Output_forUVtau(Ret_Xtrack,Ret_Lines,uvdbdtaod,interm_file)
-
 !          print *,'Finished reading ML output'
          
-!          print *, shape(Ret_tau_land), Ret_Xtrack, Ret_lines,shape(dbdt_refl)
-
+         Endif
  
 !  Merge Land and Ocean Variables together for processing NEARUV variables
      
@@ -301,7 +325,8 @@ CALL h5open_f(hdferr)
                    Ret_Tau_LandOcean,ret_ref_LandOcean,Cldmask_Native_LandOcean,&
                    Cloud_Frac_LandOcean,Ret_Xtrack,Ret_Lines,&
                    Ret_ocean_Quality,Ret_Quality_LandOcean,Ret_Quality_LandOcean_W0,&
-                   Ret_CLDFRC_land_DT,Ret_CLDFRC_ocean)
+                   Ret_CLDFRC_land_DT,Ret_CLDFRC_ocean,Ret_ref_LandOceanwOutUV,&
+                   Ret_ref_LandOcean_UV)
                   
 
    CALL NUV_package_main(cfg,Year, Month, Day, UVtoSWIR_wavelengths,UVtoSWIR_Reflectances, &
@@ -309,18 +334,25 @@ CALL h5open_f(hdferr)
           Ret_View_phi,Ret_solar_phi,Ret_Xtrack,Ret_Lines,& 
           Ret_Small_weighting,Land_sea_flag,Ret_ref_LandOcean,Ret_Tau_LandOcean,&
 	  Ret_average_Omega_Ocean_UV,Ret_Index_Height,Cloud_Frac_LandOcean,&
-	  NUV_AI, NUV_COD, NUV_CldFrac, NUV_SSA, NUV_ALH, &
-	  NUV_ACAOD, NUV_AerCorrCOD,NUV_FinalAlgorithmFlagsACA, &
-	  NUV_UncertaintyACAODToSSA,NUV_UncertaintyCODToSSA)
+	  NUV_AI, NUV_COD, NUV_CldFrac, UVReflectivity, UVResidue, NUV_SSA, NUV_ALH, &
+	  NUV_ACAOD, NUV_AerCorrCOD, NUV_ACAODVsHeight, NUV_AerCorrCODVsHeight, &
+	  NUV_FinalAlgorithmFlagsACA, NUV_UncertaintyACAODToSSA,NUV_UncertaintyCODToSSA)
 	    
 
    Call write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
-          Ret_View_phi,Ret_solar_phi,Ret_Xtrack,Ret_Lines,Ret_Small_weighting,&
-	  Land_sea_flag,Ret_ref_LandOcean,Ret_Tau_LandOcean,&
-          Ret_average_Omega_Ocean_UV,Ret_Index_Height,Cloud_Frac_LandOcean,&
-	  Ret_Quality_LandOcean,Ret_Quality_LandOcean_W0,&
-          NUV_AI, NUV_COD, NUV_CldFrac, NUV_SSA, NUV_ALH, NUV_ACAOD, NUV_AerCorrCOD,& 
-	  NUV_FinalAlgorithmFlagsACA, NUV_UncertaintyACAODToSSA, NUV_UncertaintyCODToSSA, out_file)
+     Ret_View_phi,Ret_solar_phi,Ret_Xtrack,Ret_Lines,Ret_Small_weighting,&
+	  Land_sea_flag,Ret_ref_LandOceanwOutUV,&
+	  Ret_ref_LandOcean_UV,Ret_Tau_LandOcean,&
+      Ret_average_Omega_Ocean_UV,Ret_Index_Height,Cloud_Frac_LandOcean,&
+	  Ret_Quality_LandOcean,Ret_Quality_LandOcean_W0,& 
+          NUV_AI, NUV_COD, NUV_CldFrac, UVReflectivity, UVResidue, &
+	  NUV_SSA, NUV_ALH, NUV_ACAOD, NUV_AerCorrCOD,& 
+	  NUV_ACAODVsHeight, NUV_AerCorrCODVsHeight, &
+	  NUV_FinalAlgorithmFlagsACA, NUV_UncertaintyACAODToSSA,NUV_UncertaintyCODToSSA, out_file)
+
+
+  Call write_Output_merged_1KM(l1b_nXTrack, l1b_nLines, Latitude, Longitude, &
+	       UVAI, Residue_1km, Reflectivity_1km, out_file_1KM)	  
             
 
 ! Close the HDF-5 interface

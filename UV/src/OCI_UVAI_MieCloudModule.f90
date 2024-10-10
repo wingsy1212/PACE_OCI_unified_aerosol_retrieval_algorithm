@@ -2,11 +2,16 @@ MODULE OCI_UVAI_MieCloudModule
 
 USE OCIUAAER_Config_Module
 USE OCIUAAER_L1BModule
-USE GetLUT_Miecloud_AI_H5module 
-USE GetLUT_LER_AI_H5module
-USE LookupTableModule                  
+USE GetLUT_Miecloud_AI_H5module_nc4
+USE GetLUT_LER_AI_H5module_nc4
+USE LookupTableModule_nc4                  
 USE InterpolationModule
 USE MyConstants
+
+USE HDF5
+USE H5Util_class
+USE H5write_module
+
 
 IMPLICIT NONE
 
@@ -23,32 +28,39 @@ CONTAINS
 SUBROUTINE OCI_UVAI_Miecloud(cfg, l1b_nXTrack, l1b_nLines, Month, &
                         Latitude, Longitude, SolarZenithAngle, ViewingZenithAngle, &
                         SolarAzimuthAngle, ViewingAzimuthAngle, TerrainHeight, &
-			UVtoSWIR_Reflectances, UVAI)
+			UVtoSWIR_Reflectances, UVAI, Residue_1km, Reflectivity_1km)
 
  USE OCI_UV1km_DataModule
 
 
 ! -- Mie-AI related LUTs modules ---
- USE GetSurfAlbLUT_H5module
- USE GetLUT_LER_AI_H5module
- USE Get_TerrainPressure_H5module
- USE Get_SnowIce_module
+ USE GetSurfAlbLUT_H5module_nc4
+ USE GetLUT_LER_AI_H5module_nc4
+ USE Get_TerrainPressure_H5module_nc4
+ USE Get_SnowIce_module_nc4
+ USE Get_OceanLUT_H5module_nc4
  USE HDF5
 
  IMPLICIT NONE
 
- Include '../../Main/common_l1b_var.inc'
+ Include 'common_l1b_var.inc'
 
 ! Loop Counters
- INTEGER(KIND=4)           :: iPix, jPix, j
+ INTEGER(KIND=4)           :: iPix, jPix, j, SkipProcess
  INTEGER(KIND=4)           :: iStart = 1
-
  INTEGER(KIND=4)           :: STATUS, version
- REAL(KIND=4),DIMENSION(:,:),  INTENT(OUT):: UVAI
+ 
+
  REAL(KIND=4),DIMENSION(:,:,:),INTENT(IN) :: UVtoSWIR_Reflectances
  TYPE(ociuaaer_config_type),   INTENT(IN) :: cfg
  INTEGER(KIND=4),              INTENT(IN) :: Month
+ 
 !******************************************************************************
+ INTEGER(KIND=4)     :: index1
+ CHARACTER(LEN=256)  :: NUV_native_outfile
+ logical             :: do_write
+!******************************************************************************
+ 
  INTEGER(KIND=4) :: XDim, YDim
 
  REAL(KIND=4), DIMENSION(7) :: sza_table
@@ -71,6 +83,7 @@ SUBROUTINE OCI_UVAI_Miecloud(cfg, l1b_nXTrack, l1b_nLines, Month, &
  DATA phi_table_ep /0.,30.,60.,90.,120.,150.,160.,165.,170.,175.,180./
 
 
+!do_write = .true.
 XDim = l1b_nXTrack
 YDim = l1b_nLines
 
@@ -80,6 +93,8 @@ STATUS = allocate_UV1km_Data(XDim, YDim)
      CALL EXIT(1)
   ENDIF 
 
+
+!------------------------------------------------------------------------------
 ! Read HE4 AI Mie-Atmosphere look-up tables
 ! GetLUT_Miecloud_AI_H5module 
 ! nplev_mie, nsalb_mie, ncod_mie, nsza_mie, nvza_mie, nraa_mie
@@ -87,6 +102,7 @@ STATUS = allocate_UV1km_Data(XDim, YDim)
   CALL ReadLUTAIparams(cfg%uv_ai_mielut)
 
 
+!------------------------------------------------------------------------------
 ! Read HE4 AI LER-Atmosphere look-up tables
 ! GetLUT_LER_AI_H5module 
 ! nsalb_ler, nplev_ler, nsza_ler, SURFALBSET_ler, PRESSURESET_ler
@@ -94,19 +110,47 @@ STATUS = allocate_UV1km_Data(XDim, YDim)
   CALL ReadLUT_LER_AIparams(cfg%uv_ai_lerlut)
 
 
+!------------------------------------------------------------------------------
 ! Read OCI Surface AlbeDO HE4 look-up tables (Version 5 : ocean-corrected LER)
   CALL ReadSurfAlbLUTparams(cfg%uv_surfalbfile,SRFLER354, SRFLER388, GRDLAT, GRDLON)
 
 
+!------------------------------------------------------------------------------
+  CALL Read_OceanLUTparams(cfg%uv_ocncorr_lut, oceanler, nwave_ocean, &
+                           nsza_ocean, nvza_ocean, nraa_ocean,&
+                       sza_oceanset, vza_oceanset, raa_oceanset) !Fresnel_OceanLUT_v1.he4
+
+
+!------------------------------------------------------------------------------
 ! Read Terrain pressureH5 database [3600 longitude x 1800 latitude] bins
   CALL ReadTerrainPressparams(cfg%uv_surfprsfile,tpres, terrain_Longitude, terrain_Latitude)
 
 
+!------------------------------------------------------------------------------
 ! Read Snow_Ice database [360 longitude x 180 latitude x 12 month] bins
   CALL snowice_Reader(cfg%uv_snowicefile,snowice, swice_Longitude, swice_Latitude)
 
 
+!------------------------------------------------------------------------------
+! Allocates memory to read aerosol adn other ancillary LUTs.
+  status = allocateLUT()
+  	IF (STATUS < 0) THEN
+     	  PRINT *,"Error : Error allocating memory for Aerosol LUT params"
+     	  CALL EXIT(1)
+  	ENDIF 
+
+!------------------------------------------------------------------------------
+! Reads surface_type, airco_clm, CALIPSO-data, Model-Hgt data.
+  CALL Read_ancillaryLUTs()
+
+
 RelativeAzimuthAngle = SolarAzimuthAngle
+UVAI(:,:) = -9999.
+Residue_1km(:,:) = -9999.
+Reflectivity_1km(:,:,:) = -9999.
+SurfaceTypeNativeRes(:,:) = 255
+!PRINT*, 'Native Resolution XDim, YDim = ', XDim, YDim
+
 
 ! Start Pixels and Scan line loop
 ! Loop over Scan lines
@@ -114,6 +158,19 @@ DO jPix = 1, YDim
 
 ! Loop over Pixels
     DO iPix = 1, XDim 
+
+      IF (Longitude(iPix, jPix) .GE. -180.0 .AND. Longitude(iPix, jPix) .LE. 180.0 .AND. &
+           Latitude(iPix, jPix) .GE. -90.0  .AND.  Latitude(iPix, jPix) .LE. 90.0 .AND. &
+            SolarZenithAngle(iPix, jPix) .GE. 0.001 .AND. SolarZenithAngle(iPix, jPix) .LE. 90.0 .AND. &
+	  ViewingZenithAngle(iPix, jPix) .GE. 0.001 .AND. ViewingZenithAngle(iPix, jPix) .LE. 90.0 .AND. &
+	 ViewingAzimuthAngle(iPix, jPix) .GE. -180.001 .AND. ViewingAzimuthAngle(iPix, jPix) .LE. 180.0 .AND. &
+	   SolarAzimuthAngle(iPix, jPix) .GE. -180.001 .AND. SolarAzimuthAngle(iPix, jPix) .LE. 180.0) THEN
+         SkipProcess = 0
+      ELSE
+         SkipProcess = 1
+	 CYCLE
+      ENDIF
+
 
       CALL compute_relazimuth_ang(SolarAzimuthAngle(iPix,jPix), &
                                 ViewingAzimuthAngle(iPix,jPix), &
@@ -138,13 +195,33 @@ DO jPix = 1, YDim
   	ENDIF 
                                    
                                    
+      STATUS = GetSurfaceType(Latitude(iPix,jPix), Longitude(iPix,jPix), &
+                                        SurfaceTypeNativeRes(iPix,jPix))
+  	IF (STATUS < 0) THEN
+     	  PRINT *,"Error : Error getting SurfaceType"
+     	  CALL EXIT(1)
+  	ENDIF 
+
+
       STATUS = Get_UVSurfaceAlbedo(Month, Latitude(iPix,jPix), &
                                          Longitude(iPix,jPix), &
                          SurfaceAlbedo_Oceancorr(:,iPix,jPix))
   	IF (STATUS < 0) THEN
-     	  PRINT *,"Error : Error getting Ocean corrected UV Surface albedo"
+     	  PRINT *,"Error : Error getting UV Surface albedo"
      	  CALL EXIT(1)
   	ENDIF 
+
+
+      IF (SurfaceTypeNativeRes(iPix,jPix) .EQ. 17) THEN
+      STATUS = OCEAN_FRESNEL_CORRECTION(SurfaceTypeNativeRes(iPix,jPix), SolarZenithAngle(iPix,jPix), &
+                                      ViewingZenithAngle(iPix,JPix), RelativeAzimuthAngle(iPix,jPix), &
+				  			        SurfaceAlbedo_Oceancorr(:,iPix,jPix)) 
+  	IF (STATUS < 0) THEN
+     	  PRINT *,"Error : Error getting Fresnel correction for UV Surface albedo"
+     	  CALL EXIT(1)
+  	ENDIF 
+      ENDIF
+
 
       cossza = COS(DTOR * SolarZenithAngle(iPix,jPix))
       NormRadiances(1, iPix,jPix) = (UVtoSWIR_Reflectances(2,iPix,jPix)*cossza)/PI
@@ -178,11 +255,11 @@ DO jPix = 1, YDim
                                   SnowIce_fraction(iPix,jPix), &
                          SurfaceAlbedo_Oceancorr(:,iPix,jPix), &
                                    NormRadiances(:,iPix,jPix), & ! 354, 388
-                                    UVAerosolIndex(iPix,jPix), &
+                                          UVAI(iPix,jPix), &
                                  CloudOpticalDepth(iPix,jPix), &
                                      CloudFraction(iPix,jPix), &
-                                           Residue(iPix,jPix), &
-                                    Reflectivity(:,iPix,jPix) )
+                                       Residue_1km(iPix,jPix), &
+                                Reflectivity_1km(:,iPix,jPix) )
 
 
 ! 
@@ -195,21 +272,44 @@ ENDDO    ! jPix = 1, YDim-1
 ! End Pixels and Scan line loop
 
 
-!! Deallocate memory used for Terrain pressure variables
-!  DEALLOCATE(tpres, terrain_Longitude, terrain_Latitude,  STAT=STATUS)
 
-!! Deallocate snowice, swice_latitude, swice_longitude  
-!  DEALLOCATE(snowice, swice_Longitude, swice_Latitude,  STAT=STATUS)
- 
-!! Deallocate memory used for OMI Surface Albedo HE4 LUT variables
-  DEALLOCATE(SRFLER354, SRFLER388, GRDLAT, GRDLON,  STAT=STATUS)
 
-!! Deallocate memory used for HE4 Mie-AI LUT variables
-  DEALLOCATE(rad_lin354_ai, rad_lin388_ai, rad354, rad388, SURFALBSET, CODSET, STAT=STATUS)
+! Deallocate memory used for OMI Surface Albedo HE4 LUT variables
+!  DEALLOCATE(SRFLER354, SRFLER388, GRDLAT, GRDLON,  STAT=STATUS)
 
-!! Deallocate memory used for HE4 AI LER LUT variables
-  DEALLOCATE(rad354_ler, rad388_ler, rad_lin354_ai_ler, rad_lin388_ai_ler, &
-             SURFALBSET_ler,PRESSURESET_ler, STAT=STATUS)
+! Deallocate memory used for HE4 Mie-AI LUT variables
+!  DEALLOCATE(rad_lin354_ai, rad_lin388_ai, rad354, rad388, SURFALBSET, CODSET, STAT=STATUS)
+
+! Deallocate memory used for HE4 AI LER LUT variables
+!  DEALLOCATE(rad354_ler, rad388_ler, rad_lin354_ai_ler, rad_lin388_ai_ler, &
+!             SURFALBSET_ler,PRESSURESET_ler, STAT=STATUS)
+
+
+!  status = deallocateLUT()
+!  	IF (STATUS < 0) THEN
+!     	  PRINT *,"Error : Error deallocating memory for Aerosol LUT params"
+!     	  CALL EXIT(1)
+!  	ENDIF 
+
+
+! Now write NUV output file.
+!   IF (cfg%input_l1file /= 'NULL') THEN
+!     ! index1 = index(cfg%input_l1file, 'PACE_OCI_SIM')
+!     ! l1b_date_time_str = cfg%input_l1file(index1+13:index1+13+14)
+!     index1 = index(cfg%input_l1file, 'PACE_OCI.')
+!     l1b_date_time_str = cfg%input_l1file(index1+9:index1+9+14)
+!   ELSE IF (cfg%proxy_l1file /= 'NULL') THEN
+!     index1 = index(cfg%proxy_l1file, 'TROP-in-Viirs')
+!     l1b_date_time_str = cfg%proxy_l1file(index1+20:index1+20+11)
+!   ENDIF
+!   
+!NUV_native_outfile = trim('/home/smatoo/PACE_Vinay/test_nativeoutput') // &
+!                     trim(l1b_date_time_str) // trim('.h5')   
+!CALL write_NUV_native_output(NUV_native_outfile, l1b_nXTrack, l1b_nLines, &
+!                             Latitude, Longitude, NormRadiances, UVAI, &
+!			     Reflectivity_1km, CloudOpticalDepth, CloudFraction, Residue_1km) 
+!CALL EXIT()
+  
 
 END SUBROUTINE
 !!
@@ -228,8 +328,8 @@ FUNCTION UVAI_miecloud_perpixel(plat, plon, sun_za, sat_za, phi, pterrp, &
 ! NAME: L2OMUVAI_isocloud
 
   !USE GetLUT_module
-  USE GetLUT_LER_AI_H5module
-  USE LookupTableModule                 
+  USE GetLUT_LER_AI_H5module_nc4
+  USE LookupTableModule_nc4                 
   USE InterpolationModule
 
   IMPLICIT NONE  
@@ -249,7 +349,7 @@ FUNCTION UVAI_miecloud_perpixel(plat, plon, sun_za, sat_za, phi, pterrp, &
   REAL(KIND=4), DIMENSION(2),  INTENT(OUT) :: reflectset
   
 !  SnowIce Flag
-  INTEGER(KIND=2)              :: SnowIceFlag 
+  INTEGER(KIND=2) :: SnowIceFlag 
   REAL(KIND=4)    :: swicefrac
   INTEGER(KIND=4) :: iplv, isalb, icod
 !
@@ -574,8 +674,8 @@ END FUNCTION UVAI_miecloud_perpixel
 !!
 FUNCTION InterpRadiance_ai(iwave,nw01,nw02,ntau1,ntau2,inRad_ai, outRad_ai) RESULT(STATUS)
 
-  USE GetLUT_Miecloud_AI_H5module
-  USE LookupTableModule
+  USE GetLUT_Miecloud_AI_H5module_nc4
+  USE LookupTableModule_nc4
 
   IMPLICIT NONE
 
@@ -632,9 +732,9 @@ FUNCTION InterpRadiance_ai(iwave,nw01,nw02,ntau1,ntau2,inRad_ai, outRad_ai) RESU
 !!
 FUNCTION InterpRadiance_ai_ler(iwave,nw01,nw02,inRad_ai, outRad_ai) RESULT(STATUS)
 
-  USE GetLUT_Miecloud_AI_H5module
-  USE GetLUT_LER_AI_H5module
-  USE LookupTableModule
+  USE GetLUT_Miecloud_AI_H5module_nc4
+  USE GetLUT_LER_AI_H5module_nc4
+  USE LookupTableModule_nc4
 
   IMPLICIT NONE
 
@@ -689,7 +789,7 @@ FUNCTION InterpRadiance_ai_ler(iwave,nw01,nw02,inRad_ai, outRad_ai) RESULT(STATU
 !!
 SUBROUTINE calc_coeff_Mie(thenod,szanod,phinod,nthe,nsza_in,nphi_in,xtheta,xsza,xphi_in)
 
-  USE LookupTableModule 
+  USE LookupTableModule_nc4 
 
    IMPLICIT     NONE
 
@@ -834,7 +934,7 @@ END SUBROUTINE calc_coeff_Mie
 !!
  SUBROUTINE calc_coeff_2dim_Mie(thenod,szanod,nthe,nsza_in,xtheta,xsza)
 
-  USE LookupTableModule 
+  USE LookupTableModule_nc4
 
 	IMPLICIT     NONE
 
@@ -941,7 +1041,7 @@ END SUBROUTINE calc_coeff_2dim_Mie
 !!
 SUBROUTINE calc_coeff(thenod,szanod,phinod,nthe,nsza_in,nphi_in,xtheta,xsza,xphi_in)
 
-  USE LookupTableModule 
+  USE LookupTableModule_nc4
 
     IMPLICIT     NONE
 
@@ -1085,7 +1185,7 @@ END SUBROUTINE calc_coeff
 !!
  SUBROUTINE calc_coeff_2dim(thenod,szanod,nthe,nsza_in,xtheta,xsza)
 
- USE LookupTableModule 
+ USE LookupTableModule_nc4
 
     IMPLICIT     NONE
 
@@ -1293,7 +1393,7 @@ END FUNCTION OCEAN_FRESNEL_CORRECTION
 !=======  Find ocean LER with given geometry =============================
 FUNCTION AI_oceanler(sza_in, vza_in, raa_in) RESULT( out_ler )
 
-USE Get_OceanLUT_H5module
+USE Get_OceanLUT_H5module_nc4
 
 IMPLICIT NONE
 !
@@ -1376,4 +1476,86 @@ END FUNCTION AI_oceanler
 !==============================================================================
 !!
 !!
+!!
+!==============================================================================
+!==============================================================================
+!!
+
+SUBROUTINE write_NUV_native_output(NUV_native_outfile, l1b_nXTrack, l1b_nLines, &
+                             Latitude, Longitude, NormRadiances, UVAI, &
+			     Reflectivity_1km, CloudOpticalDepth, CloudFraction, Residue_1km)  
+			     
+  IMPLICIT NONE
+
+  Include 'common_l1b_var.inc'
+
+  CHARACTER(LEN=255), INTENT(IN) :: NUV_native_outfile
+!  REAL(KIND=4), DIMENSION(:,:), INTENT(IN):: UVAI
+  REAL(KIND=4), DIMENSION(:,:,:),INTENT(IN):: NormRadiances
+!  REAL(KIND=4), DIMENSION(:,:,:),INTENT(IN):: Reflectivity_1km
+  REAL(KIND=4), DIMENSION(:,:), INTENT(IN):: CloudOpticalDepth
+  REAL(KIND=4), DIMENSION(:,:), INTENT(IN):: CloudFraction
+!  REAL(KIND=4), DIMENSION(:,:), INTENT(IN):: Residue_1km
+  
+  INTEGER(HID_T)   :: nuv_file_id
+  INTEGER(HID_T)   :: plist2_geo, plist3_geo, group_geo, group_sci
+  INTEGER(HSIZE_T) :: cXT, cLT, nW
+  INTEGER          :: hdferr1, error
+
+  REAL(KIND=4), ALLOCATABLE :: tmp2darr(:,:), tmp3darr(:,:,:)
+
+  cLT = l1b_nLines
+  cXT = l1b_nXTrack     
+  nW = 2
+  
+  CALL h5open_f(hdferr1)
+  CALL h5fcreate_f(TRIM(NUV_native_outfile), H5F_ACC_TRUNC_F, nuv_file_id, hdferr1)
+
+  CALL h5pcreate_f(H5P_DATASET_CREATE_F, plist2_geo, error)
+  CALL h5pset_chunk_f(  plist2_geo, 2, (/cXT, cLT/), error)
+  CALL h5pset_deflate_f(plist2_geo, 6, error) 
+
+  CALL h5pcreate_f(H5P_DATASET_CREATE_F, plist3_geo, error)
+  CALL h5pset_chunk_f(  plist3_geo, 3, (/nW, cXT, cLT/), error)
+  CALL h5pset_deflate_f(plist3_geo, 6, error) 
+  
+! Geolocation data
+  CALL H5gcreate_f(nuv_file_id, "/GeolocationData", group_geo, hdferr1)
+  ALLOCATE(tmp2darr(cXT,cLT), tmp3darr(nW,cXT,cLT))
+  tmp2darr(:,:) = Latitude(1:cXT, 1:cLT)
+  CALL H5write_data(group_geo, "Latitude",  tmp2darr, dcpl = plist2_geo)
+  tmp2darr(:,:) = Longitude(1:cXT, 1:cLT)
+  CALL H5write_data(group_geo, "Longitude", tmp2darr, dcpl = plist2_geo)
+  CALL h5gclose_f( group_geo, hdferr1)
+
+! Geophysical data
+  CALL H5gcreate_f(nuv_file_id, "/ScienceData", group_sci, hdferr1)
+  tmp2darr(:,:) = UVAI(1:cXT, 1:cLT)
+  CALL H5write_data(group_sci, "NUV_1km_AerosolIndex", tmp2darr, dcpl = plist2_geo)
+  tmp3darr(:,:,:) = NormRadiances(1:2,1:cXT, 1:cLT)
+  CALL H5write_data(group_sci, "NUV_1km_NormRadiances", tmp3darr, dcpl = plist3_geo)
+  tmp3darr(:,:,:) = Reflectivity_1km(1:2,1:cXT, 1:cLT)
+  CALL H5write_data(group_sci, "NUV_1km_Reflectivity", tmp3darr, dcpl = plist3_geo)
+  tmp2darr(:,:) = CloudOpticalDepth(1:cXT, 1:cLT)
+  CALL H5write_data(group_sci, "NUV_1km_CloudOpticalDepth", tmp2darr, dcpl = plist2_geo)
+  tmp2darr(:,:) = CloudFraction(1:cXT, 1:cLT)
+  CALL H5write_data(group_sci, "NUV_1km_CloudFraction", tmp2darr, dcpl = plist2_geo)
+  tmp2darr(:,:) = Residue_1km(1:cXT, 1:cLT)
+  CALL H5write_data(group_sci, "NUV_1km_Residue", tmp2darr, dcpl = plist2_geo)
+  
+  CALL h5gclose_f( group_sci, hdferr1)
+  CALL h5fclose_f(nuv_file_id, hdferr1)
+  CALL h5close_f(hdferr1)
+
+  PRINT *, ' NUV Output file : ', NUV_native_outfile
+     
+     
+END SUBROUTINE write_NUV_native_output
+
+!!
+!==============================================================================
+!==============================================================================
+!!
+
+
 END Module OCI_UVAI_MieCloudModule

@@ -55,7 +55,7 @@ c     ---intermediate parameters
       real aot_mod(6),r470new, xday, r470ss2 
       real sza, scat_ang_2, amf
       real  outbufvg(21)
-      real  model_frac, aod_frac
+      real  model_frac, aod_frac,model_frac2,model_frac3
       
       real            ::  toa_ndvi, tmp412, tmp470, tmp670, ndvi_thold
       real						::	px_elev, bgaod
@@ -94,7 +94,7 @@ c     ---intermediate parameters
       integer ::  tau_x650_flag
       integer ::  tau_x412_flag2, tau_x470_flag, tau_x412_flag_91
 
-      real    ::  refp_2100
+      real    ::  refp_2100,rc2250_fin
       real    ::  r470sv, r412sv, r470sv_veg, r412sv_veg
       real    ::  tau_x412sv94, tau_x412sv96, tau_x412sv98
       real    ::  tau_x470sv94, tau_x470sv96, tau_x470sv995
@@ -111,7 +111,7 @@ c     ---intermediate parameters
       integer ::  alg_flag, old_alg_flag
       
 c     ---output parameters
-      real xtau(3), alpha, ssa(3), tau550, sfc_typ
+      real xtau(3), alpha, ssa(3), tau550, sfc_typ,tau500sv
       integer qa_flag(4)
 c     ---common parameter      
       common  /xday/ doy
@@ -157,12 +157,11 @@ c     Load the input data into local storage
       pteran      = realbuf(21)
 
 !     dump debug output
-      if (abs(xlat-28.1) < 0.005 .AND. abs(xlong-(-16.6)) < 0.005) then
-       debug = .true.
-       lprint = 1
-      end if
-!      if (abs(xlat-12.75) > 0.05 .OR. abs(xlong-23.92) > 0.07) go to 10
-      
+C     if (abs(xlat-20.) < 0.1 .AND. abs(xlong-(11.)) < 0.1) then
+C      debug = .true.
+C      lprint = 1
+C     end if
+!      if (abs(xlat-12.75) > 0.05 .OR. abs(xlong-23.92) > 0.07) go to 10 
       if (xphi.gt.179.99) go to 10
       if (xphi.lt.6.0) xphi = 6.
  
@@ -549,26 +548,31 @@ c      if (r650.gt.60.0) go to 10
   
 !        print *, swir_coeffs(:), swir_stderr, swir_range(:)
 
-        refp_2100 = refl11*3.14159/cos(sza*cc)*100 !reflectance in percentage, not I over F
-        if(refp_2100.ge.(swir_range(1)-2).and.refp_2100.le.(swir_range(2)+2)) then
+        refp_2100 = refl11*3.14159/cos(sza*cc)*100 !reflectance in percentage, not I over F      
+        rc2250_fin = min(max(refp_2100,swir_range(1)),swir_range(2))
+       
+        if(refp_2100.ge.(swir_range(1)-5).and.refp_2100.le.(swir_range(2)+5)) then
           if(swir_coeffs470(1).gt.-900.0.and.swir_coeffs470(2).gt.-900.0.and.
      1       swir_coeffs470(3).gt.-900.0.and.swir_stderr470.lt.1.0) then
 
             r470sv = swir_coeffs470(1)
-     1             + swir_coeffs470(2)*refp_2100
-     1             + swir_coeffs470(3)*refp_2100*refp_2100
-            r470sv_veg = r470sv
+     1             + swir_coeffs470(2)*rc2250_fin
+     1             + swir_coeffs470(3)*rc2250_fin*rc2250_fin
           endif
           !==========
           if(swir_coeffs412(1).gt.-900.0.and.swir_coeffs412(2).gt.-900.0.and.
      1       swir_coeffs412(3).gt.-900.0.and.swir_stderr412.lt.1.0) then
 
             r412sv = swir_coeffs412(1)
-     1             + swir_coeffs412(2)*refp_2100
-     1             + swir_coeffs412(3)*refp_2100*refp_2100
-            r412sv_veg = r412sv
+     1             + swir_coeffs412(2)*rc2250_fin
+     1             + swir_coeffs412(3)*rc2250_fin*rc2250_fin
           endif
-        endif
+          r412sv = r412sv/rc2250_fin*refp_2100
+          r470sv = r470sv/rc2250_fin*refp_2100
+
+          r470sv_veg = r470sv
+          r412sv_veg = r412sv
+        endif        
       !endif
 
       ! AOD using 490 nm band
@@ -1416,6 +1420,7 @@ c--------------------------------------------------------
 c     Preliminary Retrieval on AOT
 c--------------------------------------------------------
 
+      if (debug) print *, '--- r470  ',r470, r470sv, r470ss, r470new, gzflg 
 c
 c     For Moderate AOT, Use 412 - 470 nm Pair
 c
@@ -1720,6 +1725,7 @@ c--------------------------------------------------------
       
       r412new = r412                         ! transitional zone
       
+      if (debug) print *, '--- r412  ',r412, r412sv, r412ss, r412new, gzflg 
       imod = 5                                ! w0 = 0.94
       if (refl < -900.) go to 605 !skip 412nm retrieval
       call aero_412(dflag,refl,x1,x2,x3,mm,nn,ll,ma,   
@@ -2014,13 +2020,16 @@ c--------------------------------------------------------
             tau_x412ss = tau_x412ss_96
             if (xlat >10.0 .and. xlat <21.0 .and. xlong > 10.0 .and. xlong < 20.0)
      1          tau_x412ss = tau_x412ss_96
-            if (Dstar1 < 1.01 .and. tau_x412ss>0.6) tau_x412ss = tau_x412ss_995
-            if (Dstar1 > 1.01 .and. Dstar1 < 1.04 .and. tau_x412ss>0.6) tau_x412ss = tau_x412ss_98
+C           if (Dstar1 < 1.01 .and. tau_x412ss>0.6) tau_x412ss = tau_x412ss_995
+C           if (Dstar1 > 1.01 .and. Dstar1 < 1.04 .and. tau_x412ss>0.6) tau_x412ss = tau_x412ss_98
+            if (tau_x412ss>0.6) tau_x412ss = tau_x412ss_98 
             endif   
           endif   
 
 !      Deserts near Egypt and Sudan        
-        if (r412_tbl > 10.5 .and. Dstar1 > 1.04) then                
+C       if (r412_tbl > 10.5 .and. Dstar1 > 1.04) then         
+        if (r412_tbl > 10.5 ) then                
+               
            if (xlat >20.0 .and. xlat <25.0 .and. xlong > 25.0 .and. xlong < 30.0)
      1         tau_x412ss = tau_x412ss_94
         endif   
@@ -2034,7 +2043,7 @@ c--------------------------------------------------------
         if (xlat >20. .and. xlong > 12.9) then               
           if (r412_tbl > 8.5) then
             if (xlat <22. .and. xlong < 17.0) go to 632
-              if (Dstar1 .lt. ddx) then
+C             if (Dstar1 .lt. ddx) then
               dd = (xlong - 11.9) /3.0
               if (xlong > 14.9) dd = 1.
               tau_x412ss = tau_x412ss-(tau_x412ss-tau_x412ss_995)*dd
@@ -2042,35 +2051,36 @@ c--------------------------------------------------------
               dd = (xlat - 18.0) /4.0
               if (xlat > 22.0) dd = 1.
               tau_x412ss = dda1-(dda1-dda2)*dd
-              endif   
+C             endif   
           endif   
         endif   
         if (xlat >15. .and. xlat <=20. .and. xlong > 22.0) then                
           if (r412_tbl > 8.5) then
-              if (Dstar1 .lt. ddx) then
+C             if (Dstar1 .lt. ddx) then
               dda2 = tau_x412ss_995
               dd = (xlat - 18.0) /4.0
               if (xlat > 22.0) dd = 1.
               if (xlat < 18.0) dd = 0.
               tau_x412ss = dda1-(dda1-dda2)*dd
-          endif
+C         endif
         endif   
         endif   
         if (xlat >19.0 .and. xlat <=20.0 .and. xlong > 19.8) then
           if (r412_tbl > 8.5) then
-              if (Dstar1 .lt. ddx) then
+C             if (Dstar1 .lt. ddx) then
               dda2 = tau_x412ss_995
               dd = (xlat - 18.0) /4.0
               if (xlat > 22.0) dd = 1.
               tau_x412ss = dda1-(dda1-dda2)*dd
-              endif
+C             endif
           endif
         endif
 
         if (xday > 243.0 .and. xday < 274.0) then
         if (xlat >19.0 .and. xlat <=21.0 .and. xlong > 19.8.and. xlong <23.5) then
           if (r412_tbl > 8.5) then
-              if (Dstar1 .lt. ddx) tau_x412ss = tau_x412ss_995
+C             if (Dstar1 .lt. ddx) tau_x412ss = tau_x412ss_995
+              tau_x412ss = tau_x412ss_995
           endif
           endif
         endif   
@@ -2096,28 +2106,32 @@ c--------------------------------------------------------
 !     NE Mauritania 1
       if (xlat>20.0 .and. xlat<30.0 .and. xlong< -12.5) then
       if (r412_tbl > 9.)  then
-          if (Dstar1 .lt. 1.01) tau_x412ss = tau_x412ss_995
+C         if (Dstar1 .lt. 1.01) tau_x412ss = tau_x412ss_995
+          tau_x412ss = tau_x412ss_995
       endif
       endif
  
 !     NE Mauritania 2
       if (xlat>26.0 .and. xlat<30.0.and. xlong>=-12.5.and. xlong< -11.001) then
       if (r412_tbl > 9.)  then
-          if (Dstar1 .lt. 1.01) tau_x412ss = tau_x412ss_995
+C         if (Dstar1 .lt. 1.01) tau_x412ss = tau_x412ss_995
+          tau_x412ss = tau_x412ss_995
       endif
       endif
 
 !     Morocco 1
       if (xlat>30.0 .and. xlat<36.0 .and. xlong<= -7.5) then
       if (r412_tbl > 5.8)  then
-          if (Dstar1 .lt. 1.01) tau_x412ss = tau_x412ss_995
+C         if (Dstar1 .lt. 1.01) tau_x412ss = tau_x412ss_995
+          tau_x412ss = tau_x412ss_995
       endif
       endif   
 
 !     Morocco 2
       if (xlat>31.5 .and. xlat<36.0 .and. xlong<= -5.0.and. xlong> -7.5) then
       if (r412_tbl > 5.8)  then
-          if (Dstar1 .lt. 1.01) tau_x412ss = tau_x412ss_995
+C         if (Dstar1 .lt. 1.01) tau_x412ss = tau_x412ss_995
+          tau_x412ss = tau_x412ss_995
       endif
         endif   
 
@@ -2833,111 +2847,288 @@ C       endif
           endif
           
           if ((gzflg <= 6 .OR. gzflg == 27) .and. (gzflg > 0 .and. gzflg /= 2)) then
-          tau550 = tau_x412ss    
-          if (Dstar1 > 1.08 .and. tau_x470ss > tau550) tau550 = tau_x470ss
-          if (xday > 151.0.and.xday < 244.0) then  ! Jun, Jul, Aug
-          tau550 = tau_x412ss
-          if (Dstar1 > 1.09.and. wv <= 1.5 .and. tau_x470ss > tau550) tau550 = tau_x470ss
-            if (Dstar1 > 1.07 .and. tau_x470ss/tau_x412ss > 3.5) tau550 = tau_x470ss
-          endif
-          ddx = 0.0
-          if (xday > 243.0.and.xday < 274.0) ddx = 1.0  ! Sep
-          if (xday > 120.0.and.xday < 152.0) ddx = 1.0  ! May
-          if (xday > 151.0.and.xday < 244.0) ddx = 1.0  ! Jun, Jul, Aug
-          if (ddx > 0.0) then 
-            if (xday > 243.0.and.xday < 274.0) then
-            if (Dstar1 > 1.01 .and. r412_tbl <12.0 .and. tau_x470ss > tau550) tau550 = tau_x470ss
-            if (Dstar1 > 0.98 .and. wv > 1.7 .and. tau_x470ss > tau550) tau550 = tau_x470ss
-            endif
-            if (tau_x470ss > tau550) then
-                if (xlong <= -5.0) tau550 = tau_x470ss
-                if (xlong > -5.0 .and. xlong < 0.0) then
-                dd = (5.+xlong) / 5.
-                tau550 = (1.-dd)* tau_x470ss + dd * tau_x412ss
+             tau550 = tau_x412ss    
+C            if (Dstar1 > 1.08 .and. tau_x470ss > tau550) tau550 = tau_x470ss
+             if (tau_x470ss > tau550) tau550 = tau_x470ss
+          
+             if (xday > 151.0.and.xday < 244.0) then  ! Jun, Jul, Aug
+              tau550 = tau_x412ss
+C             if (Dstar1 > 1.09.and. wv <= 1.5 .and. tau_x470ss > tau550) tau550 = tau_x470ss
+C             if (Dstar1 > 1.07 .and. tau_x470ss/tau_x412ss > 3.5) tau550 = tau_x470ss
+C             endif
+              if (wv <= 1.5 .and. tau_x470ss > tau550) tau550 = tau_x470ss
+              if (tau_x470ss/tau_x412ss > 3.5) tau550 = tau_x470ss
+             endif          
+             ddx = 0.0
+             if (xday > 243.0.and.xday < 274.0) ddx = 1.0  ! Sep
+             if (xday > 120.0.and.xday < 152.0) ddx = 1.0  ! May
+             if (xday > 151.0.and.xday < 244.0) ddx = 1.0  ! Jun, Jul, Aug
+           
+             if (ddx > 0.0) then 
+                if (xday > 243.0.and.xday < 274.0) then
+C                 if (Dstar1 > 1.01 .and. r412_tbl <12.0 .and. tau_x470ss > tau550) tau550 = tau_x470ss
+C                 if (Dstar1 > 0.98 .and. wv > 1.7 .and. tau_x470ss > tau550) tau550 = tau_x470ss
+                  if (r412_tbl <12.0 .and. tau_x470ss > tau550) tau550 = tau_x470ss
+                  if (wv > 1.7 .and. tau_x470ss > tau550) tau550 = tau_x470ss            
                 endif
-                if (xday > 120.0.and.xday < 152.0) then
-                if (xlong <= -5.0) tau550 = tau_x470ss
-                if (xlong > -5.0 .and. xlong < 10.0) then
-                dd = (5.+xlong) / 15.
-                tau550 = (1.-dd)* tau_x470ss + dd * tau_x412ss
+                if (tau_x470ss > tau550) then
+                    if (xlong <= -5.0) tau550 = tau_x470ss
+                    if (xlong > -5.0 .and. xlong < 0.0) then
+                      dd = (5.+xlong) / 5.
+                      tau550 = (1.-dd)* tau_x470ss + dd * tau_x412ss
+                    endif
+                    if (xday > 120.0.and.xday < 152.0) then
+                      if (xlong <= -5.0) tau550 = tau_x470ss
+                      if (xlong > -5.0 .and. xlong < 10.0) then
+                        dd = (5.+xlong) / 15.
+                        tau550 = (1.-dd)* tau_x470ss + dd * tau_x412ss
+                      endif
+                    endif
                 endif
-                endif
-            endif
-          endif
-            if (tau_x470ss > tau550) then
-                if (xlong >= 35.0) tau550 = tau_x470ss
-                if (xlong > 27.0 .and. xlong < 35.0) then
-                dd = (xlong-27.0) / 8.
-                tau550 = dd* tau_x470ss + (1.-dd) * tau_x412ss
-                endif
-          endif
+             endif
+             if (tau_x470ss > tau550) then
+               if (xlong >= 35.0) tau550 = tau_x470ss
+               if (xlong > 27.0 .and. xlong < 35.0) then
+                 dd = (xlong-27.0) / 8.
+                 tau550 = dd* tau_x470ss + (1.-dd) * tau_x412ss
+               endif
+             endif
 
           
-          if (tau550 < 0.1) tau550 = tau550 + 0.05    ! check for geo zone
+             if (tau550 < 0.1) tau550 = tau550 + 0.05    ! check for geo zone
 
-          if (Dstar1 > 1.1 .and. tau_x470ss > tau_x412ss) tau550 = tau_x470ss  !new
+C            if (Dstar1 > 1.1 .and. tau_x470ss > tau_x412ss) tau550 = tau_x470ss  !new       :this line is causing high bias
+             if (tau_x470ss > tau_x412ss) tau550 = tau_x470ss  !new       :this line is causing high bias
+          
+C            if (tau_x470ss > tau_x412ss) tau550 = (tau550+tau_x470ss)/2.  !new                          
 
-          if (xday > 151.0.and.xday < 258.0.and.
-     1        Dstar1 > 1.2.and.tau_x650 < 0.0.and.tau550 < 0.8)
+             if (xday > 151.0.and.xday < 258.0.and.
+C    1        Dstar1 > 1.2.and.tau_x650 < 0.0.and.tau550 < 0.8)
+     1        tau_x650 < 0.0.and.tau550 < 0.8)     
      1        tau550 = tau_x470ss * 2.
  
-          if (Dstar1 > 1.2.and.tau_x412ss < 0.5 .and.tau550< 0.7)
-     1        tau550 = Dstar1
+C         if (Dstar1 > 1.2.and.tau_x412ss < 0.5 .and.tau550< 0.7)
+C    1        tau550 = Dstar1
  
-          if (wv < 0.45.and.tau_x470ss >0.9.and.tau_x412ss < 0.7) tau550 = tau_x412ss  !new
-          if (Dstar1 > 1.08 .and. tau_x470ss > tau550) tau550 = tau_x470ss
+             if (wv < 0.45.and.tau_x470ss >0.9.and.tau_x412ss < 0.7) tau550 = tau_x412ss  !new
+C         if (Dstar1 > 1.08 .and. tau_x470ss > tau550) tau550 = tau_x470ss            !this line is causing high bias
+             if (tau_x470ss > tau550) tau550 = tau_x470ss            !this line is causing high bias
+          
+C         if (tau_x470ss > tau550) tau550 = (tau550+tau_x470ss)/2.            !this line is causing high bias
 
-          end if
+          end if  !          if ((gzflg <= 6 .OR. gzflg == 27) .and. (gzflg > 0 .and. gzflg /= 2)) then
  
           if (gzflg >= 6 .and. gzflg <= 11 .AND. gzflg /= 10) then
-               tau550 = tau_x470ss
-               if (tau550 < 0.45) tau550 = (tau_x470ss+tau_x412ss2)/2.
-          if (xday > 243.0 .and. xday < 274.0) then
-               tau550 = tau_x470ss
-               if (tau550 < 0.45.and. tau_x412ss2 > tau550) tau550 = (tau_x470ss+tau_x412ss2)/2.
-          endif
-               if (xday > 120.0 .and. xday < 151.0) then                   ! May
-                tau550 = tau_x470ss
-               if (tau550 < 0.45.and. tau_x412ss2 > tau550) tau550 = (tau_x470ss+tau_x412ss2)/2.
-               end if
-               if (xday > 90.0 .and. xday < 121.0) then                    ! Apr
-                   tau550 = tau_x412ss2
-                   if (tau550 < 0.5 .and. tau_x470ss > tau550) tau550 = tau_x470ss
-               end if 
-          if (xlat > 29.5 .and. Dstar1 < 0.97) then
-             if (tau550 > 0.6) tau550 = tau_x412ss2_995
-          end if 
+            tau550 = tau_x470ss
+            if (tau550 < 0.45) tau550 = (tau_x470ss+tau_x412ss2)/2.
+            if (xday > 243.0 .and. xday < 274.0) then
+                 tau550 = tau_x470ss
+                 if (tau550 < 0.45.and. tau_x412ss2 > tau550) tau550 = (tau_x470ss+tau_x412ss2)/2.
+            endif
+            if (xday > 120.0 .and. xday < 151.0) then                   ! May
+             tau550 = tau_x470ss
+             if (tau550 < 0.45.and. tau_x412ss2 > tau550) tau550 = (tau_x470ss+tau_x412ss2)/2.
+            end if
+            if (xday > 90.0 .and. xday < 121.0) then                    ! Apr
+                tau550 = tau_x412ss2
+                if (tau550 < 0.5 .and. tau_x470ss > tau550) tau550 = tau_x470ss
+            end if 
+C         if (xlat > 29.5 .and. Dstar1 < 0.97) then
+            if (xlat > 29.5 ) then
+               if (tau550 > 0.6) tau550 = tau_x412ss2_995
+            end if 
 
-          if (xday < 182.0) then
-          if (xlat > 20.0.and. xlat < 28.0.and.xlong > 42.0.and. xlong < 50.0) then
-             if (Dstar1 < 1.06.and.r412_tbl > 14.0.and.tau550 > 0.8) go to 10
-          end if
-          end if
+            if (xday < 182.0) then
+            if (xlat > 20.0.and. xlat < 28.0.and.xlong > 42.0.and. xlong < 50.0) then
+C              if (Dstar1 < 1.06.and.r412_tbl > 14.0.and.tau550 > 0.8) go to 10
+               if (r412_tbl > 14.0.and.tau550 > 0.8) go to 10
+            end if
+            end if
 
-          if (Dstar1 > 1.1 .and. tau_x470ss <0.45) tau550 = Dstar1
+C         if (Dstar1 > 1.1 .and. tau_x470ss <0.45) tau550 = Dstar1
 
-          if (xday > 243.0 .and. xday < 274.0) then    ! Sept
-          if (Dstar1 < 0.98.and.r412_tbl > 12.0.and.tau550 > 0.8) go to 10
-          endif
-          if (xday > 273.0 .and. xday < 305.0) then    ! Oct
-          if (Dstar1 < 1.04.and.r412_tbl > 12.0.and.tau550 > 0.75) go to 10
-          endif
+            if (xday > 243.0 .and. xday < 274.0) then    ! Sept
+C           if (Dstar1 < 0.98.and.r412_tbl > 12.0.and.tau550 > 0.8) go to 10
+            if (r412_tbl > 12.0.and.tau550 > 0.8) go to 10
+            endif
+            if (xday > 273.0 .and. xday < 305.0) then    ! Oct
+C           if (Dstar1 < 1.04.and.r412_tbl > 12.0.and.tau550 > 0.75) go to 10
+            if (r412_tbl > 12.0.and.tau550 > 0.75) go to 10
+            endif
 
-          if (xday > 150.0 .and. xday < 258.0) then    ! Jun, Jul, Aug
-          if (xlat > 20.0.and. xlat < 28.0.and.xlong > 42.0.and. xlong < 50.0) then
-             if (Dstar1 < 1.06.and.r412_tbl > 12.8.and.tau550 > 0.78) go to 10
-          end if
-           if (Dstar1 < 1.04.and.r412_tbl > 12.0.and.tau550 > 0.78.and. xlat>21.0.and.xlong<53.0) go to 10
-           if (Dstar1 < 1.04.and.r412_tbl > 12.0.and.tau550 > 0.78.and. xlat>23.0.and.xlong>=53.0) go to 10
-          end if
-
-          end if 
+            if (xday > 150.0 .and. xday < 258.0) then    ! Jun, Jul, Aug
+              if (xlat > 20.0.and. xlat < 28.0.and.xlong > 42.0.and. xlong < 50.0) then
+C                if (Dstar1 < 1.06.and.r412_tbl > 12.8.and.tau550 > 0.78) go to 10
+                 if (r412_tbl > 12.8.and.tau550 > 0.78) go to 10
+             
+              end if
+C            if (Dstar1 < 1.04.and.r412_tbl > 12.0.and.tau550 > 0.78.and. xlat>21.0.and.xlong<53.0) go to 10
+C            if (Dstar1 < 1.04.and.r412_tbl > 12.0.and.tau550 > 0.78.and. xlat>23.0.and.xlong>=53.0) go to 10
+             if (r412_tbl > 12.0.and.tau550 > 0.78.and. xlat>21.0.and.xlong<53.0) go to 10
+             if (r412_tbl > 12.0.and.tau550 > 0.78.and. xlat>23.0.and.xlong>=53.0) go to 10           
+            end if
+          end if  !          if (gzflg >= 6 .and. gzflg <= 11 .AND. gzflg /= 10) then
            
-        end if    ! end of barren
-        if (gzflg < 6 .and. gzflg >0 .and. Dstar1 > 1.08 .and. tau_x470ss > tau550) tau550 = tau_x470ss
- 
-      end if  
-      
+        end if    ! end of barren   
+C       if (gzflg < 6 .and. gzflg >0 .and. Dstar1 > 1.08 .and. tau_x470ss > tau550) tau550 = tau_x470ss
+        if (gzflg < 6 .and. gzflg >0 .and. tau_x470ss > tau550) tau550 = tau_x470ss
+
+
+
+
+
+          if (gzflg > 0 .and. gzflg < 6) then
+
+            !!!!!!!!!!!!!
+            ! Version 2 !
+            !!!!!!!!!!!!!
+
+            ! Mitigate a low bias from using DB surface database
+            if (tau_x470sv96_dust > tau550 .and. tau_x470sv96_dust>0.0) then
+              tau550 = tau_x470sv_dust
+              alg_flag = 12
+              old_alg_flag = 2
+            endif       
+
+            ! Recover pixels that are too bright for 470 nm band
+            if (tau500 < 0.0 .and. tau_x412_dust_96 > 0.0) then
+              tau550 = tau_x412_dust_96
+              alg_flag = 12
+              old_alg_flag = 2
+            endif
+
+            if (tau_x412_dust_96 > 0.0 .and. tau_x470sv96_dust > 0.0) then
+              ! 412 nm AOD to improve scan-angle dependence over bright surfaces
+              ! together with the adjustment of gas correction above
+              tau500sv = tau_x470sv96_dust
+    !          if (raa > 90.0 .and. vza > 45.0 .and. swir_coeffs412_annual(3) < 0.02) then 
+    !            max_model_frac = 0.5
+    !            if (r470_mintbl > 15.0) then
+    !              max_model_frac = 0.5+min(max((r470_mintbl-15.0)/5.0,0.0),1.0)*0.2
+    !     1                            -min(max((tau500sv-0.4)/0.4,0.0),1.0)*0.3
+    !            endif
+    !            model_frac = min(max((vza-45.0)/20.0,0.0),max_model_frac)
+    !            tau500sv = tau_x470sv_dust*(1.0-model_frac) + tau_x412sv_dust*model_frac
+    !          endif 
+
+              ! Use the above treatment over deserts
+              if (xlat >= 20.0) then
+                tau550 = tau500sv !note that the order matters
+                alg_flag = 12
+                old_alg_flag = 2
+              endif
+  
+              ! Smooth transition toward lower latitudes 
+              if (xlat > 15.0 .and. xlat < 20.0 .and. brdf_flag == 0) then 
+                model_frac = min(max((xlat-15.0)/5.0,0.0),1.0)
+                if (tau550 > 0.0 .and. tau500sv > 0.0) then 
+                  tau550 = tau550*(1.0-model_frac)+tau550sv*model_frac
+                  alg_flag = 20 
+                  old_alg_flag = 3 
+                endif
+              endif
+    
+              ! This improves a high bias from using AERONET BRDF over
+              ! southeastern Africa where background AOD is lower than the anchor
+              ! sites (Banizoumbou, IER Cinzana) 
+    !          if (season == 4) then
+    !            xlong_thold = 10.0 
+    !          else 
+    !            xlong_thold = 18.0
+    !          endif
+              xlong_thold = 15.0
+            
+              if (xlat < 18.0 .and. xlong > xlong_thold .and. lc /= 6) then 
+                model_frac = min(max((xlong-xlong_thold)/5.0,0.0),1.0)
+                if (tau550 > 0.0 .and. tau500sv > 0.0) then             
+                  tau550 = tau550*(1.0-model_frac)+tau500sv*model_frac
+                endif
+
+                if (model_frac > 0.0) then 
+                  if (model_frac < 1.0) then 
+                    alg_flag = 20 
+                    old_alg_flag = 3 
+                  else
+                    alg_flag = 12
+                    old_alg_flag = 2
+                  endif
+                endif
+              endif
+  
+              ! 412 nm AOD for bright pixels over the northeastern corner of North Africa
+              if (xlat > 22.0 .and. xlong > 15.0) then 
+                if (r470_mintbl > 15.0) then 
+                  aot_tmp = tau_x412_dust_995 
+                  if (aot_tmp > 0.4) then 
+                    model_frac = min(max((aot_tmp-0.4)/0.4,0.0),1.0)
+                    aot_tmp = aot_tmp*(1.0-model_frac)+tau_x412_dust_96*model_frac
+                  endif
+
+                  model_frac = min(max((r470_mintbl-15.0)/3.0,0.0),1.0)
+                  model_frac2 = min(max((xlat-22.0)/2.0,0.0),1.0)
+                  model_frac3 = min(max((xlong-15.0)/2.0,0.0),1.0)
+                  model_frac = model_frac*model_frac2*model_frac3
+          
+                  if (tau550 > 0.0 .and. aot_tmp > 0.0) then 
+                    tau550 = tau550*(1.0-model_frac)+aot_tmp*model_frac
+                    alg_flag = 12
+                    old_alg_flag = 2
+                  endif
+                endif
+              endif
+  
+              ! N. Africa, high-latitude non-desert areas, xlong to exclude Cairo
+              if (xlat > 30.0 .and. xlong < 28.0 .and. lcvr /= 16) then
+                model_frac = min(max((rc_ndvi-0.2)/0.1,0.0),1.0)
+                tau550 = tau_x412_dust_96*(1.0-model_frac)+tau_x470sv96_dust*model_frac  
+                if (tau550 > 0.4) then
+                  model_frac = min(max((tau550-0.4)/0.2,0.0),1.0)
+                  tau550 = tau550*(1.0-model_frac)+tau_x470sv96_dust*model_frac
+                endif
+                alg_flag = 12
+                old_alg_flag = 2
+              endif
+            endif ! if (tau_x412sv_dust > 0.0 .and. tau_x470sv_dust > 0.0) then 
+
+            ! Skip retrievals over the northeastern corner of North Africa
+            ! if no retrievals were made using 2.2 um surface database 
+            if (xlat > 23.0 .and. xlong > 15.0) then
+C             if (tau_x412_dust_96 < 0.0 .or. tau_x470sv96_dust < 0.0) then
+C               tau550 = -999.
+C               alg_flag = -999
+C               old_alg_flag = -999 
+C             endif
+            endif
+
+            ! This area hits the bottom AOD for certain conditions, skip
+            ! Probably need to revisit aero_470 for non-monotonic increase conditions 
+            if (season == 3) then 
+              if (xlat > 16.0 .and. xlat < 22.0. and. xlong > -13.0 .and. xlong < -1.0) then
+                if (r470_mintbl > 18.0 .and. Dstar1 > 1.08) then  
+                  if (tau_x412_dust_96 > tau_x470sv96_dust .and. tau_x412_dust_96>0 ) then
+                    tau550 = tau_x412_dust_96
+                    alg_flag = 12 
+                    old_alg_flag = 2
+                  endif
+
+C                 if (tau_x470sv96_dust < 0.3 .or. tau_x412_dust_96 < 0.0) then
+C                   tau550 = -999.
+C                   alg_flag = -999
+C                   old_alg_flag = -999
+C                 endif
+C                 go to 778 ! skip the handling of high Dstar 
+                endif
+              endif
+            endif 
+            
+C           if (debug) print *, '======V2 tau: ', tau550, tau_x412_dust_96 , tau_x470sv96_dust
+C           if (debug) print *,tau_x412sv94, tau_x412sv96, tau_x412sv98
+C           if (debug) print *,tau_x470sv94, tau_x470sv96, tau_x470sv995
+
+          endif ! end of Version 2 North Africa
+
+      end if      !      if (gzflg > 0) then
+
 !     -- for Arabian peninsula, just use AOT412 w/ w0=0.96. Override all of that above.
       if (gzflg >= 6 .and. gzflg <= 11 .AND. gzflg /= 10) then
         if ((r650_135 > 32.0) .AND. (r650_135/r412_135) > 3.7) then
@@ -2958,6 +3149,7 @@ C       endif
           end if 
           
         end if
+
       end if
  861  continue
       
@@ -3271,14 +3463,14 @@ c
           endif
 
 
-          if (r412_tbl > 12.0 .and. tau_x470sv96_dust < 0.0) then
-             if (realbuf(23) > 25.0 .and. realbuf(23)/realbuf(6) > 0.7
-     &           .and. realbuf(23)/realbuf(6) < 0.85) go to 867
-             tau550 = -999.0
-             alg_flag = -999.0
-             old_alg_flag = -999.0             
-867          continue
-          endif
+C         if (r412_tbl > 12.0 .and. tau_x470sv96_dust < 0.0) then
+C            if (realbuf(23) > 25.0 .and. realbuf(23)/realbuf(6) > 0.7
+C    &           .and. realbuf(23)/realbuf(6) < 0.85) go to 867
+C            tau550 = -999.0
+C            alg_flag = -999.0
+C            old_alg_flag = -999.0             
+C867          continue
+C         endif
          if (xday >= 152.0 .and. xday < 244.0 .and. Dstar1 >= 1.04 .and. tau_x470sv96_dust > tau550) then
            tau550 = tau_x470sv96_dust
            alg_flag = 12

@@ -212,7 +212,11 @@ contains
                 CALL Get_An_GMAO(Lat_center,Lon_center,ugrd,vgrd,pwat,&
                 ozone,skinTemp,set_counter_for_anc,RTN_NCEP,anc_file)
   
-         
+            if( Iscan .eq. 11 .and. IDATA .eq. 9 )&
+            print*, 'Lat_center,Lon_center,ugrd,vgrd,pwat,&
+                ozone,skinTemp',Lat_center,Lon_center,ugrd,vgrd,pwat,&
+                ozone,skinTemp
+            
                
 !------------------------------------------------------------------------------------------------------------------         
 ! choosing index for wind speed computed from GDAS data. It will be used to read LUT for Wind Speed WSPEED
@@ -238,6 +242,7 @@ contains
              W865_SYN,W470_SYN,W550_SYN,W124_SYN,W164_SYN,W213_SYN,W412_SYN,&
              Multi_factor) 
              
+          
 !-----------------------------------------------------------------------------------------------------------------         
 !   Compute Temperature for Channels 8.5 and 11.00 microns
 !------------------------------------------------------------------------------------------------------------------                

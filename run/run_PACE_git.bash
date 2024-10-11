@@ -14,9 +14,9 @@ parentdir="$(dirname "$dir")"
 #echo $parentdir 
 input_dir="$parentdir/Input"
 echo $input_dir
- input_dir=/tis/atmosphere/scratch/Dark_Target/yshi1/data4/PACE_Git_updated_Sep2024/Input_L1
+ input_dir=/tis/atmosphere/scratch/Dark_Target/smattoo/Projects_from_data4/PACE_Git_updated_Sep2024/Input_L1
 # input_dir=/tis/acps/scratch/vkayetha/PACE-OCI/L1B
-OUT_dir=/tis/atmosphere/scratch/Dark_Target/yshi1/data4/PACE_Git_updated_Sep2024/V3_Output
+OUT_dir=/tis/atmosphere/scratch/Dark_Target/smattoo/Projects_from_data4/PACE_Git_updated_Sep2024/V3_Output
 #OUT_dir=/tis/atmosphere/scratch/Dark_Target/smattoo/Projects_from_data4/PACE_Git_updated_Sep2024/Output
 echo $input_dir 
 

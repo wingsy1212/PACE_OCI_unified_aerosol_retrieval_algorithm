@@ -40,6 +40,8 @@ group: geolocation_data {
 		Longitude_1km:Parameter_Type = "OCI Input" ;
 		Longitude_1km:Geolocation_Pointer = "Geolocation data not applicable" ;
 		Longitude_1km:_CoordinateAxisType = "Lon" ;
+		Longitude_1km:_ChunkSizes = 128, 128 ;
+		Longitude_1km:_DeflateLevel = 4 ;
          
 	float Latitude_1km(number_of_lines_1x1, number_of_pixels_1x1) ;
 		Latitude_1km:valid_range = -90.f, 90.f ;
@@ -51,6 +53,8 @@ group: geolocation_data {
 		Latitude_1km:Parameter_Type = "OCI Input" ;
 		Latitude_1km:Geolocation_Pointer = "Geolocation data not applicable" ;
 		Latitude_1km:_CoordinateAxisType = "Lat" ;
+		Latitude_1km:_ChunkSizes = 128, 128 ;
+		Latitude_1km:_DeflateLevel = 4 ;
 
 	
     data:
@@ -69,6 +73,8 @@ group: geophysical_data {
 		NUV_AerosolIndex_1km:Parameter_Type = "Output" ;
 		NUV_AerosolIndex_1km:Geolocation_Pointer = "Internal geolocation arrays" ;
 		NUV_AerosolIndex_1km:coordinates = "/geolocation_data/Longitude_1km /geolocation_data/Latitude_1km" ;  
+		NUV_AerosolIndex_1km:_ChunkSizes = 128, 128 ;
+		NUV_AerosolIndex_1km:_DeflateLevel = 4 ;
 
 	short NUV_Residue_1km(number_of_lines_1x1, number_of_pixels_1x1) ;
 		NUV_Residue_1km:valid_range =  -5000s, 10000s ; 
@@ -80,6 +86,8 @@ group: geophysical_data {
 		NUV_Residue_1km:Parameter_Type = "Output" ;
 		NUV_Residue_1km:Geolocation_Pointer = "Internal geolocation arrays" ;
 		NUV_Residue_1km:coordinates = "/geolocation_data/Longitude_1km /geolocation_data/Latitude_1km" ;  
+		NUV_Residue_1km:_ChunkSizes = 128, 128 ;
+		NUV_Residue_1km:_DeflateLevel = 4 ;
 
 	short NUV_Reflectivity_1km(number_of_lines_1x1, number_of_pixels_1x1, Wavelength_Used_UV1) ;
 		NUV_Reflectivity_1km:valid_range =  0s, 1000s ; 
@@ -91,6 +99,9 @@ group: geophysical_data {
 		NUV_Reflectivity_1km:Parameter_Type = "Output" ;
 		NUV_Reflectivity_1km:Geolocation_Pointer = "Internal geolocation arrays" ;
 		NUV_Reflectivity_1km:coordinates = "/geolocation_data/Longitude_1km /geolocation_data/Latitude_1km" ;  
+		NUV_Reflectivity_1km:_ChunkSizes = 128, 128, 2 ;
+		NUV_Reflectivity_1km:_DeflateLevel = 4 ;
+
     data:
     } // group geophysical_data
 }

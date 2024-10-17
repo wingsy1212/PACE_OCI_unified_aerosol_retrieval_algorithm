@@ -37,6 +37,7 @@ dimensions:
 
 group: geolocation_data {
     variables:
+	
 	float longitude(number_of_lines_7x7, number_of_pixels_7x7) ;
 		longitude:valid_range = -180.f, 180.f ;
 		longitude:_FillValue = -999.f ;
@@ -62,7 +63,7 @@ group: geolocation_data {
 		latitude:_CoordinateAxisType = "Lat" ;
 		latitude:_ChunkSizes = 32, 32 ;
  		latitude:_DeflateLevel = 4 ;
-        
+         
 	short solar_zenith_angle(number_of_lines_7x7, number_of_pixels_7x7) ;
 		solar_zenith_angle:valid_range = 0s, 18000s ;
 		solar_zenith_angle:_FillValue = -9999s ;
@@ -73,6 +74,7 @@ group: geolocation_data {
 		solar_zenith_angle:Parameter_Type = "OCI Input" ;
 		solar_zenith_angle:Geolocation_Pointer = "Internal geolocation arrays" ;
 		solar_zenith_angle:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
+		solar_azimuth_angle:_ChunkSizes = 32, 32 ;
 		solar_zenith_angle:_DeflateLevel = 4 ;
          
 	short solar_azimuth_angle(number_of_lines_7x7, number_of_pixels_7x7) ;
@@ -116,6 +118,7 @@ group: geolocation_data {
         
     data:
     } // group geolocation_data
+
 group: geophysical_data {
     variables:
    short Land_Sea_Flag(number_of_lines_7x7, number_of_pixels_7x7) ;

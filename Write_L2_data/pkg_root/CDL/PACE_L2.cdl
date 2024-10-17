@@ -49,8 +49,6 @@ group: geolocation_data {
 		Longitude_1km:Parameter_Type = "OCI Input" ;
 		Longitude_1km:Geolocation_Pointer = "Geolocation data not applicable" ;
 		Longitude_1km:_CoordinateAxisType = "Lon" ;
-		Longitude_1km:_ChunkSizes = 128, 128 ;
-		Longitude_1km:_DeflateLevel = 4 ;
          
 	float Latitude_1km(number_of_lines_1x1, number_of_pixels_1x1) ;
 		Latitude_1km:valid_range = -90.f, 90.f ;
@@ -62,8 +60,6 @@ group: geolocation_data {
 		Latitude_1km:Parameter_Type = "OCI Input" ;
 		Latitude_1km:Geolocation_Pointer = "Geolocation data not applicable" ;
 		Latitude_1km:_CoordinateAxisType = "Lat" ;
-		Latitude_1km:_ChunkSizes = 128, 128 ;
-		Latitude_1km:_DeflateLevel = 4 ;
 
 	float longitude(number_of_lines_7x7, number_of_pixels_7x7) ;
 		longitude:valid_range = -180.f, 180.f ;
@@ -75,8 +71,6 @@ group: geolocation_data {
 		longitude:Parameter_Type = "OCI Input" ;
 		longitude:Geolocation_Pointer = "Geolocation data not applicable" ;
 		longitude:_CoordinateAxisType = "Lon" ;
-		longitude:_ChunkSizes = 32, 32 ;
-		longitude:_DeflateLevel = 4 ;
          
 	float latitude(number_of_lines_7x7, number_of_pixels_7x7) ;
 		latitude:valid_range = -90.f, 90.f ;
@@ -88,9 +82,7 @@ group: geolocation_data {
 		latitude:Parameter_Type = "OCI Input" ;
 		latitude:Geolocation_Pointer = "Geolocation data not applicable" ;
 		latitude:_CoordinateAxisType = "Lat" ;
-		latitude:_ChunkSizes = 32, 32 ;
- 		latitude:_DeflateLevel = 4 ;
-        
+         
 	short solar_zenith_angle(number_of_lines_7x7, number_of_pixels_7x7) ;
 		solar_zenith_angle:valid_range = 0s, 18000s ;
 		solar_zenith_angle:_FillValue = -9999s ;
@@ -101,7 +93,6 @@ group: geolocation_data {
 		solar_zenith_angle:Parameter_Type = "OCI Input" ;
 		solar_zenith_angle:Geolocation_Pointer = "Internal geolocation arrays" ;
 		solar_zenith_angle:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		solar_zenith_angle:_DeflateLevel = 4 ;
          
 	short solar_azimuth_angle(number_of_lines_7x7, number_of_pixels_7x7) ;
 		solar_azimuth_angle:valid_range = -18000s, 18000s ;
@@ -113,8 +104,6 @@ group: geolocation_data {
 		solar_azimuth_angle:Parameter_Type = "OCI Input" ;
 		solar_azimuth_angle:Geolocation_Pointer = "Internal geolocation arrays" ;
 		solar_azimuth_angle:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		solar_azimuth_angle:_ChunkSizes = 32, 32 ;
-		solar_azimuth_angle:_DeflateLevel = 4 ;
          
 	short sensor_zenith_angle(number_of_lines_7x7, number_of_pixels_7x7) ;
 		sensor_zenith_angle:valid_range = 0s, 18000s ;
@@ -126,8 +115,6 @@ group: geolocation_data {
 		sensor_zenith_angle:Parameter_Type = "OCI Input" ;
 		sensor_zenith_angle:Geolocation_Pointer = "Internal geolocation arrays" ;
 		sensor_zenith_angle:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		sensor_zenith_angle:_ChunkSizes = 32, 32 ;
-		sensor_zenith_angle:_DeflateLevel = 4 ;
         
 	short sensor_azimuth_angle(number_of_lines_7x7, number_of_pixels_7x7) ;
 		sensor_azimuth_angle:valid_range = -18000s, 18000s ;
@@ -139,8 +126,6 @@ group: geolocation_data {
 		sensor_azimuth_angle:Parameter_Type = "OCI Input" ;
 		sensor_azimuth_angle:Geolocation_Pointer = "Internal geolocation arrays" ;
 		sensor_azimuth_angle:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		sensor_azimuth_angle:_ChunkSizes = 32, 32 ;
-		sensor_azimuth_angle:_DeflateLevel = 4 ;
         
     data:
     } // group geolocation_data
@@ -156,8 +141,6 @@ group: geophysical_data {
 		Land_Sea_Flag:Parameter_Type = "Output" ;
 		Land_Sea_Flag:Geolocation_Pointer = "Internal geolocation arrays" ;
 		Land_Sea_Flag:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		Land_Sea_Flag:_ChunkSizes = 32, 32 ;
-		Land_Sea_Flag:_DeflateLevel = 4 ;
                  
    short Aerosol_Optical_Depth(number_of_lines_7x7, number_of_pixels_7x7, Wavelength_Used_all) ;
 		Aerosol_Optical_Depth:valid_range = -50s, 5000s ;
@@ -169,8 +152,6 @@ group: geophysical_data {
 		Aerosol_Optical_Depth:Parameter_Type = "Output" ;
 		Aerosol_Optical_Depth:Geolocation_Pointer = "Internal geolocation arrays" ;
 		Aerosol_Optical_Depth:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		Aerosol_Optical_Depth:_ChunkSizes = 32, 32, 9 ;
-		Aerosol_Optical_Depth:_DeflateLevel = 4 ;
          
    short Optical_Depth_Ratio_Small_Ocean_used(number_of_lines_7x7, number_of_pixels_7x7) ;
 		Optical_Depth_Ratio_Small_Ocean_used:valid_range = 0s, 1000s ;
@@ -182,8 +163,6 @@ group: geophysical_data {
 		Optical_Depth_Ratio_Small_Ocean_used:Parameter_Type = "Output" ;
 		Optical_Depth_Ratio_Small_Ocean_used:Geolocation_Pointer = "Internal geolocation arrays" ;
 		Optical_Depth_Ratio_Small_Ocean_used:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		Optical_Depth_Ratio_Small_Ocean_used:_ChunkSizes = 32, 32 ;
-		Optical_Depth_Ratio_Small_Ocean_used:_DeflateLevel = 4 ;
              
    short Mean_Gas_Corrected_Reflectance(number_of_lines_7x7, number_of_pixels_7x7, Wavelength_Used_DTDB) ;
 		Mean_Gas_Corrected_Reflectance:valid_range = 0s, 10000s ;
@@ -195,8 +174,6 @@ group: geophysical_data {
 		Mean_Gas_Corrected_Reflectance:Parameter_Type = "Output" ;
 		Mean_Gas_Corrected_Reflectance:Geolocation_Pointer = "Internal geolocation arrays" ;
 		Mean_Gas_Corrected_Reflectance:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		Mean_Gas_Corrected_Reflectance:_ChunkSizes = 32, 32, 7 ;
-		Mean_Gas_Corrected_Reflectance:_DeflateLevel = 4 ;
 		
   short Mean_Reflectance(number_of_lines_7x7, number_of_pixels_7x7, Wavelength_Used_UV1);
 		Mean_Reflectance:valid_range = 0s, 10000s ;
@@ -208,8 +185,7 @@ group: geophysical_data {
 		Mean_Reflectance:Parameter_Type = "Output" ;
 		Mean_Reflectance:Geolocation_Pointer = "Internal geolocation arrays" ;
 		Mean_Reflectance:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		Mean_Reflectance:_ChunkSizes = 32, 32, 2 ;
-		Mean_Reflectance:_DeflateLevel = 4 ;
+
        
     short  DT_AerosolSingleScattAlbedo(number_of_lines_7x7, number_of_pixels_7x7, Wavelength_Used_UV) ;
 		DT_AerosolSingleScattAlbedo:valid_range = 700s, 1000s ;
@@ -221,8 +197,6 @@ group: geophysical_data {
 		DT_AerosolSingleScattAlbedo:Parameter_Type = "Output" ;
 		DT_AerosolSingleScattAlbedo:Geolocation_Pointer = "Internal geolocation arrays" ;
 		DT_AerosolSingleScattAlbedo:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;	
-		DT_AerosolSingleScattAlbedo:_ChunkSizes = 32, 32, 3 ;
-		DT_AerosolSingleScattAlbedo:_DeflateLevel = 4 ;
 		
     short DT_AerosolLayerHeight(number_of_lines_7x7, number_of_pixels_7x7) ;
 		DT_AerosolLayerHeight:valid_range = 1s, 10s ;
@@ -234,8 +208,6 @@ group: geophysical_data {
 		DT_AerosolLayerHeight:Parameter_Type = "Output" ;
 		DT_AerosolLayerHeight:Geolocation_Pointer = "Internal geolocation arrays" ;
 		DT_AerosolLayerHeight:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		DT_AerosolLayerHeight:_ChunkSizes = 32, 32 ;
-		DT_AerosolLayerHeight:_DeflateLevel = 4 ;
         
     short Aerosol_Cld_Fraction_Land_Ocean(number_of_lines_7x7, number_of_pixels_7x7) ;
 		Aerosol_Cld_Fraction_Land_Ocean:valid_range = 0S, 1000S ;
@@ -247,9 +219,8 @@ group: geophysical_data {
 		Aerosol_Cld_Fraction_Land_Ocean:Parameter_Type = "Output" ;
 		Aerosol_Cld_Fraction_Land_Ocean:Geolocation_Pointer = "Internal geolocation arrays" ;
 		Aerosol_Cld_Fraction_Land_Ocean:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		Aerosol_Cld_Fraction_Land_Ocean:_ChunkSizes = 32, 32 ;
-		Aerosol_Cld_Fraction_Land_Ocean:_DeflateLevel = 4 ;
-                  
+        
+          
 	short NUV_AerosolIndex_1km(number_of_lines_1x1, number_of_pixels_1x1) ;
 		NUV_AerosolIndex_1km:valid_range =  -5000s, 10000s ; 
 		NUV_AerosolIndex_1km:_FillValue = -9999s ;
@@ -260,8 +231,6 @@ group: geophysical_data {
 		NUV_AerosolIndex_1km:Parameter_Type = "Output" ;
 		NUV_AerosolIndex_1km:Geolocation_Pointer = "Internal geolocation arrays" ;
 		NUV_AerosolIndex_1km:coordinates = "/geolocation_data/Longitude_1km /geolocation_data/Latitude_1km" ;  
-		NUV_AerosolIndex_1km:_ChunkSizes = 128, 128 ;
-		NUV_AerosolIndex_1km:_DeflateLevel = 4 ;
 
 	short NUV_Residue_1km(number_of_lines_1x1, number_of_pixels_1x1) ;
 		NUV_Residue_1km:valid_range =  -5000s, 10000s ; 
@@ -273,8 +242,6 @@ group: geophysical_data {
 		NUV_Residue_1km:Parameter_Type = "Output" ;
 		NUV_Residue_1km:Geolocation_Pointer = "Internal geolocation arrays" ;
 		NUV_Residue_1km:coordinates = "/geolocation_data/Longitude_1km /geolocation_data/Latitude_1km" ;  
-		NUV_Residue_1km:_ChunkSizes = 128, 128 ;
-		NUV_Residue_1km:_DeflateLevel = 4 ;
 
 	short NUV_Reflectivity_1km(number_of_lines_1x1, number_of_pixels_1x1, Wavelength_Used_UV1) ;
 		NUV_Reflectivity_1km:valid_range =  0s, 1000s ; 
@@ -286,8 +253,7 @@ group: geophysical_data {
 		NUV_Reflectivity_1km:Parameter_Type = "Output" ;
 		NUV_Reflectivity_1km:Geolocation_Pointer = "Internal geolocation arrays" ;
 		NUV_Reflectivity_1km:coordinates = "/geolocation_data/Longitude_1km /geolocation_data/Latitude_1km" ;  
-		NUV_Reflectivity_1km:_ChunkSizes = 128, 128, 2 ;
-		NUV_Reflectivity_1km:_DeflateLevel = 4 ;
+
 
 	short NUV_AerosolIndex(number_of_lines_7x7, number_of_pixels_7x7) ;
 		NUV_AerosolIndex:valid_range =  -5000s, 10000s ; 
@@ -299,8 +265,6 @@ group: geophysical_data {
 		NUV_AerosolIndex:Parameter_Type = "Output" ;
 		NUV_AerosolIndex:Geolocation_Pointer = "Internal geolocation arrays" ;
 		NUV_AerosolIndex:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;  
-		NUV_AerosolIndex:_ChunkSizes = 32, 32 ;
-		NUV_AerosolIndex:_DeflateLevel = 4 ;
 	      
 	short NUV_AerosolLayerHeight(number_of_lines_7x7, number_of_pixels_7x7) ;
 		NUV_AerosolLayerHeight:valid_range = 0s, 10000s ;
@@ -312,8 +276,6 @@ group: geophysical_data {
 		NUV_AerosolLayerHeight:Parameter_Type = "Output" ;
 		NUV_AerosolLayerHeight:Geolocation_Pointer = "Internal geolocation arrays" ;
 		NUV_AerosolLayerHeight:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;  
-		NUV_AerosolLayerHeight:_ChunkSizes = 32, 32 ;
-		NUV_AerosolLayerHeight:_DeflateLevel = 4 ;
 		
 	short NUV_AerosolSingleScattAlbedo(number_of_lines_7x7, number_of_pixels_7x7,Wavelength_Used) ;
 		NUV_AerosolSingleScattAlbedo:valid_range = 700s, 1000s ;
@@ -325,8 +287,6 @@ group: geophysical_data {
 		NUV_AerosolSingleScattAlbedo:Parameter_Type = "Output" ;
 		NUV_AerosolSingleScattAlbedo:Geolocation_Pointer = "Internal geolocation arrays" ;
 		NUV_AerosolSingleScattAlbedo:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;	
-		NUV_AerosolSingleScattAlbedo:_ChunkSizes = 32, 32, 5 ;
-		NUV_AerosolSingleScattAlbedo:_DeflateLevel = 4 ;
         
 	short NUV_RadiativeCloudFraction(number_of_lines_7x7, number_of_pixels_7x7) ;
 		NUV_RadiativeCloudFraction:valid_range = 0s, 1000s ;
@@ -338,8 +298,6 @@ group: geophysical_data {
 		NUV_RadiativeCloudFraction:Parameter_Type = "Output" ;
 		NUV_RadiativeCloudFraction:Geolocation_Pointer = "Internal geolocation arrays" ;
 		NUV_RadiativeCloudFraction:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		NUV_RadiativeCloudFraction:_ChunkSizes = 32, 32 ;
-		NUV_RadiativeCloudFraction:_DeflateLevel = 4 ;
          
 	short NUV_Residue(number_of_lines_7x7, number_of_pixels_7x7) ;
 		NUV_Residue:valid_range = -5000s, 10000s ;
@@ -351,8 +309,6 @@ group: geophysical_data {
 		NUV_Residue:Parameter_Type = "Output" ;
 		NUV_Residue:Geolocation_Pointer = "Internal geolocation arrays" ;
 		NUV_Residue:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		NUV_Residue:_ChunkSizes = 32, 32 ;
-		NUV_Residue:_DeflateLevel = 4 ;
 
 	short NUV_Reflectivity(number_of_lines_7x7, number_of_pixels_7x7, Wavelength_Used_UV1) ;
 		NUV_Reflectivity:valid_range = 0s, 1000s ;
@@ -364,8 +320,6 @@ group: geophysical_data {
 		NUV_Reflectivity:Parameter_Type = "Output" ;
 		NUV_Reflectivity:Geolocation_Pointer = "Internal geolocation arrays" ;
 		NUV_Reflectivity:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		NUV_Reflectivity:_ChunkSizes = 32, 32, 2 ;
-		NUV_Reflectivity:_DeflateLevel = 4 ;
 
 	short NUV_CloudOpticalDepth(number_of_lines_7x7, number_of_pixels_7x7) ;
 		NUV_CloudOpticalDepth:valid_range = 0s, 5000s ;
@@ -377,8 +331,6 @@ group: geophysical_data {
 		NUV_CloudOpticalDepth:Parameter_Type = "Output" ;
 		NUV_CloudOpticalDepth:Geolocation_Pointer = "Internal geolocation arrays" ;
 		NUV_CloudOpticalDepth:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		NUV_CloudOpticalDepth:_ChunkSizes = 32, 32 ;
-		NUV_CloudOpticalDepth:_DeflateLevel = 4 ;
          
 	short NUV_AerosolOpticalDepthOverCloud(number_of_lines_7x7, number_of_pixels_7x7, Wavelength_Used_UV) ;
 		NUV_AerosolOpticalDepthOverCloud:valid_range = 0s, 5000s ;
@@ -390,8 +342,6 @@ group: geophysical_data {
 		NUV_AerosolOpticalDepthOverCloud:Parameter_Type = "Output" ;
 		NUV_AerosolOpticalDepthOverCloud:Geolocation_Pointer = "Internal geolocation arrays" ;
 		NUV_AerosolOpticalDepthOverCloud:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		NUV_AerosolOpticalDepthOverCloud:_ChunkSizes = 32, 32, 3 ;
-		NUV_AerosolOpticalDepthOverCloud:_DeflateLevel = 4 ;
          
 	short NUV_AerosolCorrCloudOpticalDepth(number_of_lines_7x7, number_of_pixels_7x7) ;
 		NUV_AerosolCorrCloudOpticalDepth:valid_range = 0s, 500s ;
@@ -403,8 +353,6 @@ group: geophysical_data {
 		NUV_AerosolCorrCloudOpticalDepth:Parameter_Type = "Output" ;
 		NUV_AerosolCorrCloudOpticalDepth:Geolocation_Pointer = "Internal geolocation arrays" ;
 		NUV_AerosolCorrCloudOpticalDepth:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		NUV_AerosolCorrCloudOpticalDepth:_ChunkSizes = 32, 32 ;
-		NUV_AerosolCorrCloudOpticalDepth:_DeflateLevel = 4 ;
 
 	short NUV_AerosolOpticalDepthOverCloudVsHeight(number_of_lines_7x7, number_of_pixels_7x7, Wavelength_Used_UV, Height_Levels) ;
 		NUV_AerosolOpticalDepthOverCloud:valid_range = 0s, 5000s ;
@@ -416,8 +364,6 @@ group: geophysical_data {
 		NUV_AerosolOpticalDepthOverCloud:Parameter_Type = "Output" ;
 		NUV_AerosolOpticalDepthOverCloud:Geolocation_Pointer = "Internal geolocation arrays" ;
 		NUV_AerosolOpticalDepthOverCloud:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		NUV_AerosolOpticalDepthOverCloud:_ChunkSizes = 32, 32, 3, 5 ;
-		NUV_AerosolOpticalDepthOverCloud:_DeflateLevel = 4 ;
          
 	short NUV_AerosolCorrCloudOpticalDepthVsHeight(number_of_lines_7x7, number_of_pixels_7x7, Height_Levels) ;
 		NUV_AerosolCorrCloudOpticalDepth:valid_range = 0s, 500s ;
@@ -429,8 +375,6 @@ group: geophysical_data {
 		NUV_AerosolCorrCloudOpticalDepth:Parameter_Type = "Output" ;
 		NUV_AerosolCorrCloudOpticalDepth:Geolocation_Pointer = "Internal geolocation arrays" ;
 		NUV_AerosolCorrCloudOpticalDepth:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		NUV_AerosolCorrCloudOpticalDepth:_ChunkSizes = 32, 32, 5 ;
-		NUV_AerosolCorrCloudOpticalDepth:_DeflateLevel = 4 ;
 
 	short NUV_FinalAlgorithmFlagsACA(number_of_lines_7x7, number_of_pixels_7x7) ;
 		NUV_FinalAlgorithmFlagsACA:valid_range = 0s, 3000s ;
@@ -442,8 +386,6 @@ group: geophysical_data {
 		NUV_FinalAlgorithmFlagsACA:Parameter_Type = "Output" ;
 		NUV_FinalAlgorithmFlagsACA:Geolocation_Pointer = "Internal geolocation arrays" ;
 		NUV_FinalAlgorithmFlagsACA:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		NUV_FinalAlgorithmFlagsACA:_ChunkSizes = 32, 32 ;
-		NUV_FinalAlgorithmFlagsACA:_DeflateLevel = 4 ;
 
 	short NUV_UncertaintyACAODToSSA(number_of_lines_7x7, number_of_pixels_7x7, Wavelength_ACA_UNCER) ;
 		NUV_UncertaintyACAODToSSA:valid_range = -1000s, 1000s ;
@@ -455,8 +397,6 @@ group: geophysical_data {
 		NUV_UncertaintyACAODToSSA:Parameter_Type = "Output" ;
 		NUV_UncertaintyACAODToSSA:Geolocation_Pointer = "Internal geolocation arrays" ;
 		NUV_UncertaintyACAODToSSA:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		NUV_UncertaintyACAODToSSA:_ChunkSizes = 32, 32, 2 ;
-		NUV_UncertaintyACAODToSSA:_DeflateLevel = 4 ;
 		
 	short NUV_UncertaintyCODToSSA(number_of_lines_7x7, number_of_pixels_7x7, Wavelength_ACA_UNCER) ;
 		NUV_UncertaintyCODToSSA:valid_range = -1000s, 1000s ;
@@ -468,8 +408,6 @@ group: geophysical_data {
 		NUV_UncertaintyCODToSSA:Parameter_Type = "Output" ;
 		NUV_UncertaintyCODToSSA:Geolocation_Pointer = "Internal geolocation arrays" ;
 		NUV_UncertaintyCODToSSA:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		NUV_UncertaintyCODToSSA:_ChunkSizes = 32, 32, 2 ;
-		NUV_UncertaintyCODToSSA:_DeflateLevel = 4 ;
 
     short Quality_flag_Aerosol_Optical_Depth(number_of_lines_7x7, number_of_pixels_7x7) ;
 		Quality_flag_Aerosol_Optical_Depth:valid_range = 0s, 3000s ;
@@ -481,8 +419,6 @@ group: geophysical_data {
 		Quality_flag_Aerosol_Optical_Depth:Parameter_Type = "Output" ;
 		Quality_flag_Aerosol_Optical_Depth:Geolocation_Pointer = "Internal geolocation arrays" ;
 		Quality_flag_Aerosol_Optical_Depth:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		Quality_flag_Aerosol_Optical_Depth:_ChunkSizes = 32, 32 ;
-		Quality_flag_Aerosol_Optical_Depth:_DeflateLevel = 4 ;
                 
     short Quality_flag_SingleScattAlbedo(number_of_lines_7x7, number_of_pixels_7x7) ;
 		Quality_flag_SingleScattAlbedo:valid_range = 0s, 3000s ;
@@ -494,8 +430,6 @@ group: geophysical_data {
 		Quality_flag_SingleScattAlbedo:Parameter_Type = "Output" ;
 		Quality_flag_SingleScattAlbedo:Geolocation_Pointer = "Internal geolocation arrays" ;
 		Quality_flag_SingleScattAlbedo:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		Quality_flag_SingleScattAlbedo:_ChunkSizes = 32, 32 ;
-		Quality_flag_SingleScattAlbedo:_DeflateLevel = 4 ;
          
     short Uncertainity_flag_1(number_of_lines_7x7, number_of_pixels_7x7) ;
 		Uncertainity_flag_1:valid_range = 0s, 1000s ;
@@ -507,8 +441,6 @@ group: geophysical_data {
 		Uncertainity_flag_1:Parameter_Type = "Output" ;
 		Uncertainity_flag_1:Geolocation_Pointer = "Internal geolocation arrays" ;
 		Uncertainity_flag_1:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		Uncertainity_flag_1:_ChunkSizes = 32, 32 ;
-		Uncertainity_flag_1:_DeflateLevel = 4 ;
                 
     short Uncertainity_flag_2(number_of_lines_7x7, number_of_pixels_7x7) ;
 		Uncertainity_flag_2:valid_range = 0s, 1000s ;
@@ -520,8 +452,6 @@ group: geophysical_data {
 		Uncertainity_flag_2:Parameter_Type = "Output" ;
 		Uncertainity_flag_2:Geolocation_Pointer = "Internal geolocation arrays" ;
 		Uncertainity_flag_2:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		Uncertainity_flag_2:_ChunkSizes = 32, 32 ;
-		Uncertainity_flag_2:_DeflateLevel = 4 ;
          
     data:
     } // group geophysical_data

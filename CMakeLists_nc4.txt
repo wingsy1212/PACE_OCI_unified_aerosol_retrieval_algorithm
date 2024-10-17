@@ -264,6 +264,7 @@ add_executable(oci_ua_aer
   
   #S_Write
   Write_L2_data/src/write_merged_file.f90
+  Write_L2_data/src/write_1KM_merged.f90
   Write_interm_file/src/write_Output_forUVtau.f90
   Write_interm_file/src/read_Output_forUVtau.f90
   Main/OCIUAAER.f90  

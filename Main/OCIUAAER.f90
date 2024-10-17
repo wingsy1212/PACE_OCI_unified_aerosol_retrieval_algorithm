@@ -16,6 +16,7 @@ USE compute_DT_Land_main
 USE compute_DB_Land_main
 use calendars, only: gdatetime, gregorian_from_doy
 use write_Pace_merged
+use write_Pace_merged_1KM
 use write_intrim_forUVtau
 use read_intrim_forUVtau
 USE HDF5
@@ -60,18 +61,20 @@ real :: lat_min,lat_max,lon_max,lon_min
 
                   
   INTEGER :: num_args
-  CHARACTER(255) :: par_file, l1b_file, met1_file, met2_file, out_file, interm_file
+  CHARACTER(255) :: par_file, l1b_file, met1_file, met2_file, out_file, interm_file,&
+  out_file_1KM
   CHARACTER(255) :: metdt_file
   CHARACTER(2048) :: pycommand
 
   num_args = command_argument_count()
-  IF (num_args == 6) THEN
+  IF (num_args == 7) THEN
       call get_command_argument(1,par_file)
       call get_command_argument(2,l1b_file)
       call get_command_argument(3,met1_file)
       call get_command_argument(4,met2_file)
       call get_command_argument(5,out_file)
       call get_command_argument(6,interm_file)
+      call get_command_argument(7,out_file_1KM)
   ELSE
     PRINT *,'Error : Six command line arguments required.'
     CALL EXIT(1)
@@ -341,13 +344,15 @@ CALL h5open_f(hdferr)
 	  Land_sea_flag,Ret_ref_LandOceanwOutUV,&
 	  Ret_ref_LandOcean_UV,Ret_Tau_LandOcean,&
       Ret_average_Omega_Ocean_UV,Ret_Index_Height,Cloud_Frac_LandOcean,&
-	  Ret_Quality_LandOcean,Ret_Quality_LandOcean_W0,&
-	  l1b_nXTrack, l1b_nLines, Latitude, Longitude, &
-	  UVAI, Residue_1km, Reflectivity_1km, &
+	  Ret_Quality_LandOcean,Ret_Quality_LandOcean_W0,& 
           NUV_AI, NUV_COD, NUV_CldFrac, UVReflectivity, UVResidue, &
 	  NUV_SSA, NUV_ALH, NUV_ACAOD, NUV_AerCorrCOD,& 
 	  NUV_ACAODVsHeight, NUV_AerCorrCODVsHeight, &
 	  NUV_FinalAlgorithmFlagsACA, NUV_UncertaintyACAODToSSA,NUV_UncertaintyCODToSSA, out_file)
+
+
+  Call write_Output_merged_1KM(l1b_nXTrack, l1b_nLines, Latitude, Longitude, &
+	       UVAI, Residue_1km, Reflectivity_1km, out_file_1KM)	  
             
 
 ! Close the HDF-5 interface

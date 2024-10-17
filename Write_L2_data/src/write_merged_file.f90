@@ -30,9 +30,7 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
 	      Land_sea_flag,Ret_ref_LandOceanwOutUV,&
               Ret_ref_LandOcean_UV,Ret_Tau_LandOcean,&
               Ret_average_Omega_Ocean_UV,Ret_Index_Height,Cloud_Frac_LandOcean,&
-	      Ret_Quality_LandOcean,Ret_Quality_LandOcean_W0,&
-	      l1b_nXTrack, l1b_nLines, Latitude, Longitude, &
-	      UVAI, Residue_1km, Reflectivity_1km, &
+	      Ret_Quality_LandOcean,Ret_Quality_LandOcean_W0,& 
               NUV_AI, NUV_COD, NUV_CldFrac, UVReflectivity, UVResidue, &
 	      NUV_SSA, NUV_ALH, NUV_ACAOD, NUV_AerCorrCOD,& 
 	      NUV_ACAODVsHeight, NUV_AerCorrCODVsHeight, &
@@ -69,11 +67,7 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
       integer  ixp, IYp,A_Num_part,iscan,idata,ik,ij 
 
 !     Declare variables for netCDF processing
-      real nc_lat_1km(l1b_nXTrack, l1b_nLines)
-      real nc_lon_1km(l1b_nXTrack, l1b_nLines)
-      real nc_uvai_1km(l1b_nXTrack, l1b_nLines)
-      real nc_reflectivity_1km(l1b_nXTrack, l1b_nLines,2)
-      real nc_residue_1km(l1b_nXTrack, l1b_nLines)
+      
       real nc_uvai(Ret_Xtrack,Ret_Lines)
       real nc_reflectivity(Ret_Xtrack,Ret_Lines,2)
       real nc_residue(Ret_Xtrack,Ret_Lines)
@@ -124,28 +118,6 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
            print*,'XX1,YY2', XX1,YY2
               
 
-! Native 1km resolution variables   
-        
-      nc_lat_1km(1:l1b_nXTrack, 1:l1b_nLines) = Latitude(1:l1b_nXTrack, 1:l1b_nLines) 
-      nc_lat_1km = scale_offset(nc_lat_1km, l1b_nXTrack,SCALE1,OFFSET1,fv3,l1b_nXTrack, l1b_nLines) 
-
-      nc_lon_1km(1:l1b_nXTrack, 1:l1b_nLines) = Longitude(1:l1b_nXTrack, 1:l1b_nLines)
-      nc_lon_1km = scale_offset(nc_lon_1km, l1b_nXTrack,SCALE1,OFFSET1,fv3,l1b_nXTrack, l1b_nLines)  
-      
-      nc_uvai_1km(1:l1b_nXTrack, 1:l1b_nLines) = UVAI(1:l1b_nXTrack, 1:l1b_nLines)
-      nc_uvai_1km = scale_offset(nc_uvai_1km, l1b_nXTrack,SCALE3,OFFSET3,fv4,l1b_nXTrack, l1b_nLines)  
-
-      nc_residue_1km(1:l1b_nXTrack, 1:l1b_nLines) = Residue_1km(1:l1b_nXTrack, 1:l1b_nLines)
-      nc_residue_1km = scale_offset(nc_residue_1km, l1b_nXTrack,SCALE3,OFFSET3,fv4,l1b_nXTrack, l1b_nLines)  
-
-      nc_reflectivity_1km(1:l1b_nXTrack, 1:l1b_nLines, 1) = Reflectivity_1km(1, 1:l1b_nXTrack, 1:l1b_nLines)
-      nc_reflectivity_1km(1:l1b_nXTrack, 1:l1b_nLines, 2) = Reflectivity_1km(2, 1:l1b_nXTrack, 1:l1b_nLines)
-      do li=1,2
-      nc_reflectivity_1km(1:l1b_nXTrack, 1:l1b_nLines, li) = &
-          scale_offset(nc_reflectivity_1km(1:l1b_nXTrack, 1:l1b_nLines, li), &
-                    l1b_nXTrack,SCALE3,OFFSET3,fv4,l1b_nXTrack, l1b_nLines)  
-      enddo
-      
 
 ! Aggregate resolution variables
 
@@ -300,8 +272,7 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
       call write_nc_2d(nc_senzen,'sensor_zenith_angle',XX1,YY1,YY2,grpid,1,A_Num_part)
       call write_nc_2d(nc_senazi,'sensor_azimuth_angle',XX1,YY1,YY2,grpid,1,A_Num_part)
       call write_nc_2d(nc_solazi,'solar_azimuth_angle',XX1,YY1,YY2,grpid,1,A_Num_part)
-      call write_nc_2d(nc_lat_1km,'Latitude_1km',l1b_nXTrack,1,l1b_nLines,grpid,0,l1b_nLines)  
-      call write_nc_2d(nc_lon_1km,'Longitude_1km',l1b_nXTrack,1,l1b_nLines,grpid,0,l1b_nLines) 
+      
       
         
 !     Open netCDF file group geophysical_data
@@ -344,15 +315,7 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
 
 !  NUV variables    
 
-      call write_nc_2d(nc_uvai_1km,'NUV_AerosolIndex_1km',&
-           l1b_nXTrack,1,l1b_nLines,grpid,1,l1b_nLines)  
-
-      call write_nc_2d(nc_residue_1km,'NUV_Residue_1km',&
-           l1b_nXTrack,1,l1b_nLines,grpid,1,l1b_nLines)  
-
-      call write_nc_3d(nc_reflectivity_1km,'NUV_Reflectivity_1km',&
-           l1b_nXTrack,1,l1b_nLines,ZL2,grpid,1,l1b_nLines)  
-
+     
       call write_nc_2d(nc_uvai,'NUV_AerosolIndex',&
            XX1,YY1,YY2,grpid,1,A_Num_part)  
             

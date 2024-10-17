@@ -23,5 +23,8 @@ Real(Kind=4), Dimension(:,:,:), Allocatable :: Reflectivity_1km
 ! needs an increase in reflectances by 2.5 and 0.9 percent (July 2024).
 ! This soft-calibration is applied in the L1B reader (OCIUAAER_L1BModule.f90). 
 !
-Real(Kind=4), PARAMETER :: softcalib354 = 1.025
-Real(Kind=4), PARAMETER :: softcalib388 = 1.009
+! Real(Kind=4), PARAMETER :: softcalib354 = 1.025
+! Real(Kind=4), PARAMETER :: softcalib388 = 1.009
+! no soft calibration.
+  Real(Kind=4), PARAMETER :: softcalib354 = 1.0
+  Real(Kind=4), PARAMETER :: softcalib388 = 1.0

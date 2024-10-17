@@ -43,13 +43,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux" )
   if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
   # 64bit bits...
     set(EOS_ARCH linux64)
-    if(DEFINED ENV{OCSSWROOT})
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
-    else()
-      set (CMAKE_SYSTEM_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
-      set (CMAKE_SYSTEM_INCLUDE_PATH "/usr/include/x86_64-linux-gnu")
-    endif()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
+    #set (CMAKE_SYSTEM_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
+    #set (CMAKE_SYSTEM_INCLUDE_PATH "/usr/include/x86_64-linux-gnu")
   endif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 # Mac bits
@@ -270,6 +267,7 @@ add_executable(oci_ua_aer
   
   #S_Write
   Write_L2_data/src/write_merged_file.f90
+  Write_L2_data/src/write_1KM_merged.f90
   Write_interm_file/src/write_Output_forUVtau.f90
   Write_interm_file/src/read_Output_forUVtau.f90
   Main/OCIUAAER.f90  

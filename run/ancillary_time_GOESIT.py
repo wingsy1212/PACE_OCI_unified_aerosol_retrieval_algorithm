@@ -40,22 +40,28 @@ atime0 = tstamp+timedelta(hours=(ti0-dhr))
 atime1 = tstamp+timedelta(hours=(ti1-dhr))
 print (atime0)
 print (atime1)
-
+ 
 #aname0 = datetime.strftime(atime0,'GEOS.fpit.asm.inst3_2d_asm_Nx.GEOS5124.%Y%m%d_%H%M.')
 #aname1 = datetime.strftime(atime1,'GEOS.fpit.asm.inst3_2d_asm_Nx.GEOS5124.%Y%m%d_%H%M.') 
-aname0 = datetime.strftime(atime0,'GMAO_IT.%Y%m%dT%H%M') 
-aname1 = datetime.strftime(atime1,'GMAO_IT.%Y%m%dT%H%M')
+aname0 = datetime.strftime(atime0,'GMAO_MERRA2.%Y%m%dT%H%M') 
+aname1 = datetime.strftime(atime1,'GMAO_MERRA2.%Y%m%dT%H%M')
 print (aname0)
 print (aname1) 
 print ((apath+datetime.strftime(atime0,'/%Y/%m/%d/')+aname0+'*.nc'))
-fname0 = glob(apath+datetime.strftime(atime0,'/%Y/%m/%d/')+aname0+'*.nc')[0]
-fname1 = glob(apath+datetime.strftime(atime1,'/%Y/%m/%d/')+aname1+'*.nc')[0] 
-print (fname0)
-print (fname1)
-
-with open('input_anc_file1','w') as outfile:
-    outfile.write(fname0+'\n')
-with open('input_anc_file2','w') as outfile:
-    outfile.write(fname1+'\n')  
-    
-#    outfile.write(fname1)
+try:
+    fname0 = glob(apath+datetime.strftime(atime0,'/%Y/%m/%d/')+aname0+'*.nc')[0]
+    print(fname0)
+    with open('input_anc_file1','w') as outfile:
+        outfile.write(fname0+'\n')
+except:
+    print('Cannot find '+aname0)
+ 
+try:
+    fname1 = glob(apath+datetime.strftime(atime1,'/%Y/%m/%d/')+aname1+'*.nc')[0]
+    print(fname1)
+    with open('input_anc_file2','w') as outfile:
+        outfile.write(fname1+'\n')
+except:
+    print('Cannot find '+aname1)
+ 
+ 

@@ -1,7 +1,7 @@
-dt_nc4 = /tis/atmosphere/scratch/Dark_Target/smattoo/Projects_from_data4/PACE_Git_August2024/PACE_INPUT_LUTS/nclut_dt.nc
-db_nc4 = /tis/atmosphere/scratch/Dark_Target/smattoo/Projects_from_data4/PACE_Git_August2024/PACE_INPUT_LUTS/nclut_db.nc
-uv_nc4 = /tis/atmosphere/scratch/Dark_Target/smattoo/Projects_from_data4/PACE_Git_August2024/PACE_INPUT_LUTS/nclut_uv_mono_Jul2024.nc
-landwater_mask = /tis/atmosphere/scratch/Dark_Target/smattoo/Projects_from_data4/PACE_INPUT_LUTS/landmask_GMT15ARC.nc 
-read_nc_landonly= /tis/atmosphere/scratch/Dark_Target/smattoo/Projects_from_data4/PACE_Git_August2024/PACE_OCI_unified_aerosol_retrieval_algorithm/ML_UVAOD/read_nc_landonly_new.py
-ml_340 = /tis/atmosphere/scratch/Dark_Target/smattoo/Projects_from_data4/PACE_INPUT_LUTS/landmodel_both_nogeo_340.pkl
-ml_380 = /tis/atmosphere/scratch/Dark_Target/smattoo/Projects_from_data4/PACE_INPUT_LUTS/landmodel_both_nogeo_380.pkl
+dt_nc4 = /tis/atmosphere/scratch/Dark_Target/smattoo/Projects_from_data4/PACE_Git_updated_Sep2024/PACE_INPUT_LUTS/nclut_dt.nc
+db_nc4 = /tis/atmosphere/scratch/Dark_Target/smattoo/Projects_from_data4/PACE_Git_updated_Sep2024/PACE_INPUT_LUTS/nclut_db.nc
+uv_nc4 = /tis/atmosphere/scratch/Dark_Target/smattoo/Projects_from_data4/PACE_Git_updated_Sep2024/PACE_INPUT_LUTS/nclut_uv_mono_Jul2024.nc
+landwater_mask = /tis/atmosphere/scratch/Dark_Target/smattoo/Projects_from_data4/PACE_Git_updated_Sep2024/PACE_INPUT_LUTS/landmask_GMT15ARC.nc 
+read_nc_landonly= /tis/atmosphere/scratch/Dark_Target/smattoo/Projects_from_data4/PACE_Git_updated_Sep2024/PACE_OCI_unified_aerosol_retrieval_algorithm/ML_UVAOD/read_nc_landonly_new.py
+ml_340 = /tis/atmosphere/scratch/Dark_Target/smattoo/Projects_from_data4/PACE_Git_updated_Sep2024/PACE_INPUT_LUTS/landmodel_both_nogeo_340.pkl
+ml_380 = /tis/atmosphere/scratch/Dark_Target/smattoo/Projects_from_data4/PACE_Git_updated_Sep2024/PACE_INPUT_LUTS/landmodel_both_nogeo_380.pkl

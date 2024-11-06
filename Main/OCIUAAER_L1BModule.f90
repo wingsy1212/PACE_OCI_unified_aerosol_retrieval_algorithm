@@ -1,5 +1,6 @@
 Module OCIUAAER_L1BModule
 
+USE OCIUAAER_Config_Module
 USE H5Util_class
 USE HDF5
 USE DataTypeDef
@@ -350,7 +351,64 @@ END FUNCTION OCI_l1b_read_date
 !===============================================================
 
 !===============================================================
+FUNCTION OCI_l1b_get_meta_data() RESULT(STATUS)
 
+  USE netcdf       ! Include the NetCDF module
+  IMPLICIT NONE
+  
+  ! Output parameter
+  INTEGER :: STATUS
+  
+  ! Local variables
+  INTEGER :: ncid    ! File ID
+  INTEGER :: dimid, retval
+  CHARACTER(LEN=255) :: time_coverage_start, time_coverage_end
+  
+  STATUS = 0
+  ! Open the NetCDF file in read-only mode
+  retval = nf90_open(trim(cfg%input_l1file), NF90_NOWRITE, ncid)
+  IF (retval /= nf90_noerr) THEN
+    PRINT *, 'Error: Unable to open L1B input file.'
+    STATUS = retval
+    RETURN
+  END IF
+  
+    ! Get the value of the global attribute ":time_coverage_start"
+  status = nf90_get_att(ncid, NF90_GLOBAL, 'time_coverage_start', time_coverage_start)
+  IF (status /= nf90_noerr) THEN
+    PRINT *, 'Error: Unable to get time_coverage_start attribute in L1B file'
+    STATUS = retval
+    RETURN
+  END IF
+  
+  ! Print the dimension name and size
+  cfg%coverage_start = time_coverage_start
+  
+    ! Get the value of the global attribute ":time_coverage_start"
+  status = nf90_get_att(ncid, NF90_GLOBAL, 'time_coverage_end', time_coverage_end)
+  IF (status /= nf90_noerr) THEN
+    PRINT *, 'Error: Unable to get time_coverage_end attribute in L1B file'
+    STATUS = retval
+    RETURN
+  END IF
+  
+  ! Print the dimension name and size
+  cfg%coverage_end = time_coverage_end
+  
+  ! Close the NetCDF file
+  retval = nf90_close(ncid)
+  IF (retval /= nf90_noerr) THEN
+    PRINT *, 'Error: Unable to close the L1B input file.'
+    STATUS = retval
+    RETURN
+  END IF
+  
+  RETURN
+    
+END FUNCTION OCI_l1b_get_meta_data
+!===============================================================
+
+!===============================================================
 SUBROUTINE OCI_l1b_select_wv(L1B, UVtoSWIR_nWavel, &
                                   UVtoSWIR_wavelengths, &
                                   UVtoSWIR_Reflectances)
@@ -471,9 +529,8 @@ IF (ALLOCATED(spectra_data)) DEALLOCATE(spectra_data)
 !IF (ALLOCATED(L1B%l1b_SWIR_rad)) DEALLOCATE(L1B%l1b_SWIR_rad)
 
 END SUBROUTINE
-
-
 !===============================================================
+
 !===============================================================
 FUNCTION get_gmt15arc_lwmask(lwmask_file, l1b_nXTrack, l1b_nLines, &
                                           l1b_lat, l1b_lon, &
@@ -558,6 +615,7 @@ RETURN
 
 END FUNCTION get_gmt15arc_lwmask
 !===============================================================
+
 !===============================================================
 !
 FUNCTION Get_granule_lwmask(lwmask, lat, lon, thismask) RESULT(STATUS)
@@ -595,9 +653,8 @@ FUNCTION Get_granule_lwmask(lwmask, lat, lon, thismask) RESULT(STATUS)
   RETURN
 
  END FUNCTION Get_granule_lwmask
-
-!===============================================================
 !===============================================================
 
+!===============================================================
 End Module OCIUAAER_L1BModule
 !

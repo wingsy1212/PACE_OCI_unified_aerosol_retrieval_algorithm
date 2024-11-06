@@ -13,6 +13,7 @@
 ! If this part doesn't compile: module load sips/gcc
 
 use netcdf
+USE OCIUAAER_Config_Module
 
 implicit none
 
@@ -86,7 +87,7 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
       
       integer XL,YL,ZL,li,lj, YY1_new, YY2_new,ZL1,ZL2,ZL3,ZL4,ZLS
       integer IL,IX,IY
-      integer ncid,grpid
+      integer ncid, grpid, retval
 !      character (len=*), parameter :: nc_name = 'PACE_output.nc'
       real fv3,fv4
 
@@ -94,8 +95,18 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
        
                     
 !       call check( nf90_open(nc_name,NF90_WRITE, ncid) )
-       call check( nf90_open(trim(out_file),NF90_WRITE, ncid) )
-       ipart =1
+      retval = nf90_open(trim(out_file),NF90_WRITE, ncid)
+      IF (retval /= nf90_noerr) THEN
+        PRINT *, 'Error: Unable to open file for writing'
+        STOP
+      END IF
+
+      ! Write the attributes :time_coverage_start and :time_coverage_end
+      retval = nf90_put_att(ncid, NF90_GLOBAL, 'time_coverage_start', cfg%coverage_start)
+      retval = nf90_put_att(ncid, NF90_GLOBAL, 'time_coverage_end', cfg%coverage_end)
+      retval = nf90_put_att(ncid, NF90_GLOBAL, 'history', cfg%history)
+
+      ipart = 1
     
       XL = Ret_Xtrack
       YL = Ret_Lines

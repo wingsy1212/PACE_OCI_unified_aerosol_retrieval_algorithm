@@ -61,13 +61,21 @@ real :: lat_min,lat_max,lon_max,lon_min
 
                   
   INTEGER :: num_args
-  CHARACTER(255) :: par_file, l1b_file, met1_file, met2_file, out_file, interm_file,&
-  out_file_1KM
+  CHARACTER(255) :: prog_name, par_file, l1b_file, met1_file, met2_file, out_file,&
+   interm_file, out_file_1KM
   CHARACTER(255) :: metdt_file
   CHARACTER(2048) :: pycommand
 
+  CHARACTER(len=8) :: date
+  CHARACTER(len=10) :: rtime
+  character(len=4) :: year_str
+  character(len=2) :: month_str, day_str, hour_str, minute_str, second_str
+  CHARACTER(len=5) :: zone
+  integer :: values(8)
+
   num_args = command_argument_count()
   IF (num_args == 7) THEN
+      call get_command_argument(0,prog_name)
       call get_command_argument(1,par_file)
       call get_command_argument(2,l1b_file)
       call get_command_argument(3,met1_file)
@@ -76,10 +84,11 @@ real :: lat_min,lat_max,lon_max,lon_min
       call get_command_argument(6,interm_file)
       call get_command_argument(7,out_file_1KM)
   ELSE
-    PRINT *,'Error : Six command line arguments required.'
-    CALL EXIT(1)
+    PRINT *,'Error : Not enough arguments.'
+    PRINT *, 'oci_ua_aer <Par_Filename> <L1B_Filename> <GEO_Data_start_filename> &
+    <GEO_Data_End_filename> <L2_Output_Filename> Interm_L2.nc <L2_1KM_Output_Filename>'
+        CALL EXIT(1)
   ENDIF
-
 
 CALL h5open_f(hdferr)
 
@@ -94,6 +103,24 @@ CALL h5open_f(hdferr)
   doy=0
   cfg%input_l1file = l1b_file
   l1b_filename = cfg%input_l1file
+
+  call date_and_time(date, rtime, zone, values)
+
+  ! Convert integers to strings
+  write(year_str, '(I4)') values(1)
+  write(month_str, '(I2.2)') values(2)  ! Zero-padded 2-digit month
+  write(day_str, '(I2.2)') values(3)    ! Zero-padded 2-digit day
+  write(hour_str, '(I2.2)') values(5)   ! Zero-padded 2-digit hour
+  write(minute_str, '(I2.2)') values(6) ! Zero-padded 2-digit minute
+  write(second_str, '(I2.2)') values(7) ! Zero-padded 2-digit second
+
+  cfg%history = TRIM(year_str) // '-' // TRIM(month_str) // '-' // TRIM(day_str) // 'T' // &
+                TRIM(hour_str) // ':' // TRIM(minute_str) // ':' // TRIM(second_str) // ': ' // &
+                TRIM(prog_name) // ' ' // TRIM(par_file) // ' ' // TRIM(l1b_file) // ' ' // &
+                TRIM(met1_file) // ' ' // TRIM(met2_file) // ' ' // TRIM(out_file) // ' ' // &
+                TRIM(interm_file) // ' ' // TRIM(out_file_1KM)
+
+  ! print *, 'History = ', cfg%history
 
   do_testfile = .false.  !.true.  !.false.
 ! do_testfile = .true.
@@ -110,7 +137,16 @@ CALL h5open_f(hdferr)
    print*,'Inputfile = ',cfg%input_l1file
 
    IF (cfg%input_l1file /= 'NULL') THEN
-     ! Read Synthetic data file
+    STATUS = OCI_l1b_get_meta_data()
+    IF (STATUS < 0) THEN 
+      PRINT *,'Error : Unable to Read L1B-Coverage Meta-Data'
+      CALL EXIT(1)
+    ENDIF 
+
+    ! print *, 'Time Coverage Start = ', cfg%coverage_start
+    ! print *, 'Time Coverage End = ', cfg%coverage_end
+
+    ! Read Synthetic data file
      STATUS = OCI_l1b_get_reflect(cfg%input_l1file, l1b_nXTrack, l1b_nLines, l1b_date_time_str, &
                                 Latitude, Longitude, SolarZenithAngle, ViewingZenithAngle, &
                                 SolarAzimuthAngle, ViewingAzimuthAngle, TerrainHeight, &

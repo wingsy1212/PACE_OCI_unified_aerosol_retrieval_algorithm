@@ -15,6 +15,9 @@ TYPE, PUBLIC  :: ociuaaer_config_type
   CHARACTER(LEN=255)      ::  input_l1file = 'NULL'
   CHARACTER(LEN=255)      ::  proxy_l1file = 'NULL'
   CHARACTER(LEN=255)      ::  output_dir = 'NULL'
+  CHARACTER(LEN=255)      ::  coverage_start = 'NULL'
+  CHARACTER(LEN=255)      ::  coverage_end = 'NULL'
+  CHARACTER(LEN=1536)     ::  history = 'NULL'
 !
   CHARACTER(LEN=255)      ::  landwater_mask = 'NULL'
 !

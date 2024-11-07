@@ -11,29 +11,25 @@ dimensions:
 	Height_Levels = 5;
 	
 // global attributes:
-        :Conventions = "CF-1.6";
+        :Conventions = "CF-1.8 ACDD-1.3";
         :format_version = 1; 
         :instrument = "OCI";
-        :platform = "";  // Suomi-NPP or NOAA-20
+        :platform = "PACE";  // Suomi-NPP or NOAA-20
         :processing_level = "L2";
         :cdm_data_type = "swath";
-        :creator_name = "NASA Atmosphere SIPS";
-        :creator_email = "sips.support@ssec.wisc.edu";
-        :creator_url = "https://sips.ssec.wisc.edu/";
+        :creator_name = "NASA/GSFC/OBPG";
+        :creator_email = "data@oceancolor.gsfc.nasa.gov";
+        :creator_url = "https://oceandata.sci.gsfc.nasa.gov";
         :institution = "NASA Atmosphere SIPS";
-        :project = "NASA Atmosphere Discipline";
-        :publisher_name = "NASA Atmosphere SIPS";
-        :publisher_email = "sips.support@ssec.wisc.edu";
-        :publisher_url = "https://sips.ssec.wisc.edu/";
+        :project = "Ocean Biology Processing Group (NASA/GSFC/OBPG)";
+        :publisher_name = "NASA/GSFC/OBPG";
+        :publisher_email = "data@oceancolor.gsfc.nasa.gov";
+        :publisher_url = "https://oceandata.sci.gsfc.nasa.gov ";
         :keywords_vocabulary = "NASA Global Change Master Directory (GCMD) Science Keywords";
         :license = "https://science.nasa.gov/earth-science/earth-science-data/data-information-policy/";
         :stdname_vocabulary = "NetCDF Climate and Forecast (CF) Metadata Convention";
-        :naming_authority = "gov.nasa.gsfc.sci.atmos";
-        :history = "";
-        :source = "";
-        :title = ""; // look this up
-        :long_name = ""; // look this up
-        :processing_version = "";
+        :naming_authority = "gov.nasa.gsfc.sci.oceandata";
+        :title = "PACE OC Level-2 Data AER";
 
 group: geolocation_data {
     variables:
@@ -74,7 +70,7 @@ group: geolocation_data {
 		solar_zenith_angle:Parameter_Type = "OCI Input" ;
 		solar_zenith_angle:Geolocation_Pointer = "Internal geolocation arrays" ;
 		solar_zenith_angle:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
-		solar_azimuth_angle:_ChunkSizes = 32, 32 ;
+		solar_zenith_angle:_ChunkSizes = 32, 32 ;
 		solar_zenith_angle:_DeflateLevel = 4 ;
          
 	short solar_azimuth_angle(number_of_lines_7x7, number_of_pixels_7x7) ;

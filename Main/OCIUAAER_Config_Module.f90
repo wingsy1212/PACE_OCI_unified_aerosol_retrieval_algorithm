@@ -18,6 +18,12 @@ TYPE, PUBLIC  :: ociuaaer_config_type
   CHARACTER(LEN=255)      ::  coverage_start = 'NULL'
   CHARACTER(LEN=255)      ::  coverage_end = 'NULL'
   CHARACTER(LEN=1536)     ::  history = 'NULL'
+  CHARACTER(LEN=8480)     ::  config_file = 'NULL'
+  CHARACTER(LEN=255)      ::  glat_min = 'NULL'
+  CHARACTER(LEN=255)      ::  glat_max = 'NULL'
+  CHARACTER(LEN=255)      ::  glon_min = 'NULL'
+  CHARACTER(LEN=255)      ::  glon_max = 'NULL'
+  CHARACTER(LEN=255)      ::  gbounds_crs = 'NULL'
 !
   CHARACTER(LEN=255)      ::  landwater_mask = 'NULL'
 !
@@ -69,7 +75,7 @@ TYPE(ociuaaer_config_type), INTENT(INOUT) :: cfg
 CHARACTER(255), PARAMETER :: config_file = 'OCIUAAER_Config'
 CHARACTER*255 , Filename
 CHARACTER(255)  :: c_line, var, val, edr, evr, dataroot, varroot
-INTEGER         :: STATUS, eq_index, nline, id, iv, ned, ndr, nev, nvr
+INTEGER         :: STATUS, eq_index, nline, id, iv, ned, ndr, nev, nvr, c_len, n_len
 
 STATUS = 0
 nline = 0
@@ -113,6 +119,15 @@ nline = 0
     ENDIF
     IF (LEN_trim(c_line) == 0) THEN
 	CYCLE
+    ENDIF
+
+    c_len = LEN_TRIM(cfg%config_file)           ! Get the current length of config_file
+    n_len = c_len + LEN_TRIM(c_line) + 1            ! Calculate the new length after appending
+    IF (n_len <= LEN(cfg%config_file)) THEN     ! Ensure the new length doesn't exceed the buffer
+        cfg%config_file(c_len+1:n_len) = TRIM(c_line) // ' '  ! Append the new line
+    ELSE
+        PRINT *, "ERROR: config_file metadata is full, cannot append more PAR file lines."
+        RETURN
     ENDIF
 			
     ! Begin parsing for variable and value.  

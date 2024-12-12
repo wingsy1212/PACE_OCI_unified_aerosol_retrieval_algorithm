@@ -101,10 +101,29 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
         STOP
       END IF
 
+      ! Write L1B geospatial data to L2 global attributes
+      retval = nf90_put_att(ncid, NF90_GLOBAL, 'geospatial_lat_min', cfg%glat_min)
+      retval = nf90_put_att(ncid, NF90_GLOBAL, 'geospatial_lat_max', cfg%glat_max)
+      retval = nf90_put_att(ncid, NF90_GLOBAL, 'geospatial_lon_min', cfg%glon_min)
+      retval = nf90_put_att(ncid, NF90_GLOBAL, 'geospatial_lon_max', cfg%glon_max)
+      retval = nf90_put_att(ncid, NF90_GLOBAL, 'geospatial_bounds_crs', cfg%gbounds_crs)
+
       ! Write the attributes :time_coverage_start and :time_coverage_end
       retval = nf90_put_att(ncid, NF90_GLOBAL, 'time_coverage_start', cfg%coverage_start)
       retval = nf90_put_att(ncid, NF90_GLOBAL, 'time_coverage_end', cfg%coverage_end)
       retval = nf90_put_att(ncid, NF90_GLOBAL, 'history', cfg%history)
+     
+      ! Write the contents of the Config/PAR file to the Process_Control group to the L2.nc file
+      retval = nf90_inq_grp_ncid(ncid, "processing_control", grpid)
+      IF (retval /= nf90_noerr) THEN
+        PRINT *, 'Error retrieving group ID: ', trim(nf90_strerror(retval))
+        STOP
+      END IF
+      retval = nf90_put_att(grpid, NF90_GLOBAL, 'config_file', trim(cfg%config_file))
+      IF (retval /= nf90_noerr) THEN
+        PRINT *, 'Error writing attribute: ', trim(nf90_strerror(retval))
+        STOP
+      END IF
 
       ipart = 1
     

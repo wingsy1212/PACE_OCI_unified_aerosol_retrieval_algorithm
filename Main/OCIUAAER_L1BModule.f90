@@ -362,7 +362,8 @@ FUNCTION OCI_l1b_get_meta_data() RESULT(STATUS)
   ! Local variables
   INTEGER :: ncid    ! File ID
   INTEGER :: dimid, retval
-  CHARACTER(LEN=255) :: time_coverage_start, time_coverage_end
+  CHARACTER(LEN=255) :: t_coverage, bounds
+  REAL :: geos
   
   STATUS = 0
   ! Open the NetCDF file in read-only mode
@@ -373,27 +374,24 @@ FUNCTION OCI_l1b_get_meta_data() RESULT(STATUS)
     RETURN
   END IF
   
-    ! Get the value of the global attribute ":time_coverage_start"
-  status = nf90_get_att(ncid, NF90_GLOBAL, 'time_coverage_start', time_coverage_start)
-  IF (status /= nf90_noerr) THEN
-    PRINT *, 'Error: Unable to get time_coverage_start attribute in L1B file'
-    STATUS = retval
-    RETURN
-  END IF
-  
-  ! Print the dimension name and size
-  cfg%coverage_start = time_coverage_start
-  
-    ! Get the value of the global attribute ":time_coverage_start"
-  status = nf90_get_att(ncid, NF90_GLOBAL, 'time_coverage_end', time_coverage_end)
-  IF (status /= nf90_noerr) THEN
-    PRINT *, 'Error: Unable to get time_coverage_end attribute in L1B file'
-    STATUS = retval
-    RETURN
-  END IF
-  
-  ! Print the dimension name and size
-  cfg%coverage_end = time_coverage_end
+  ! Get the value of the global attribute ":time_coverage_start"
+  retval = nf90_get_att(ncid, NF90_GLOBAL, 'time_coverage_start', t_coverage)
+  cfg%coverage_start = t_coverage
+  retval = nf90_get_att(ncid, NF90_GLOBAL, 'time_coverage_end', t_coverage)
+  cfg%coverage_end = t_coverage
+
+  ! Get the geospatial data from the L1B file to put into the L2 output files
+  retval = nf90_get_att(ncid, NF90_GLOBAL, 'geospatial_lat_min', geos)
+  cfg%glat_min = geos
+  retval = nf90_get_att(ncid, NF90_GLOBAL, 'geospatial_lat_max', geos)
+  cfg%glat_max = geos
+  retval = nf90_get_att(ncid, NF90_GLOBAL, 'geospatial_lon_min', geos)
+  cfg%glon_min = geos
+  retval = nf90_get_att(ncid, NF90_GLOBAL, 'geospatial_lon_max', geos)
+  cfg%glon_max = geos
+  retval = nf90_get_att(ncid, NF90_GLOBAL, 'geospatial_bounds_crs', bounds)
+  cfg%gbounds_crs = bounds
+
   
   ! Close the NetCDF file
   retval = nf90_close(ncid)

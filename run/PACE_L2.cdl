@@ -120,7 +120,7 @@ group: geophysical_data {
    short Aerosol_Optical_Depth(number_of_lines, pixels_per_line, Wavelength_Used_all) ;
 		Aerosol_Optical_Depth:valid_range = -50s, 5000s ;
 		Aerosol_Optical_Depth:_FillValue = -9999s ;
-		Aerosol_Optical_Depth:long_name = "Retrieved AOT at 0.354,0.388 0.48, 0.55, 0.67, 0.87 1.24, 1.64, 2.2"  ;
+		Aerosol_Optical_Depth:long_name = "Retrieved AOT at 0.354,0.388 0.48, 0.55, 0.67, 0.87 1.24, 1.64, 2.2 micron"  ;
 		Aerosol_Optical_Depth:scale_factor = 0.001 ;
 		Aerosol_Optical_Depth:add_offset = 0. ;
 		Aerosol_Optical_Depth:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
@@ -140,7 +140,7 @@ group: geophysical_data {
    short Mean_Gas_Corrected_Reflectance(number_of_lines, pixels_per_line, Wavelength_Used_DTDB) ;
 		Mean_Gas_Corrected_Reflectance:valid_range = 0s, 10000s ;
 		Mean_Gas_Corrected_Reflectance:_FillValue = -9999s ;
-		Mean_Gas_Corrected_Reflectance:long_name = "Mean reflectance Gas corrected of pixels at  0.48, 0.55, 0.67, 0.87 1.24, 1.64, 2.2" ;
+		Mean_Gas_Corrected_Reflectance:long_name = "Mean reflectance Gas corrected of pixels at  0.48, 0.55, 0.67, 0.87 1.24, 1.64, 2.2 micron" ;
 		Mean_Gas_Corrected_Reflectance:scale_factor = 0.0001 ;
 		Mean_Gas_Corrected_Reflectance:add_offset = 0. ;
 		Mean_Gas_Corrected_Reflectance:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
@@ -150,7 +150,7 @@ group: geophysical_data {
   short Mean_Reflectance(number_of_lines, pixels_per_line, Wavelength_Used_UV1);
 		Mean_Reflectance:valid_range = 0s, 10000s ;
 		Mean_Reflectance:_FillValue = -9999s ;
-		Mean_Reflectance:long_name = "Mean reflectance (not corrected for GAS ) pixels at 0.354 0.388" ;
+		Mean_Reflectance:long_name = "Mean reflectance (not corrected for GAS ) pixels at 0.354 0.388 micron" ;
 		Mean_Reflectance:scale_factor = 0.0001 ;
 		Mean_Reflectance:add_offset = 0. ;
 		Mean_Reflectance:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
@@ -160,7 +160,7 @@ group: geophysical_data {
     short  DT_AerosolSingleScattAlbedo(number_of_lines, pixels_per_line, Wavelength_Used_UV) ;
 		DT_AerosolSingleScattAlbedo:valid_range = 700s, 1000s ;
 		DT_AerosolSingleScattAlbedo:_FillValue = -9999s ;
-		DT_AerosolSingleScattAlbedo:long_name = "Single scattering Albedo from Dark Target ocean 0.354 and 0.388 and 0.50, microns" ;
+		DT_AerosolSingleScattAlbedo:long_name = "Single scattering Albedo from Dark Target ocean 0.354 and 0.388 and 0.50, micron" ;
 		DT_AerosolSingleScattAlbedo:scale_factor = 0.001 ;
 		DT_AerosolSingleScattAlbedo:add_offset = 0. ;
 		DT_AerosolSingleScattAlbedo:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
@@ -168,9 +168,11 @@ group: geophysical_data {
 		DT_AerosolSingleScattAlbedo:_DeflateLevel = 4 ;
 
     short DT_AerosolLayerHeight(number_of_lines, pixels_per_line) ;
-		DT_AerosolLayerHeight:valid_range = 1s, 10s ;
+		DT_AerosolLayerHeight:valid_range = 1500s, 10000s, 10s ;
 		DT_AerosolLayerHeight:_FillValue = -9999s ;
-		DT_AerosolLayerHeight:long_name = "Height 1.5KM  3KM, 6KM, 10KM)";
+		DT_AerosolLayerHeight:long_name = "Height 1.5 3, 6, 10)";
+		DT_AerosolLayerHeight:scale_factor = 0.001 ;
+		DT_AerosolLayerHeight:add_offset = 0. ;
 		DT_AerosolLayerHeight:units = "km" ;
 		DT_AerosolLayerHeight:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
 		DT_AerosolLayerHeight:_ChunkSizes = 32, 32 ;
@@ -189,7 +191,7 @@ group: geophysical_data {
 	short NUV_AerosolIndex(number_of_lines, pixels_per_line) ;
 		NUV_AerosolIndex:valid_range =  -5000s, 10000s ;
 		NUV_AerosolIndex:_FillValue = -9999s ;
-		NUV_AerosolIndex:long_name = "NUV Retrieved Aerosol Index (0.354,0.388) Pair"  ;
+		NUV_AerosolIndex:long_name = "NUV Aerosol Index (0.354-0.388 pair)"  ;
 		NUV_AerosolIndex:scale_factor = 0.001 ;
 		NUV_AerosolIndex:add_offset = 0. ;
 		NUV_AerosolIndex:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
@@ -210,7 +212,7 @@ group: geophysical_data {
 	short NUV_AerosolSingleScattAlbedo(number_of_lines, pixels_per_line,Wavelength_Used) ;
 		NUV_AerosolSingleScattAlbedo:valid_range = 700s, 1000s ;
 		NUV_AerosolSingleScattAlbedo:_FillValue = -9999s ;
-		NUV_AerosolSingleScattAlbedo:long_name = "NUV Retrieved Aerosol Single Scattering Albedo at 0.354, 0.388, 0.480, 0.550, 0.670" ;
+		NUV_AerosolSingleScattAlbedo:long_name = "NUV Retrieved Aerosol Single Scattering Albedo at 0.354, 0.388, 0.480, 0.550, 0.670 micron" ;
 		NUV_AerosolSingleScattAlbedo:scale_factor = 0.001 ;
 		NUV_AerosolSingleScattAlbedo:add_offset = 0. ;
 		NUV_AerosolSingleScattAlbedo:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
@@ -220,7 +222,7 @@ group: geophysical_data {
 	short NUV_RadiativeCloudFraction(number_of_lines, pixels_per_line) ;
 		NUV_RadiativeCloudFraction:valid_range = 0s, 1000s ;
 		NUV_RadiativeCloudFraction:_FillValue = -9999s ;
-		NUV_RadiativeCloudFraction:long_name = "NUV derived Radiative Equivalent Cloud Fraction at 0.388"  ;
+		NUV_RadiativeCloudFraction:long_name = "NUV derived Radiative Equivalent Cloud Fraction at 0.388 micron"  ;
 		NUV_RadiativeCloudFraction:scale_factor = 0.001;
 		NUV_RadiativeCloudFraction:add_offset = 0. ;
 		NUV_RadiativeCloudFraction:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
@@ -230,7 +232,7 @@ group: geophysical_data {
 	short NUV_Residue(number_of_lines, pixels_per_line) ;
 		NUV_Residue:valid_range = -5000s, 10000s ;
 		NUV_Residue:_FillValue = -9999s ;
-		NUV_Residue:long_name = "NUV Retrieved LER based AI (0.354,0.388) Pair"  ;
+		NUV_Residue:long_name = "NUV Retrieved LER based AI (0.354-0.388) Pair"  ;
 		NUV_Residue:scale_factor = 0.001 ;
 		NUV_Residue:add_offset = 0. ;
 		NUV_Residue:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
@@ -240,7 +242,7 @@ group: geophysical_data {
 	short NUV_Reflectivity(number_of_lines, pixels_per_line, Wavelength_Used_UV1) ;
 		NUV_Reflectivity:valid_range = 0s, 1000s ;
 		NUV_Reflectivity:_FillValue = -9999s ;
-		NUV_Reflectivity:long_name = "NUV Retrieved Aerosol Optical Depth Over Cloud at 0.354, 0.388"  ;
+		NUV_Reflectivity:long_name = "NUV Lambertian Equivalent Reflectivity (LER) at 0.354 and 0.388 micron"  ;
 		NUV_Reflectivity:scale_factor = 0.001 ;
 		NUV_Reflectivity:add_offset = 0.0 ;
 		NUV_Reflectivity:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
@@ -250,7 +252,7 @@ group: geophysical_data {
 	short NUV_CloudOpticalDepth(number_of_lines, pixels_per_line) ;
 		NUV_CloudOpticalDepth:valid_range = 0s, 5000s ;
 		NUV_CloudOpticalDepth:_FillValue = -9999s ;
-		NUV_CloudOpticalDepth:long_name = "NUV Retrieved Cloud Optical Depth at 0.388"  ;
+		NUV_CloudOpticalDepth:long_name = "NUV Retrieved Cloud Optical Depth at 0.388 micron"  ;
 		NUV_CloudOpticalDepth:scale_factor = 0.001 ;
 		NUV_CloudOpticalDepth:add_offset = 0. ;
 		NUV_CloudOpticalDepth:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
@@ -260,7 +262,7 @@ group: geophysical_data {
 	short NUV_AerosolOpticalDepthOverCloud(number_of_lines, pixels_per_line, Wavelength_Used_UV) ;
 		NUV_AerosolOpticalDepthOverCloud:valid_range = 0s, 5000s ;
 		NUV_AerosolOpticalDepthOverCloud:_FillValue = -9999s ;
-		NUV_AerosolOpticalDepthOverCloud:long_name = "NUV Retrieved Aerosol Optical Depth Over Cloud at 0.354, 0.388, 0.550"  ;
+		NUV_AerosolOpticalDepthOverCloud:long_name = "NUV Retrieved Aerosol Optical Depth Over Cloud at 0.354, 0.388, 0.550 micron"  ;
 		NUV_AerosolOpticalDepthOverCloud:scale_factor = 0.001 ;
 		NUV_AerosolOpticalDepthOverCloud:add_offset = 0.0 ;
 		NUV_AerosolOpticalDepthOverCloud:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
@@ -270,7 +272,7 @@ group: geophysical_data {
 	short NUV_AerosolCorrCloudOpticalDepth(number_of_lines, pixels_per_line) ;
 		NUV_AerosolCorrCloudOpticalDepth:valid_range = 0s, 500s ;
 		NUV_AerosolCorrCloudOpticalDepth:_FillValue = -9999s ;
-		NUV_AerosolCorrCloudOpticalDepth:long_name = "NUV Retrieved Aerosol Corrected Cloud Optical Depth at 0.388"  ;
+		NUV_AerosolCorrCloudOpticalDepth:long_name = "NUV Retrieved Aerosol Corrected Cloud Optical Depth at 0.388 micron"  ;
 		NUV_AerosolCorrCloudOpticalDepth:scale_factor = 0.1 ;
 		NUV_AerosolCorrCloudOpticalDepth:add_offset = 0. ;
 		NUV_AerosolCorrCloudOpticalDepth:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
@@ -280,7 +282,7 @@ group: geophysical_data {
 	short NUV_AerosolOpticalDepthOverCloudVsHeight(number_of_lines, pixels_per_line, Wavelength_Used_UV, Height_Levels) ;
 		NUV_AerosolOpticalDepthOverCloud:valid_range = 0s, 5000s ;
 		NUV_AerosolOpticalDepthOverCloud:_FillValue = -9999s ;
-		NUV_AerosolOpticalDepthOverCloud:long_name = "NUV Retrieved Aerosol Optical Depth Over Cloud for 0.354, 0.388, 0.550 at 5 levels"  ;
+		NUV_AerosolOpticalDepthOverCloud:long_name = "NUV Retrieved Aerosol Optical Depth Over Cloud for 0.354, 0.388, 0.550 micron at 5 levels(3, 6, 9, 12, 15 km)"  ;
 		NUV_AerosolOpticalDepthOverCloud:scale_factor = 0.001 ;
 		NUV_AerosolOpticalDepthOverCloud:add_offset = 0.0 ;
 		NUV_AerosolOpticalDepthOverCloud:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
@@ -290,7 +292,7 @@ group: geophysical_data {
 	short NUV_AerosolCorrCloudOpticalDepthVsHeight(number_of_lines, pixels_per_line, Height_Levels) ;
 		NUV_AerosolCorrCloudOpticalDepth:valid_range = 0s, 500s ;
 		NUV_AerosolCorrCloudOpticalDepth:_FillValue = -9999s ;
-		NUV_AerosolCorrCloudOpticalDepth:long_name = "NUV Retrieved Aerosol Corrected Cloud Optical Depth for 0.388 micron at 5 levels"  ;
+		NUV_AerosolCorrCloudOpticalDepth:long_name = "NUV Retrieved Aerosol Corrected Cloud Optical Depth for 0.388 micron at 5 levels (3, 6, 9, 12, 15 km)"  ;
 		NUV_AerosolCorrCloudOpticalDepth:scale_factor = 0.1 ;
 		NUV_AerosolCorrCloudOpticalDepth:add_offset = 0. ;
 		NUV_AerosolCorrCloudOpticalDepth:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;

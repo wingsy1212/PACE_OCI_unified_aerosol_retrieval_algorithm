@@ -1055,9 +1055,13 @@ SUBROUTINE CUBIC_SPLINE (N, XI, FI, P2)
     G(I) = FI(I+1) - FI(I)
   END DO
 !
-! Evaluate the coefficient matrix elements
+! Evaluate the coefficient matrix elements   
   DO I = 1, N-1
-    D(I) = 2*(H(I+1)+H(I))
+    D(I) = 2*(H(I+1)+H(I)) 
+!  Fix to Zero divide   
+        if(H(I) .eq.0 )H(I) = .00001 
+        if(H(I+1) .eq.0 )H(I+1) = .00001 
+    
     B(I) = 6*(G(I+1)/H(I+1)-G(I)/H(I))
     C(I) = H(I+1)
   END DO

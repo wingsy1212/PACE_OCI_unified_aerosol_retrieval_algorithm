@@ -174,7 +174,7 @@ Subroutine write_Output_merged(Ret_Lat,Ret_Lon,Ret_SolZen,Ret_View_angle,&
 
 !     
       nc_Height_indx(1:XL,1:YL) =  Ret_Index_Height(1:XL,1:YL)
-      nc_Height_indx = scale_offset(nc_Height_indx,XX1,SCALE1,OFFSET1,fv4,XL,YL)
+      nc_Height_indx = scale_offset(nc_Height_indx,XX1,SCALE3,OFFSET3,fv4,XL,YL)
        
       nc_Cloud_Frac_LandOcean(1:XL,1:YL) = Cloud_Frac_LandOcean(1:XL,1:YL) 
       nc_Cloud_Frac_LandOcean= &

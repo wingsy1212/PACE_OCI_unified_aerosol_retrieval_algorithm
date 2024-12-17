@@ -62,7 +62,7 @@ group: geophysical_data {
 	short NUV_AerosolIndex_1km(number_of_lines, pixels_per_line) ;
 		NUV_AerosolIndex_1km:valid_range =  -5000s, 10000s ;
 		NUV_AerosolIndex_1km:_FillValue = -9999s ;
-		NUV_AerosolIndex_1km:long_name = "NUV Retrieved Aerosol Index (0.354-0.388) Pair at native 1km resolution"  ;
+		NUV_AerosolIndex_1km:long_name = "NUV Retrieved Aerosol Index (0.354-0.388 pair) at native 1km resolution"  ;
 		NUV_AerosolIndex_1km:scale_factor = 0.001 ;
 		NUV_AerosolIndex_1km:add_offset = 0. ;
 		NUV_AerosolIndex_1km:coordinates = "/geolocation_data/Longitude_1km /geolocation_data/Latitude_1km" ;
@@ -72,7 +72,7 @@ group: geophysical_data {
 	short NUV_Residue_1km(number_of_lines, pixels_per_line) ;
 		NUV_Residue_1km:valid_range =  -5000s, 10000s ;
 		NUV_Residue_1km:_FillValue = -9999s ;
-		NUV_Residue_1km:long_name = "NUV Retrieved LER based AI (0.354-0.388) Pair at native 1km resolution"  ;
+		NUV_Residue_1km:long_name = "NUV Retrieved LER based AI (0.354-0.388 pair) at native 1km resolution"  ;
 		NUV_Residue_1km:scale_factor = 0.001 ;
 		NUV_Residue_1km:add_offset = 0. ;
 		NUV_Residue_1km:coordinates = "/geolocation_data/Longitude_1km /geolocation_data/Latitude_1km" ;

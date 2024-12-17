@@ -73,7 +73,7 @@ group: geolocation_data {
 
 	short solar_azimuth_angle(number_of_lines, pixels_per_line) ;
 		solar_azimuth_angle:valid_range = -18000s, 18000s ;
-		solar_azimuth_angle:_FillValue = -9999s ;
+		solar_azimuth_angle:_FillValue = -99999s ;
 		solar_azimuth_angle:long_name = "Solar Azimuth Angle, Cell to Sun" ;
 		solar_azimuth_angle:units = "degree" ;
 		solar_azimuth_angle:scale_factor = 0.01 ;
@@ -95,7 +95,7 @@ group: geolocation_data {
 
 	short sensor_azimuth_angle(number_of_lines, pixels_per_line) ;
 		sensor_azimuth_angle:valid_range = -18000s, 18000s ;
-		sensor_azimuth_angle:_FillValue = -9999s ;
+		sensor_azimuth_angle:_FillValue = -99999s ;
 		sensor_azimuth_angle:long_name = "Sensor Azimuth Angle, Cell to Sensor" ;
 		sensor_azimuth_angle:units = "degree" ;
 		sensor_azimuth_angle:scale_factor = 0.01 ;
@@ -170,7 +170,7 @@ group: geophysical_data {
     short DT_AerosolLayerHeight(number_of_lines, pixels_per_line) ;
 		DT_AerosolLayerHeight:valid_range = 1500s, 10000s, 10s ;
 		DT_AerosolLayerHeight:_FillValue = -9999s ;
-		DT_AerosolLayerHeight:long_name = "Height 1.5 3, 6, 10)";
+		DT_AerosolLayerHeight:long_name = "DT Retrieved Aerosol Layer Height (1.5, 3, 6, 10 km)";
 		DT_AerosolLayerHeight:scale_factor = 0.001 ;
 		DT_AerosolLayerHeight:add_offset = 0. ;
 		DT_AerosolLayerHeight:units = "km" ;
@@ -232,7 +232,7 @@ group: geophysical_data {
 	short NUV_Residue(number_of_lines, pixels_per_line) ;
 		NUV_Residue:valid_range = -5000s, 10000s ;
 		NUV_Residue:_FillValue = -9999s ;
-		NUV_Residue:long_name = "NUV Retrieved LER based AI (0.354-0.388) Pair"  ;
+		NUV_Residue:long_name = "NUV Retrieved LER based AI (0.354-0.388 pair)"  ;
 		NUV_Residue:scale_factor = 0.001 ;
 		NUV_Residue:add_offset = 0. ;
 		NUV_Residue:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;
@@ -332,7 +332,7 @@ group: geophysical_data {
     short Quality_flag_Aerosol_Optical_Depth(number_of_lines, pixels_per_line) ;
 		Quality_flag_Aerosol_Optical_Depth:valid_range = 0s, 3000s ;
 		Quality_flag_Aerosol_Optical_Depth:_FillValue = -9999s ;
-		Quality_flag_Aerosol_Optical_Depth:long_name = "Land=0 Ocean,0,1,2,3" ;
+		Quality_flag_Aerosol_Optical_Depth:long_name = "Land=0 Ocean=0,1,2,3" ;
 		Quality_flag_Aerosol_Optical_Depth:scale_factor = 0.001 ;
 		Quality_flag_Aerosol_Optical_Depth:add_offset = 0. ;
 		Quality_flag_Aerosol_Optical_Depth:coordinates = "/geolocation_data/longitude /geolocation_data/latitude" ;

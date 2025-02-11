@@ -2112,14 +2112,14 @@
   uvaimie_dustolin800zhgt17_aac(:)= RESHAPE(uvaimie_800zhgt17_aac_dsto,&
   					(/nsalb_aac*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac*nraa_aac/) )
 
- DEALLOCATE(rad388_1013zhgt3_aac_smk, rad388_1013zhgt4_aac_smk, rad388_1013zhgt5_aac_smk, rad388_1013zhgt6_aac_smk,&
-            rad388_1013zhgt9_aac_smk, rad388_1013zhgt12_aac_smk, rad388_1013zhgt15_aac_smk,&
-            rad388_800zhgt5_aac_smk, rad388_800zhgt6_aac_smk, rad388_800zhgt7_aac_smk, rad388_800zhgt8_aac_smk,&
-            rad388_800zhgt11_aac_smk, rad388_800zhgt14_aac_smk, rad388_800zhgt17_aac_smk,&
-            uvaimie_1013zhgt3_aac_smk, uvaimie_1013zhgt4_aac_smk, uvaimie_1013zhgt5_aac_smk, uvaimie_1013zhgt6_aac_smk,&
-            uvaimie_1013zhgt9_aac_smk, uvaimie_1013zhgt12_aac_smk, uvaimie_1013zhgt15_aac_smk,&
-            uvaimie_800zhgt5_aac_smk, uvaimie_800zhgt6_aac_smk, uvaimie_800zhgt7_aac_smk, uvaimie_800zhgt8_aac_smk,&
-            uvaimie_800zhgt11_aac_smk, uvaimie_800zhgt14_aac_smk, uvaimie_800zhgt17_aac_smk, STAT=status)
+ !DEALLOCATE(rad388_1013zhgt3_aac_smk, rad388_1013zhgt4_aac_smk, rad388_1013zhgt5_aac_smk, rad388_1013zhgt6_aac_smk,&
+ !           rad388_1013zhgt9_aac_smk, rad388_1013zhgt12_aac_smk, rad388_1013zhgt15_aac_smk,&
+ !           rad388_800zhgt5_aac_smk, rad388_800zhgt6_aac_smk, rad388_800zhgt7_aac_smk, rad388_800zhgt8_aac_smk,&
+ !           rad388_800zhgt11_aac_smk, rad388_800zhgt14_aac_smk, rad388_800zhgt17_aac_smk,&
+ !           uvaimie_1013zhgt3_aac_smk, uvaimie_1013zhgt4_aac_smk, uvaimie_1013zhgt5_aac_smk, uvaimie_1013zhgt6_aac_smk,&
+ !           uvaimie_1013zhgt9_aac_smk, uvaimie_1013zhgt12_aac_smk, uvaimie_1013zhgt15_aac_smk,&
+ !           uvaimie_800zhgt5_aac_smk, uvaimie_800zhgt6_aac_smk, uvaimie_800zhgt7_aac_smk, uvaimie_800zhgt8_aac_smk,&
+ !           uvaimie_800zhgt11_aac_smk, uvaimie_800zhgt14_aac_smk, uvaimie_800zhgt17_aac_smk, STAT=status)
 
  DEALLOCATE(rad388_1013zhgt3_aac_dst, rad388_1013zhgt4_aac_dst, rad388_1013zhgt5_aac_dst, rad388_1013zhgt6_aac_dst,&
             rad388_1013zhgt9_aac_dst, rad388_1013zhgt12_aac_dst, rad388_1013zhgt15_aac_dst,&
@@ -2149,16 +2149,16 @@
  END SUBROUTINE Read_aac_LUTparams
 
 
- SUBROUTINE Interpol_aac_LUTparams(ocean,atype,inpterr, inzhgt, inssa, insalb354, insalb388, &
+ SUBROUTINE Interpol_aac_LUTparams(sun_za,sat_za,phi,ocean,atype,inpterr, inzhgt, inssa, insalb354, insalb388, &
                                    fint_rad388_aac, fint_uvaimie_aac)
 !
    USE LookupTableModule_nc4
 
    IMPLICIT NONE
 
-   INTEGER(KIND=4) :: status, version, ocean
-   INTEGER(KIND=2), INTENT(IN)  :: atype
-   REAL(KIND=4),    INTENT(IN)  ::  inpterr, inzhgt, inssa, insalb354, insalb388
+  INTEGER(KIND=4) :: status, version, ocean
+  INTEGER(KIND=2), INTENT(IN)  :: atype
+  REAL(KIND=4),    INTENT(IN)  ::  inpterr, inzhgt, inssa, insalb354, insalb388, sun_za,sat_za,phi
 
   REAL(KIND=4), DIMENSION(:,:), ALLOCATABLE, INTENT(OUT) :: fint_rad388_aac, fint_uvaimie_aac
 
@@ -2176,6 +2176,12 @@
   REAL(KIND=4), DIMENSION(:,:),     ALLOCATABLE  :: int4_rad388_1013_aac, int4_rad388_800_aac, &
                                                     int4_uvaimie_1013_aac, int4_uvaimie_800_aac
 
+  REAL(KIND=4), DIMENSION(:,:,:,:,:,:,:), ALLOCATABLE    :: rad_tmp
+
+  INTEGER(KIND=4)                                     :: sza_indx1, sza_indx2
+  INTEGER(KIND=4)                                     :: vza_indx1, vza_indx2
+  INTEGER(KIND=4)                                     :: phi_indx1, phi_indx2
+
 
 !  Bounding values in table for input parameters
 !==============================================================================
@@ -2188,8 +2194,8 @@
 !==============================================================================
   INTEGER(KIND=4) :: jtheta, jtheta2, jsza, jsza2, jphi, jphi2, jw1
 
-  REAL(KIND=4), DIMENSION(7) ::       ssa388val_smk = (/0.780184, 0.807809, 0.845545, 0.887624, 0.935943, 0.964274, 1.000/)
-  REAL(KIND=4), DIMENSION(7) ::  ssa388val_dst_land = (/0.779210, 0.837780, 0.876060, 0.905320, 0.948860, 0.972340, 1.000/)
+  REAL(KIND=4), DIMENSION(7) :: ssa388val_smk = (/0.780184, 0.807809, 0.845545, 0.887624, 0.935943, 0.964274, 1.000/)
+  REAL(KIND=4), DIMENSION(7) :: ssa388val_dst_land = (/0.779210, 0.837780, 0.876060, 0.905320, 0.948860, 0.972340, 1.000/)
   REAL(KIND=4), DIMENSION(7) :: ssa388val_dst_ocean = (/0.767990, 0.829980, 0.870520, 0.901320, 0.946900, 0.971240, 1.000/)
   REAL(KIND=4), DIMENSION(7) :: zhgt1013val = (/3.0, 4.0, 5.0, 6.0, 9.0, 12.0, 15.0/)
   REAL(KIND=4), DIMENSION(5) :: salbval = (/0.0, 0.05, 0.10, 0.15, 0.20/)
@@ -2198,11 +2204,11 @@
   INTEGER(KIND=4) ::  ialo, iz
 
 !
-   ALLOCATE(intrad388_1013_aac(nsalb_aac,4,nssa_aac,naod_aac,ncod_aac), &
-             intrad388_800_aac(nsalb_aac,4,nssa_aac,naod_aac,ncod_aac) )
+   ALLOCATE(intrad388_1013_aac(nsalb_aac,7,nssa_aac,naod_aac,ncod_aac), &
+             intrad388_800_aac(nsalb_aac,7,nssa_aac,naod_aac,ncod_aac) )
 
-   ALLOCATE(intuvaimie_1013_aac(nsalb_aac,4,nssa_aac,naod_aac,ncod_aac), &
-             intuvaimie_800_aac(nsalb_aac,4,nssa_aac,naod_aac,ncod_aac) )
+   ALLOCATE(intuvaimie_1013_aac(nsalb_aac,7,nssa_aac,naod_aac,ncod_aac), &
+             intuvaimie_800_aac(nsalb_aac,7,nssa_aac,naod_aac,ncod_aac) )
 !
    ALLOCATE(    rad_smokeout_aac(nssa_aac,naod_aac,ncod_aac) )
    ALLOCATE(     rad_dustout_aac(nssa_aac,naod_aac,ncod_aac) )
@@ -2210,7 +2216,8 @@
    ALLOCATE(uvaimie_smokeout_aac(nssa_aac,naod_aac,ncod_aac) )
    ALLOCATE( uvaimie_dustout_aac(nssa_aac,naod_aac,ncod_aac) )
    ALLOCATE(uvaimie_dustoout_aac(nssa_aac,naod_aac,ncod_aac) )
-
+   
+   ALLOCATE(rad_tmp(nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac))
 
 
 !=============================================================================
@@ -2261,74 +2268,104 @@
                                                                   fractionalSALB388)
 
 
+ ! Find bounding indices of LUT for observed SZA, VZA, and PHI...
+  CALL Find_Indices(nraa_aac, raatbl_aac, phi, phi_indx1, phi_indx2)
+  CALL Find_Indices(nvza_aac, vzatbl_aac, sat_za, vza_indx1, vza_indx2)
+  CALL Find_Indices(nsza_aac, szatbl_aac, sun_za, sza_indx1, sza_indx2)
+
+
+  rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin1013zhgt3_aac, &
+                           (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
   IF(atype .eq. 1) THEN
    !
   DO ialo = salblw388, salbup388
-   IF(zhgtlw .EQ. 1) &
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt3_aac, rad_smokeout_aac)
-   IF(zhgtlw .EQ. 2) &
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt4_aac, rad_smokeout_aac)
-   IF(zhgtlw .EQ. 3) &
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt5_aac, rad_smokeout_aac)
-   IF(zhgtlw .EQ. 4) &
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt6_aac, rad_smokeout_aac)
-   IF(zhgtlw .EQ. 5) &
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt9_aac, rad_smokeout_aac)
-   IF(zhgtlw .EQ. 6) &
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt12_aac, rad_smokeout_aac)
-   IF(zhgtlw .EQ. 7) &
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt15_aac, rad_smokeout_aac)
-   intrad388_1013_aac(ialo,zhgtlw,:,:,:) = rad_smokeout_aac
-  
-   IF(zhgtup .EQ. 1) &
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt3_aac, rad_smokeout_aac)
-   IF(zhgtup .EQ. 2) &
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt4_aac, rad_smokeout_aac)
-   IF(zhgtup .EQ. 3) &
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt5_aac, rad_smokeout_aac)
-   IF(zhgtup .EQ. 4) &
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt6_aac, rad_smokeout_aac)
-   IF(zhgtup .EQ. 5) &
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt9_aac, rad_smokeout_aac)
-   IF(zhgtup .EQ. 6) &
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt12_aac, rad_smokeout_aac)
-   IF(zhgtup .EQ. 7) &
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin1013zhgt15_aac, rad_smokeout_aac)
+
+   IF(zhgtlw .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin1013zhgt3_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin1013zhgt4_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))                                      
+   IF(zhgtlw .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin1013zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))                                      
+   IF(zhgtlw .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin1013zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))                                      
+   IF(zhgtlw .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin1013zhgt9_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))                                      
+   IF(zhgtlw .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin1013zhgt12_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))                                      
+   IF(zhgtlw .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin1013zhgt15_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))                                      
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,rad_smokeout_aac)
+
+   intrad388_1013_aac(ialo,zhgtlw,:,:,:) = rad_smokeout_aac         
+
+
+   IF(zhgtup .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin1013zhgt3_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin1013zhgt4_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin1013zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin1013zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin1013zhgt9_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin1013zhgt12_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin1013zhgt15_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,rad_smokeout_aac)
+
    intrad388_1013_aac(ialo,zhgtup,:,:,:) = rad_smokeout_aac
+   
   ENDDO   !DO ialo = salblw388, salbup388
    
 
   DO ialo = salblw388, salbup388
-   IF(zhgtlw .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt3_aac, uvaimie_smokeout_aac)
-   IF(zhgtlw .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt4_aac, uvaimie_smokeout_aac)
-   IF(zhgtlw .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt5_aac, uvaimie_smokeout_aac)
-   IF(zhgtlw .EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt6_aac, uvaimie_smokeout_aac)
-   IF(zhgtlw .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt9_aac, uvaimie_smokeout_aac)
-   IF(zhgtlw .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt12_aac, uvaimie_smokeout_aac)
-   IF(zhgtlw .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt15_aac, uvaimie_smokeout_aac)
+
+   IF(zhgtlw .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin1013zhgt3_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin1013zhgt4_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin1013zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin1013zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin1013zhgt9_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin1013zhgt12_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin1013zhgt15_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,uvaimie_smokeout_aac)                                      
+
    intuvaimie_1013_aac(ialo,zhgtlw,:,:,:) = uvaimie_smokeout_aac
 
-   IF(zhgtup .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt3_aac, uvaimie_smokeout_aac)
-   IF(zhgtup .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt4_aac, uvaimie_smokeout_aac)
-   IF(zhgtup .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt5_aac, uvaimie_smokeout_aac)
-   IF(zhgtup .EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt6_aac, uvaimie_smokeout_aac)
-   IF(zhgtup .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt9_aac, uvaimie_smokeout_aac)
-   IF(zhgtup .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt12_aac, uvaimie_smokeout_aac)
-   IF(zhgtup .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin1013zhgt15_aac, uvaimie_smokeout_aac)
+
+   IF(zhgtup .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin1013zhgt3_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin1013zhgt4_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin1013zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin1013zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin1013zhgt9_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin1013zhgt12_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin1013zhgt15_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,uvaimie_smokeout_aac)
+                                      
    intuvaimie_1013_aac(ialo,zhgtup,:,:,:) = uvaimie_smokeout_aac
   ENDDO   !DO ialo = salblw388, salbup388
 
@@ -2336,71 +2373,91 @@
  ! -- 800 hPa --------------------------------------------------
    !
   DO ialo = salblw388, salbup388
-   IF(zhgtlw .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt5_aac, rad_smokeout_aac)
-   IF(zhgtlw .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt6_aac, rad_smokeout_aac)
-   IF(zhgtlw .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt7_aac, rad_smokeout_aac)
-   IF(zhgtlw .EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt8_aac, rad_smokeout_aac)
-   IF(zhgtlw .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt11_aac, rad_smokeout_aac)
-   IF(zhgtlw .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt14_aac, rad_smokeout_aac)
-   IF(zhgtlw .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt17_aac, rad_smokeout_aac)
+
+
+   IF(zhgtlw .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin800zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin800zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin800zhgt7_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin800zhgt8_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin800zhgt11_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin800zhgt14_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin800zhgt17_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,rad_smokeout_aac)
+
    intrad388_800_aac(ialo,zhgtlw,:,:,:) = rad_smokeout_aac
 
-   IF(zhgtup .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt5_aac, rad_smokeout_aac)
-   IF(zhgtup .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt6_aac, rad_smokeout_aac)
-   IF(zhgtup .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt7_aac, rad_smokeout_aac)
-   IF(zhgtup .EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt8_aac, rad_smokeout_aac)
-   IF(zhgtup .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt11_aac, rad_smokeout_aac)
-   IF(zhgtup .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt14_aac, rad_smokeout_aac)
-   IF(zhgtup .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_smokelin800zhgt17_aac, rad_smokeout_aac)
+
+   IF(zhgtup .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin800zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin800zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin800zhgt7_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin800zhgt8_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin800zhgt11_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin800zhgt14_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_smokelin800zhgt17_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,rad_smokeout_aac)
+                                      
    intrad388_800_aac(ialo,zhgtup,:,:,:) = rad_smokeout_aac
   ENDDO   !DO ialo = salblw388, salbup388
 
 
   DO ialo = salblw388, salbup388
-   IF(zhgtlw .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt5_aac, uvaimie_smokeout_aac)
-   IF(zhgtlw .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt6_aac, uvaimie_smokeout_aac)
-   IF(zhgtlw .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt7_aac, uvaimie_smokeout_aac)
-   IF(zhgtlw .EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt8_aac, uvaimie_smokeout_aac)
-   IF(zhgtlw .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt11_aac, uvaimie_smokeout_aac)
-   IF(zhgtlw .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt14_aac, uvaimie_smokeout_aac)
-   IF(zhgtlw .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt17_aac, uvaimie_smokeout_aac)
+
+   IF(zhgtlw .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin800zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin800zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin800zhgt7_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin800zhgt8_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin800zhgt11_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin800zhgt14_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin800zhgt17_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,uvaimie_smokeout_aac)
+
    intuvaimie_800_aac(ialo,zhgtlw,:,:,:) = uvaimie_smokeout_aac
 
-   IF(zhgtup .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt5_aac, uvaimie_smokeout_aac)
-   IF(zhgtup .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt6_aac, uvaimie_smokeout_aac)
-   IF(zhgtup .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt7_aac, uvaimie_smokeout_aac)
-   IF(zhgtup .EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt8_aac, uvaimie_smokeout_aac)
-   IF(zhgtup .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt11_aac, uvaimie_smokeout_aac)
-   IF(zhgtup .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt14_aac, uvaimie_smokeout_aac)
-   IF(zhgtup .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_smokelin800zhgt17_aac, uvaimie_smokeout_aac)
+   IF(zhgtup .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin800zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin800zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin800zhgt7_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin800zhgt8_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin800zhgt11_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin800zhgt14_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_smokelin800zhgt17_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,uvaimie_smokeout_aac)
+
    intuvaimie_800_aac(ialo,zhgtup,:,:,:) = uvaimie_smokeout_aac
   ENDDO   !DO ialo = salblw388, salbup388
 
@@ -2410,140 +2467,178 @@
  IF(atype .eq. 2) THEN     !over-land pixel
   !
   DO ialo = salblw388, salbup388
-   IF(zhgtlw .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt3_aac, rad_dustout_aac)
-   IF(zhgtlw .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt4_aac, rad_dustout_aac)
-   IF(zhgtlw .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt5_aac, rad_dustout_aac)
-   IF(zhgtlw .EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt6_aac, rad_dustout_aac)
-   IF(zhgtlw .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt9_aac, rad_dustout_aac)
-   IF(zhgtlw .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt12_aac, rad_dustout_aac)
-   IF(zhgtlw .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt15_aac, rad_dustout_aac)
+
+   IF(zhgtlw .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin1013zhgt3_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin1013zhgt4_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin1013zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin1013zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin1013zhgt9_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin1013zhgt12_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin1013zhgt15_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,rad_dustout_aac)
+
    intrad388_1013_aac(ialo,zhgtlw,:,:,:) = rad_dustout_aac
 
-   IF(zhgtup .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt3_aac, rad_dustout_aac)
-   IF(zhgtup .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt4_aac, rad_dustout_aac)
-   IF(zhgtup .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt5_aac, rad_dustout_aac)
-   IF(zhgtup.EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt6_aac, rad_dustout_aac)
-   IF(zhgtup .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt9_aac, rad_dustout_aac)
-   IF(zhgtup .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt12_aac, rad_dustout_aac)
-   IF(zhgtup .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin1013zhgt15_aac, rad_dustout_aac)
+
+   IF(zhgtup .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin1013zhgt3_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin1013zhgt4_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin1013zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin1013zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin1013zhgt9_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin1013zhgt12_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin1013zhgt15_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,rad_dustout_aac)
+
    intrad388_1013_aac(ialo,zhgtup,:,:,:) = rad_dustout_aac
   ENDDO   !DO ialo = salblw388, salbup388
 
   DO ialo = salblw388, salbup388
-   IF(zhgtlw .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt3_aac, uvaimie_dustout_aac)
-   IF(zhgtlw .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt4_aac, uvaimie_dustout_aac)
-   IF(zhgtlw .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt5_aac, uvaimie_dustout_aac)
-   IF(zhgtlw .EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt6_aac, uvaimie_dustout_aac)
-   IF(zhgtlw .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt9_aac, uvaimie_dustout_aac)
-   IF(zhgtlw .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt12_aac, uvaimie_dustout_aac)
-   IF(zhgtlw .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt15_aac, uvaimie_dustout_aac)
+
+   IF(zhgtlw .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin1013zhgt3_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin1013zhgt4_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin1013zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin1013zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin1013zhgt9_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin1013zhgt12_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin1013zhgt15_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,rad_dustout_aac)
+
    intuvaimie_1013_aac(ialo,zhgtlw,:,:,:) = uvaimie_dustout_aac
 
-   IF(zhgtup .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt3_aac, uvaimie_dustout_aac)
-   IF(zhgtup .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt4_aac, uvaimie_dustout_aac)
-   IF(zhgtup .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt5_aac, uvaimie_dustout_aac)
-   IF(zhgtup .EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt6_aac, uvaimie_dustout_aac)
-   IF(zhgtup .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt9_aac, uvaimie_dustout_aac)
-   IF(zhgtup .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt12_aac, uvaimie_dustout_aac)
-   IF(zhgtup .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin1013zhgt15_aac, uvaimie_dustout_aac)
+
+   IF(zhgtup .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin1013zhgt3_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin1013zhgt4_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin1013zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin1013zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin1013zhgt9_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin1013zhgt12_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin1013zhgt15_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,rad_dustout_aac)
+
    intuvaimie_1013_aac(ialo,zhgtup,:,:,:) = uvaimie_dustout_aac
   ENDDO   !DO ialo = salblw388, salbup388
 
  ! -- 800 hPa --------------------------------------------------
   !
   DO ialo = salblw388, salbup388
-   IF(zhgtlw .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt5_aac, rad_dustout_aac)
-   IF(zhgtlw .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt6_aac, rad_dustout_aac)
-   IF(zhgtlw .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt7_aac, rad_dustout_aac)
-   IF(zhgtlw .EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt8_aac, rad_dustout_aac)
-   IF(zhgtlw .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt11_aac, rad_dustout_aac)
-   IF(zhgtlw .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt14_aac, rad_dustout_aac)
-   IF(zhgtlw .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt17_aac, rad_dustout_aac)
+
+   IF(zhgtlw .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin800zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin800zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin800zhgt7_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin800zhgt8_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin800zhgt11_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin800zhgt14_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin800zhgt17_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,rad_dustout_aac)
+
    intrad388_800_aac(ialo,zhgtlw,:,:,:) = rad_dustout_aac
 
-   IF(zhgtup .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt5_aac, rad_dustout_aac)
-   IF(zhgtup .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt6_aac, rad_dustout_aac)
-   IF(zhgtup .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt7_aac, rad_dustout_aac)
-   IF(zhgtup .EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt8_aac, rad_dustout_aac)
-   IF(zhgtup .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt11_aac, rad_dustout_aac)
-   IF(zhgtup .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt14_aac, rad_dustout_aac)
-   IF(zhgtup .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustlin800zhgt17_aac, rad_dustout_aac)
+
+   IF(zhgtup .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin800zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin800zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin800zhgt7_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin800zhgt8_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin800zhgt11_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin800zhgt14_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustlin800zhgt17_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,rad_dustout_aac)
    intrad388_800_aac(ialo,zhgtup,:,:,:) = rad_dustout_aac
   ENDDO   !DO ialo = salblw388, salbup388
 
   DO ialo = salblw388, salbup388
-   IF(zhgtlw .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt5_aac, uvaimie_dustout_aac)
-   IF(zhgtlw .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt6_aac, uvaimie_dustout_aac)
-   IF(zhgtlw .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt7_aac, uvaimie_dustout_aac)
-   IF(zhgtlw .EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt8_aac, uvaimie_dustout_aac)
-   IF(zhgtlw .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt11_aac, uvaimie_dustout_aac)
-   IF(zhgtlw .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt14_aac, uvaimie_dustout_aac)
-   IF(zhgtlw .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt17_aac, uvaimie_dustout_aac)
+
+   IF(zhgtlw .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin800zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin800zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin800zhgt7_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin800zhgt8_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin800zhgt11_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin800zhgt14_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin800zhgt17_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,rad_dustout_aac)
+
    intuvaimie_800_aac(ialo,zhgtlw,:,:,:) = uvaimie_dustout_aac
 
-   IF(zhgtup .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt5_aac, uvaimie_dustout_aac)
-   IF(zhgtup .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt6_aac, uvaimie_dustout_aac)
-   IF(zhgtup .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt7_aac, uvaimie_dustout_aac)
-   IF(zhgtup .EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt8_aac, uvaimie_dustout_aac)
-   IF(zhgtup .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt11_aac, uvaimie_dustout_aac)
-   IF(zhgtup .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt14_aac, uvaimie_dustout_aac)
-   IF(zhgtup .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustlin800zhgt17_aac, uvaimie_dustout_aac)
+   IF(zhgtup .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin800zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin800zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin800zhgt7_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin800zhgt8_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin800zhgt11_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin800zhgt14_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustlin800zhgt17_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,rad_dustout_aac)
+
    intuvaimie_800_aac(ialo,zhgtup,:,:,:) = uvaimie_dustout_aac
   ENDDO   !DO ialo = salblw388, salbup388
  ENDIF
@@ -2553,70 +2648,89 @@
 IF(atype .eq. 4) THEN     !over-ocean pixel
   !
   DO ialo = salblw388, salbup388
-   IF(zhgtlw .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt3_aac, rad_dustoout_aac)
-   IF(zhgtlw .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt4_aac, rad_dustoout_aac)
-   IF(zhgtlw .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt5_aac, rad_dustoout_aac)
-   IF(zhgtlw .EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt6_aac, rad_dustoout_aac)
-   IF(zhgtlw .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt9_aac, rad_dustoout_aac)
-   IF(zhgtlw .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt12_aac, rad_dustoout_aac)
-   IF(zhgtlw .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt15_aac, rad_dustoout_aac)
+
+   IF(zhgtlw .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin1013zhgt3_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin1013zhgt4_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin1013zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin1013zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin1013zhgt9_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin1013zhgt12_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin1013zhgt15_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,rad_dustoout_aac)
+
    intrad388_1013_aac(ialo,zhgtlw,:,:,:) = rad_dustoout_aac
 
-   IF(zhgtup .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt3_aac, rad_dustoout_aac)
-   IF(zhgtup .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt4_aac, rad_dustoout_aac)
-   IF(zhgtup .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt5_aac, rad_dustoout_aac)
-   IF(zhgtup .EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt6_aac, rad_dustoout_aac)
-   IF(zhgtup .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt9_aac, rad_dustoout_aac)
-   IF(zhgtup .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt12_aac, rad_dustoout_aac)
-   IF(zhgtup .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin1013zhgt15_aac, rad_dustoout_aac)
+   IF(zhgtup .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin1013zhgt3_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin1013zhgt4_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin1013zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin1013zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin1013zhgt9_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin1013zhgt12_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin1013zhgt15_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,rad_dustoout_aac)
+
    intrad388_1013_aac(ialo,zhgtup,:,:,:) = rad_dustoout_aac
   ENDDO   !DO ialo = salblw388, salbup388
 
   DO ialo = salblw388, salbup388
-   IF(zhgtlw .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt3_aac, uvaimie_dustoout_aac)
-   IF(zhgtlw .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt4_aac, uvaimie_dustoout_aac)
-   IF(zhgtlw .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt5_aac, uvaimie_dustoout_aac)
-   IF(zhgtlw .EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt6_aac, uvaimie_dustoout_aac)
-   IF(zhgtlw .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt9_aac, uvaimie_dustoout_aac)
-   IF(zhgtlw .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt12_aac, uvaimie_dustoout_aac)
-   IF(zhgtlw .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt15_aac, uvaimie_dustoout_aac)
+
+   IF(zhgtlw .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin1013zhgt3_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin1013zhgt4_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin1013zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin1013zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin1013zhgt9_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin1013zhgt12_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin1013zhgt15_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,uvaimie_dustoout_aac)
+
    intuvaimie_1013_aac(ialo,zhgtlw,:,:,:) = uvaimie_dustoout_aac
 
-   IF(zhgtup .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt3_aac, uvaimie_dustoout_aac)
-   IF(zhgtup .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt4_aac, uvaimie_dustoout_aac)
-   IF(zhgtup .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt5_aac, uvaimie_dustoout_aac)
-   IF(zhgtup .EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt6_aac, uvaimie_dustoout_aac)
-   IF(zhgtup .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt9_aac, uvaimie_dustoout_aac)
-   IF(zhgtup .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt12_aac, uvaimie_dustoout_aac)
-   IF(zhgtup .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin1013zhgt15_aac, uvaimie_dustoout_aac)
+
+   IF(zhgtup .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin1013zhgt3_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin1013zhgt4_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin1013zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin1013zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin1013zhgt9_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin1013zhgt12_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin1013zhgt15_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,uvaimie_dustoout_aac)
+
    intuvaimie_1013_aac(ialo,zhgtup,:,:,:) = uvaimie_dustoout_aac
   ENDDO   !DO ialo = salblw388, salbup388
 
@@ -2624,70 +2738,89 @@ IF(atype .eq. 4) THEN     !over-ocean pixel
 ! -- 800 hPa --------------------------------------------------
   !
   DO ialo = salblw388, salbup388
-   IF(zhgtlw .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt5_aac, rad_dustoout_aac)
-   IF(zhgtlw .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt6_aac, rad_dustoout_aac)
-   IF(zhgtlw .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt7_aac, rad_dustoout_aac)
-   IF(zhgtlw .EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt8_aac, rad_dustoout_aac)
-   IF(zhgtlw .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt11_aac, rad_dustoout_aac)
-   IF(zhgtlw .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt14_aac, rad_dustoout_aac)
-   IF(zhgtlw .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt17_aac, rad_dustoout_aac)
+
+   IF(zhgtlw .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin800zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin800zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin800zhgt7_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin800zhgt8_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin800zhgt11_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin800zhgt14_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin800zhgt17_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,rad_dustout_aac)
+
    intrad388_800_aac(ialo,zhgtlw,:,:,:) = rad_dustoout_aac
 
-   IF(zhgtup .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt5_aac, rad_dustoout_aac)
-   IF(zhgtup .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt6_aac, rad_dustoout_aac)
-   IF(zhgtup .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt7_aac, rad_dustoout_aac)
-   IF(zhgtup .EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt8_aac, rad_dustoout_aac)
-   IF(zhgtup .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt11_aac, rad_dustoout_aac)
-   IF(zhgtup .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt14_aac, rad_dustoout_aac)
-   IF(zhgtup .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, rad388_dustolin800zhgt17_aac, rad_dustoout_aac)
+   IF(zhgtup .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin800zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin800zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin800zhgt7_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin800zhgt8_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin800zhgt11_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin800zhgt14_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(rad388_dustolin800zhgt17_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,rad_dustout_aac)
+
    intrad388_800_aac(ialo,zhgtup,:,:,:) = rad_dustoout_aac
   ENDDO   !DO ialo = salblw388, salbup388
 
   DO ialo = salblw388, salbup388
-   IF(zhgtlw .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt5_aac, uvaimie_dustoout_aac)
-   IF(zhgtlw .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt6_aac, uvaimie_dustoout_aac)
-   IF(zhgtlw .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt7_aac, uvaimie_dustoout_aac)
-   IF(zhgtlw .EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt8_aac, uvaimie_dustoout_aac)
-   IF(zhgtlw .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt11_aac, uvaimie_dustoout_aac)
-   IF(zhgtlw .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt14_aac, uvaimie_dustoout_aac)
-   IF(zhgtlw .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt17_aac, uvaimie_dustoout_aac)
+
+   IF(zhgtlw .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin800zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin800zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin800zhgt7_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin800zhgt8_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin800zhgt11_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin800zhgt14_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtlw .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin800zhgt17_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,uvaimie_dustoout_aac)
+
    intuvaimie_800_aac(ialo,zhgtlw,:,:,:) = uvaimie_dustoout_aac
 
-   IF(zhgtup .EQ. 1) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt5_aac, uvaimie_dustoout_aac)
-   IF(zhgtup .EQ. 2) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt6_aac, uvaimie_dustoout_aac)
-   IF(zhgtup .EQ. 3) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt7_aac, uvaimie_dustoout_aac)
-   IF(zhgtup .EQ. 4) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt8_aac, uvaimie_dustoout_aac)
-   IF(zhgtup .EQ. 5) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt11_aac, uvaimie_dustoout_aac)
-   IF(zhgtup .EQ. 6) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt14_aac, uvaimie_dustoout_aac)
-   IF(zhgtup .EQ. 7) & 
-   	status = InterpRadiance_aac(ialo,1,naod_aac,1,ncod_aac,1,nssa_aac, uvaimie_dustolin800zhgt17_aac, uvaimie_dustoout_aac)
+
+   IF(zhgtup .EQ. 1) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin800zhgt5_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 2) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin800zhgt6_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 3) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin800zhgt7_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 4) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin800zhgt8_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 5) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin800zhgt11_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 6) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin800zhgt14_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+   IF(zhgtup .EQ. 7) rad_tmp(:,:,:,:,:,:,:) = RESHAPE(uvaimie_dustolin800zhgt17_aac, &
+                                              (/nsalb_aac,nssa_aac,naod_aac,ncod_aac,nsza_aac,nvza_aac,nraa_aac/))
+
+   status = InterpRadiance_Linear(nssa_aac,naod_aac,ncod_aac,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,PHI_indx1, &
+                 PHI_indx2,sun_za,sat_za,phi,rad_tmp,uvaimie_dustoout_aac)
+
    intuvaimie_800_aac(ialo,zhgtup,:,:,:) = uvaimie_dustoout_aac
   ENDDO   !DO ialo = salblw388, salbup388
  ENDIF
@@ -2775,16 +2908,12 @@ IF(atype .eq. 4) THEN     !over-ocean pixel
   else
      inpterr2 = inpterr
   endif
-  wt = (LOG(1013.0) - LOG(inpterr2)) / (LOG(1013.0) - LOG(800.0))
-!write(*,*) 'inpterr2 , wt : ', inpterr2 , wt
+  wt = (LOG(1013.25) - LOG(inpterr2)) / (LOG(1013.25) - LOG(800.0))
 
   fint_rad388_aac(:,:) = int4_rad388_1013_aac(:,:)*(1.0 -wt) + int4_rad388_800_aac(:,:)*wt
   fint_uvaimie_aac(:,:) = int4_uvaimie_1013_aac(:,:)*(1.0 -wt) + int4_uvaimie_800_aac(:,:)*wt
 
 !
-!write(*,*) 'fint_rad388_aac(:,1) : ', fint_rad388_aac(:,1)
-!write(*,*) 'fint_rad388_aac(:,8) : ', fint_rad388_aac(:,8)
-
   DEALLOCATE(rad_smokeout_aac, rad_dustout_aac, rad_dustoout_aac, &
              uvaimie_smokeout_aac, uvaimie_dustout_aac, uvaimie_dustoout_aac, & 
              intrad388_1013_aac, intrad388_800_aac,  &
@@ -2798,6 +2927,8 @@ IF(atype .eq. 4) THEN     !over-ocean pixel
 !
   DEALLOCATE(int4_rad388_1013_aac, int4_rad388_800_aac, &
             int4_uvaimie_1013_aac, int4_uvaimie_800_aac, STAT=status)
+
+  DEALLOCATE(rad_tmp, STAT=status)
 
  END SUBROUTINE Interpol_aac_LUTparams
 
@@ -2843,7 +2974,7 @@ IF(atype .eq. 4) THEN     !over-ocean pixel
        do i=1,4
           isza = indsol+i-1
           n = n+1
-!               5 -> the number of actual layer heights used on the calculations
+!               5 -> the number of surface albedo nodes
 
           idxgral(n) = iwave+ (isza-1)*5*nssa_aac*naod_aac*ncod_aac + &
                        (iphi-1)*5*nssa_aac*naod_aac*ncod_aac*nsza_aac*nvza_aac + &
@@ -2870,5 +3001,134 @@ ENDDO  ! DO issa = 1, nssa_aac
 
  END FUNCTION InterpRadiance_aac
 
+
+
+FUNCTION InterpRadiance_Linear(nssa_in,naod_in,ncod_in,SZA_indx1,SZA_indx2,VZA_indx1,VZA_indx2,&
+          RAA_indx1, RAA_indx2,sun_za,sat_za,phi,rad_in,outRad_ai) RESULT(status)
+
+USE LookupTableModule_nc4
+
+IMPLICIT NONE
+
+INTEGER(KIND=4)  :: iSSA, iAOD, iCOD
+
+INTEGER(KIND=4)              :: iSZA, iVZA, iRAA
+INTEGER(KIND=4),  INTENT(IN) :: RAA_indx1, RAA_indx2
+INTEGER(KIND=4), INTENT(IN)  :: VZA_indx1, VZA_indx2
+INTEGER(KIND=4), INTENT(IN)  :: SZA_indx1, SZA_indx2
+
+REAL(KIND=4), INTENT(IN)     :: sun_za, sat_za, phi
+
+
+INTEGER(KIND=4), INTENT(IN) :: nssa_in,naod_in,ncod_in
+REAL(KIND=4), DIMENSION(5,7,7,10,7,14,11), INTENT(IN)    :: rad_in
+REAL(KIND=4), DIMENSION(:,:,:), INTENT(OUT)              :: outRad_ai
+
+!Local arrays
+REAL(KIND=4) :: rad_PHI(nphi), val_intp
+REAL(KIND=4) :: rad_dim1(nssa_in, naod_in, ncod_in, nsza, ntheta)
+REAL(KIND=4) :: rad_dim2(nssa_in, naod_in, ncod_in, nsza)
+
+  INTEGER(KIND=4)        :: status
+  CHARACTER(LEN=12)     :: mytime
+
+  status = -1
+
+DO iSSA = 1, nssa_in
+DO iAOD = 1, naod_in
+DO iCOD = 1, ncod_in
+
+    !Solar Zenith Angle Loop?~@?
+    DO iSZA = SZA_indx1, SZA_indx2
+
+    !Viewing Zenith Angle Loop?~@?
+    DO iVZA = VZA_indx1, VZA_indx2
+
+    ! Resolving RAA here...
+    DO iRAA = 1, nphi
+    rad_PHI(iRAA) = rad_in(1, iSSA, iAOD, iCOD, iSZA, iVZA, iRAA)
+    ENDDO
+
+    CALL Interpolation(nphi, phi_table, rad_PHI, phi, val_intp)
+    rad_dim1(iSSA, iAOD, iCOD, iSZA, iVZA) = val_intp
+
+    ENDDO  ! iVZA = VZA_indx1, VZA_indx2
+
+    ! Resolving VZA here...
+    CALL Interpolation(2, theta_table(VZA_indx1:VZA_indx2), rad_dim1(iSSA, iAOD, iCOD, iSZA, VZA_indx1:VZA_indx2), sat_za, val_intp)
+    rad_dim2(iSSA, iAOD, iCOD, iSZA) = val_intp
+
+    ENDDO  ! iSZA = SZA_indx1, SZA_indx2
+
+! Resolving SZA here...
+    CALL Interpolation(2,sza_table(SZA_indx1:SZA_indx2), &
+           rad_dim2(iSSA, iAOD, iCOD, SZA_indx1:SZA_indx2), sun_za, val_intp)
+    outRad_ai(iSSA, iAOD, iCOD) = val_intp
+
+    ENDDO
+    ENDDO
+    ENDDO
+
+    RETURN
+
+END FUNCTION InterpRadiance_Linear
+
+!**************************************************************
+SUBROUTINE Find_Indices(n_nodes,val_nodes,val_true,indx1,indx2)
+!**************************************************************
+
+ IMPLICIT NONE
+
+ INTEGER(KIND = 4)                              :: m
+ INTEGER, INTENT(IN)                            :: n_nodes
+ REAL, INTENT(IN), DIMENSION(n_nodes)           :: val_nodes
+ REAL, INTENT(IN)                               :: val_true
+ INTEGER, INTENT(OUT)                           :: indx1, indx2
+
+ indx1 = 0
+ indx2 = 0
+
+ DO m = 1, n_nodes-1
+
+ IF ( val_true .GE. val_nodes(m) .AND. val_true .LE. val_nodes(m+1)) THEN
+      indx1 = m
+      indx2 = m+1
+ ENDIF
+
+ ENDDO
+
+END SUBROUTINE Find_Indices
+
+SUBROUTINE INTERPOLATION(n_nodes,nodes,val_at_nodes,node_true,val_intp)
+
+ IMPLICIT NONE
+
+ INTEGER(KIND = 4)                              :: m
+ INTEGER, INTENT(IN)                            :: n_nodes
+ REAL, INTENT(IN), DIMENSION(n_nodes)           :: nodes
+ REAL, INTENT(IN), DIMENSION(n_nodes)           :: val_at_nodes
+ REAL(KIND=4)                                   :: node_true
+ REAL, INTENT(OUT)                              :: val_intp
+ INTEGER(KIND=4)                                :: indx
+
+ val_intp = -9.99
+ indx = 0
+
+ DO m = 1, n_nodes-1
+
+ IF ( nodes(m) .GE. 0 .AND. nodes(m+1) .GE. 0 .AND. indx .EQ. 0 ) THEN
+
+    IF ((node_true .GE. nodes(m) .AND. node_true .LE. nodes(m+1)) .OR. &
+        (node_true .LE. nodes(m) .AND. node_true .GE. nodes(m+1))) THEN
+         val_intp = val_at_nodes(m) + ((val_at_nodes(m+1)-val_at_nodes(m)) &
+         / (nodes(m+1)-nodes(m)) * (node_true-nodes(m)))
+         indx = 1
+    ENDIF
+
+ ENDIF
+
+ ENDDO
+
+END SUBROUTINE Interpolation
 
 END MODULE Get_omacaLUT7dim_H5module_nc4 

@@ -146,7 +146,7 @@ FUNCTION OCI_NUV_ACAer_Process(yr, mon, dy, nWavel,  &
 !==============================================================================
   REAL(KIND=4) :: pressure_table(2)
   REAL(KIND=4) :: logFacPressure
-  DATA pressure_table/1013.,600./
+  DATA pressure_table/1013.25,800./
 
 !==============================================================================
 ! Unpacking gpQF fields
@@ -252,7 +252,7 @@ IF( ( (gpQF.EQ.17 .AND. reflect(2) .GT. 0.20 .AND. reflect(2) .LE. 0.30 .AND. su
       (gpQF.EQ.17 .AND. reflect(2) .GT. 0.30 .AND. sun_ga .GE. 0 .AND. phi .GT.20.).OR. &
       (gpQF.NE.17 .AND. reflect(2) .GT. 0.20)) .AND. &
        salb(2) .GT. 0 .AND. salb(2) .LE. 0.20 .AND. &
-       pterrp .GT. 800.0 .AND. atype_aerac .LE. 2) THEN
+       pterrp .GT. 800.0 .AND. ((atype_aerac .LE. 2).OR.(atype_aerac .EQ. 4)).AND.sun_za.LE.80) THEN
 
 ! Surface albedo (388 nm) threshold of 0.20 is expected to avoid above-cloud 
 ! aerosol inversion over snow and sea-ice surface.
@@ -314,7 +314,7 @@ IF(atypeTmp .EQ. 1 .AND. ainuv .GE. 0.8)THEN
 
   inzhgt = zhgt_nodes(izhgt)
 
-  CALL Interpol_aac_LUTparams(ocean, atypeTmp, pterrp, inzhgt, inssacval, salb(1), salb(2),  &
+  CALL Interpol_aac_LUTparams(sun_za,sat_za,phi, ocean, atypeTmp, pterrp, inzhgt, inssacval, salb(1), salb(2),  &
                                     fint_rad388_aac, fint_uvaimie_aac)
 
    ! -- Transpose of 'fint_uvaimie_aac' and 'fint_rad388_aac'
@@ -367,7 +367,7 @@ ENDIF            !Aerosol type selection IF condition.
 
 ! --------------------------------------------------
 
-        CALL Interpol_aac_LUTparams(ocean,atype_aerac,pterrp, inzhgt, inssacval, salb(1), salb(2),  &
+        CALL Interpol_aac_LUTparams(sun_za,sat_za,phi,ocean,atype_aerac,pterrp, inzhgt, inssacval, salb(1), salb(2),  &
                                     fint_rad388_aac, fint_uvaimie_aac)
       
        ! -- Compute the LER 388 for the Aerosol Above Clouds  -----
@@ -392,7 +392,6 @@ ENDIF            !Aerosol type selection IF condition.
        IF(ainuv .GE. -100.)THEN
         !toa388_aac2(:,1) contains radiances of clouds with ACAOD=0.0
          toa388_aac2_array = toa388_aac2(:,1)
-
          CALL SPLINE(toa388_aac2_array,codtbl_aac,ncod_aac,rad_obs(2),appcodtau_aac_wl3)
        ENDIF
        !***********************************************************
@@ -472,9 +471,8 @@ ENDIF            !Aerosol type selection IF condition.
         IF (iSSA .EQ. 1) inssacval_tmp = inssacval - 0.03
         IF (iSSA .EQ. 2) inssacval_tmp = inssacval + 0.03
 
-        CALL Interpol_aac_LUTparams(ocean, atype_aerac, pterrp, inzhgt, inssacval_tmp, &
-	                            salb(1), salb(2),  &
-                                    fint_rad388_aac, fint_uvaimie_aac)
+        CALL Interpol_aac_LUTparams(sun_za,sat_za,phi,ocean, atype_aerac, pterrp, inzhgt, inssacval_tmp, &
+	                            salb(1), salb(2), fint_rad388_aac, fint_uvaimie_aac)
 
 
         ! -- Compute the LER 388 for the Aerosol Above Clouds  -----
@@ -1024,9 +1022,11 @@ SUBROUTINE SPLINE(XI, FI, N_NODES, X, F)
    IF (K .GE. 1 .AND. K .LE. N_NODES-1) THEN
 ! Find the value of function f(x)
     DX = XI(K+1) - XI(K)
+    
     ALPHA = P2(K+1)/(6*DX)
     BETA = -P2(K)/(6*DX)
     GAMMA = FI(K+1)/DX - DX*P2(K+1)/6
+    
     ETA = DX*P2(K)/6 - FI(K)/DX
     F = ALPHA*(X-XI(K))*(X-XI(K))*(X-XI(K)) &
        +BETA*(X-XI(K+1))*(X-XI(K+1))*(X-XI(K+1)) &
